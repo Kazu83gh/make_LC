@@ -10409,8 +10409,8 @@ ParcelRequire = (function (e, r, t, n) {
                 return l + j * (e - k);
               },
               //表示されているバーの高さ
-              C = -100, //x.minY[o],
-              q = 100, //x.maxY[o],
+              C = x.minY[o],
+              q = x.maxY[o],
               B = u / (q - C),
               P = function (e) {
                 return m - B * (e - C);
@@ -10458,7 +10458,7 @@ ParcelRequire = (function (e, r, t, n) {
                     ),
                     (H = []);
                 },
-                X = x //.bins
+                X = x.bins
                   .map(function (e) {
                     var t = z(e[0]);
                     if (((Y = e[2]), S(t))) {
@@ -10491,7 +10491,7 @@ ParcelRequire = (function (e, r, t, n) {
               M.push(
                 e.createElement("path", {
                   key: t.PlotType.Point,
-                  d: x //.bins
+                  d: x.bins
                     .map(function (e) {
                       if (e[1] < _) return "";
                       _ = e[2];
@@ -10597,7 +10597,7 @@ ParcelRequire = (function (e, r, t, n) {
                     maxMJD: h,
                     binSize: s,
                     object: n.map.get(_),
-                    data: json_data /*l.get(_)*/,
+                    data: l.get(_),
                     plotType: c,
                     isFirst: 0 === v,
                     isLast: v === i.bandCount * o.length - 1,
