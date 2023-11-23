@@ -11066,7 +11066,7 @@ ParcelRequire = (function (e, r, t, n) {
               O = i.useCache({
                 keys: F,
                 getter: function (e) {
-                  var t = _.get(e);
+                  var t = json_data;//_.get(e);
                   return t ? a.getRollingAverage(t, y.binSize) : null;
                 },
                 onError: E,
