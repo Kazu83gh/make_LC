@@ -9556,6 +9556,7 @@ ParcelRequire = (function (e, r, t, n) {
             return i;
           }),
           (exports.filterPlotType = function (t) {
+            console.log(i.isAvailablePlotType(t));
             return i.isAvailablePlotType(t) ? t : e.PlotType.Line;
           }),
           (exports.filterFont = function (t) {
@@ -11083,6 +11084,13 @@ ParcelRequire = (function (e, r, t, n) {
               w = n.useState(exports.getInitialSelectedObjects()),
               F = w[0],
               U = w[1],
+              x = n.useReducer(function (e, t) {
+                return new URL(
+                  "objects/" + F.join(",") + "?" + t,
+                  e.protocol + "//" + e.host
+                );
+              }, new URL(location.href)),
+              k = x[1],
               _ = i.useCache({
                 keys: F,
                 getter: l.getLightCurveData,
@@ -11098,6 +11106,18 @@ ParcelRequire = (function (e, r, t, n) {
                 onError: E,
                 dependencies: [y.binSize, _],
               });
+            //plottypeを変更する部分
+            n.useEffect(
+              function () {
+                var e = setTimeout(function () {
+                  return v(R);
+                }, 300);
+                return function () {
+                  return clearTimeout(e);
+                };
+              },
+              [R]
+            );
             //Kに光度曲線のReact要素を作成する。
             var K = n.createElement(s.LightCurve, {
               preferences: y,
@@ -11122,7 +11142,6 @@ ParcelRequire = (function (e, r, t, n) {
                   n.createElement(
                     "article",
                     null,
-
                     //光度曲線のPlot typeやBin sizeを設定する場所(今はとりあえずいらない)
                     n.createElement(
                       "ul",
@@ -11152,6 +11171,8 @@ ParcelRequire = (function (e, r, t, n) {
                                       e.currentTarget.value
                                     ),
                                   });
+                                  //選択されているplottype
+                                  console.log(e.currentTarget.value);
                                 },
                               }),
                               o.AvailablePlotTypeTitles[e]
