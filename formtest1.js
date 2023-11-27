@@ -2297,9 +2297,29 @@ ParcelRequire = (function (e, r, t, n) {
           if (5 === e.tag || 6 === e.tag) return e.stateNode;
           l("33");
         }
+        function W(e, t, n) {
+          (t = z(e, n.dispatchConfig.phasedRegistrationNames[t])) &&
+            ((n._dispatchListeners = E(n._dispatchListeners, t)),
+            (n._dispatchInstances = E(n._dispatchInstances, e)));
+        }
         function L(e) {
           return e[M] || null;
         }
+        //------------------------------追加して部分------------------------------
+        function A(e) {
+          do {
+            e = e.return;
+          } while (e && 5 !== e.tag);
+          return e || null;
+        }
+        function V(e) {
+          if (e && e.dispatchConfig.phasedRegistrationNames) {
+            for (var t = e._targetInst, n = []; t; ) n.push(t), (t = A(t));
+            for (t = n.length; 0 < t--; ) W(n[t], "captured", e);
+            for (t = 0; t < n.length; t++) W(n[t], "bubbled", e);
+          }
+        }
+        //------------------------------追加して部分------------------------------
         function j(e, t, n) {
           e &&
             n &&
@@ -2311,6 +2331,7 @@ ParcelRequire = (function (e, r, t, n) {
         function B(e) {
           e && e.dispatchConfig.registrationName && j(e._targetInst, null, e);
         }
+        //plottypeに必要？
         function H(e) {
           C(e, V);
         }
@@ -8885,6 +8906,7 @@ ParcelRequire = (function (e, r, t, n) {
               ? location.protocol + "//" + location.hostname + ":80"
               : location.protocol + "//" + location.host + ":80"
           )),
+          //両plottypeを配列として格納
           (exports.AvailablePlotTypes = [r.PlotType.Point, r.PlotType.Line]),
           (exports.AvailablePlotTypeTitles =
             (((e = {})[r.PlotType.Point] = "Point"),
@@ -9294,6 +9316,7 @@ ParcelRequire = (function (e, r, t, n) {
               Math.pow(s, -0.5),
             ];
           }),
+          //bins、minX、minYの設定
           (exports.getRollingAverage = function (r, o) {
             return t(n, void 0, Promise, function () {
               var t,
@@ -10367,17 +10390,17 @@ ParcelRequire = (function (e, r, t, n) {
             //おそらくこれを呼べば作られるようになっている。
             M = [
               //縦の目盛り追加
-              e.createElement(n.YTicks, {
-                key: "yTicks",
-                min: k,
-                max: y,
-                left: l,
-                right: s,
-                top: c,
-                bottom: m,
-                width: h,
-                height: u,
-              }),
+              // e.createElement(n.YTicks, {
+              //   key: "yTicks",
+              //   min: k,
+              //   max: y,
+              //   left: l,
+              //   right: s,
+              //   top: c,
+              //   bottom: m,
+              //   width: h,
+              //   height: u,
+              // }),
               //光度曲線の枠組み
               e.createElement("rect", {
                 key: "frame",
@@ -10421,7 +10444,7 @@ ParcelRequire = (function (e, r, t, n) {
               w = 2 * o + 3,
               A = w + 1;
             if (
-              M.push(
+              (M.push(
                 e.createElement(n.YTicks, {
                   key: "yTicks",
                   min: C,
@@ -10433,7 +10456,8 @@ ParcelRequire = (function (e, r, t, n) {
                   width: h,
                   height: u,
                 })
-              )
+              ),
+              T === t.PlotType.Line)
             ) {
               var Y = -1,
                 H = [],
@@ -10903,8 +10927,8 @@ ParcelRequire = (function (e, r, t, n) {
                   cache: e.cache,
                   minMJD: g[0],
                   maxMJD: g[1],
-                  //plotType: e.preferences.plotType,
-                  //binSize: e.preferences.binSize,
+                  plotType: e.preferences.plotType,
+                  binSize: e.preferences.binSize,
                   svgWidth: a,
                   areaHeight: f,
                   margin: c,
@@ -11037,6 +11061,7 @@ ParcelRequire = (function (e, r, t, n) {
                   font: c.filterFont(t.font || e.font),
                 };
               }, c.getDefaultPreferences(new URLSearchParams(location.search))),
+              //b[0]にplottypeの情報が入っている。
               y = b[0],
               v = b[1],
               S = n.useReducer(function (e, t) {
@@ -11063,22 +11088,23 @@ ParcelRequire = (function (e, r, t, n) {
                 getter: l.getLightCurveData,
                 onError: E,
               }),
+              //_ からデータを取得してbinsやminYを設定するところに送る
               O = i.useCache({
                 keys: F,
                 getter: function (e) {
-                  var t = json_data;//_.get(e);
+                  var t = json_data; /*_.get(e)とりあえず今は直接入れる。*/
                   return t ? a.getRollingAverage(t, y.binSize) : null;
                 },
                 onError: E,
                 dependencies: [y.binSize, _],
               });
+            //Kに光度曲線のReact要素を作成する。
             var K = n.createElement(s.LightCurve, {
               preferences: y,
               objects: 0 < F.length ? F : [""],
               cache: O,
               setPreferences: v,
             });
-
             return L
               ? n.createElement(n.Fragment, null, K)
               : n.createElement(
@@ -11096,6 +11122,45 @@ ParcelRequire = (function (e, r, t, n) {
                   n.createElement(
                     "article",
                     null,
+
+                    //光度曲線のPlot typeやBin sizeを設定する場所(今はとりあえずいらない)
+                    n.createElement(
+                      "ul",
+                      null,
+                      n.createElement.apply(
+                        void 0,
+                        [
+                          "li",
+                          null,
+                          n.createElement("label", null, "Plot type: "),
+                        ].concat(
+                          o.AvailablePlotTypes.map(function (e) {
+                            return n.createElement(
+                              "label",
+                              {
+                                className: p.default.radioLabel,
+                              },
+                              //plottypeの切り替え機能の追加
+                              n.createElement("input", {
+                                type: "radio",
+                                name: o.URLParameterKey.plotType,
+                                value: e,
+                                defaultChecked: y.plotType === e,
+                                onChange: function (e) {
+                                  T({
+                                    plotType: c.filterPlotType(
+                                      e.currentTarget.value
+                                    ),
+                                  });
+                                },
+                              }),
+                              o.AvailablePlotTypeTitles[e]
+                            );
+                          }),
+                          ["."]
+                        )
+                      )
+                    ),
                     //光度曲線全体をfigureタグの中に入れている
                     n.createElement("figure", null, K)
                   )
