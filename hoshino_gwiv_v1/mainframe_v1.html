@@ -1,0 +1,220 @@
+<html>
+  <meta content="text/html; charset=UTF-8" http-equiv="Content-Type" /meta>
+  <head>
+    <title>座標変換</title>
+    <style type="text/css">
+      * {
+        touch-action: manipulation;
+      }
+      #image1 {
+        position: absolute;
+        z-index: 0;
+      }
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+      #close {
+        position: fixed;
+        opacity: 0.5;
+        z-index: 4;
+        width: 50px;
+        height: 50px;
+        top: 0px;
+        right: 0px;
+      }
+      #image4 {
+        position: fixed;
+        width: 25px;
+        height: 25px;
+        top: 5px;
+        right: 12px;
+      }
+      #skymap {
+        position: absolute;
+        visibility: hidden;
+        z-index: 1;
+        opacity: 0.2;
+      }
+      #errorImage {
+        position: absolute;
+        z-index: 4;
+        opacity: 1;
+        visibility: visible;
+      }
+      #triggerMap {
+        position: absolute;
+        z-index: 5;
+      }
+      #asNS1 {
+        position: absolute;
+        z-index: 1;
+        opacity: 1;
+        visibility: visible;
+      }
+      #asNS2 {
+        position: absolute;
+        z-index: 2;
+        opacity: 1;
+        visibility: visible;
+      }
+      #mailNS1 {
+        position: absolute;
+        z-index: 3;
+        opacity: 1;
+        visibility: visible;
+      }
+      #mailNS2 {
+        position: absolute;
+        z-index: 4;
+        opacity: 1;
+        visibility: visible;
+      }
+
+      #svg-LightCurve {
+        position: absolute;
+        top: 0;
+        width: 0;
+        height: 300;
+      }
+
+      #svg-Popup {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 180;
+        height: 90;
+        z-index: 4;
+        background-color: snow;
+        visibility: hidden;
+      }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script type="text/javascript" src="mainframe_v1.js"></script>
+    <script type="text/javascript" src="mainsub.js"></script>
+  </head>
+  <body bgcolor="black" text="white">
+    <img src="loading.png" name="image1" id="image1" class="img1" />
+    <img src="" name="skymap" id="skymap" />
+    <!--20191216追加　ここに載せる-->
+    <img src="" name="errorImage" id="errorImage" />
+    <!--半透明にしてるから、実際に機能を作った後cssのerrorImageにあるopacityの欄を消すこと-->
+
+    <div
+      id="myMarker"
+      style="position: absolute; visibility: hidden; z-index: 2"
+    >
+      <img src="ring.gif" name="image02" id="image2" width="25" height="25" />
+    </div>
+
+    <div
+      id="myCursor"
+      style="position: absolute; visibility: hidden; z-index: 3"
+    >
+      <table border="0" bordercolor="gray" cellpadding="10" cellspacing="0">
+        <tr>
+          <td nowrap><div id="cursorPoint"></div></td>
+        </tr>
+      </table>
+    </div>
+
+    <div id="close" onmousedown="fullScreen()">
+      <img src="SQUARE.PNG" name="image04" id="image4" />
+    </div>
+
+    <div
+      id="mainPop"
+      class="contextMenu"
+      style="
+        position: absolute;
+        visibility: hidden;
+        cursor: pointer;
+        z-index: 6;
+      "
+    >
+      <table
+        border="1"
+        cellspacing="0"
+        cellpadding="3"
+        valign="center"
+        bordercolor="green"
+        bgcolor="gray"
+        width="150"
+      >
+        <tr>
+          <td>Team members only</td>
+        </tr>
+        <tr>
+          <td
+            onClick="FlashReport('./f_report.html', 'Flash Menu', 400, 300); return false; "
+            onMouseOver="setColor(this, true)"
+            onMouseOut="setColor(this, false)"
+          >
+            <font size="-1">Flash Report</font>
+          </td>
+        </tr>
+
+        <tr>
+          <td
+            onClick="makeFlashReport('./db_access.html', 'DBmenu', 550, 580); return false;"
+            onMouseOver="setColor(this, true)"
+            onMouseOut="setColor(this, false)"
+          >
+            <font size="-1">Photon Image</font>
+          </td>
+        </tr>
+
+        <tr>
+          <td
+            onClick="makeFlashReport(nCandidate2[0][4], 'DBmenu', 1000, 800); return false;"
+            onMouseOver="setColor(this, true)"
+            onMouseOut="setColor(this, false)"
+          >
+            <font size="-1">Triggered Event (FR)</font>
+          </td>
+        </tr>
+
+        <tr>
+          <td
+            onClick="hidariClick()"
+            onMouseOver="setColor(this, true)"
+            onMouseOut="setColor(this, false)"
+          >
+            <font size="-1">Close</font>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="triggerMap" name="triggerMap" id="triggerMap">
+      <img src="" id="asNS1" name="asNS1" />
+      <img src="" id="asNS2" name="asNS2" />
+      <img src="" id="mailNS1" name="mailNS1" />
+      <img src="" id="mailNS2" name="mailNS2" />
+    </div>
+
+    <!-- lightCurveを表示するところ -->
+    <div id="lightCurve">
+      <svg
+        id="svg-LightCurve"
+        viewBox="-400 -100 400 200"
+        preserveAspectRatio="none"
+      >
+        <script src="../formtest1.js"></script>
+        <!-- <path id="path-LightCurve" stroke="red" /> -->
+      </svg>
+    </div>
+
+    <svg id="svg-Popup" viewBox="-400 -100 400 200" preserveAspectRatio="none">
+      <image
+        href="loading.png"
+        id="image-Popup"
+        x="-400"
+        y="-100"
+        height="200"
+        width="0"
+      />
+      <path id="path-Popup" stroke="red" />
+    </svg>
+  </body>
+</html>
