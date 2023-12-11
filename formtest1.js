@@ -7752,6 +7752,7 @@ ParcelRequire = (function (e, r, t, n) {
         });
         var e = require("./constants");
         exports.mjdToDate = function (t) {
+          //console.log((1640995200000 - e.MJDEpochDate) / e.DAY_MS);
           return new Date(e.MJDEpochDate + t * e.DAY_MS);
         };
 
@@ -8062,6 +8063,7 @@ ParcelRequire = (function (e, r, t, n) {
     WubQ: [
       function (require, module, exports) {
         "use strict";
+        let judge_dptc = require("./constants");
         var t =
             (this && this.__awaiter) ||
             function (t, e, n, r) {
@@ -8207,30 +8209,45 @@ ParcelRequire = (function (e, r, t, n) {
             var n = 0 === e ? 0 : 1 / Math.pow(e, 2);
             return [n, t * n];
           }),
-          //8301行目のbにデータを返す。
-          (exports.getRollingAverageBin = function (t, e, n, r) {
-            var o = r[0],
-              a = r[1],
-              i = r[2], //i以降は2，3，4の光度曲線のデータはないため必要ない。
-              u = r[3],
-              l = r[4],
-              c = r[5],
-              s = r[6],
-              f = r[7];
-            return [
-              t,
-              e - 0.5,
-              n + 0.5,
-              a / o,
-              Math.pow(o, -0.5),
-              u / i, //これ以降は光度曲線のデータがないため必要ない
-              Math.pow(i, -0.5),
-              c / l,
-              Math.pow(l, -0.5),
-              f / s,
-              Math.pow(s, -0.5),
-            ];
-          }),
+          ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+          //受け取ったデータがdptcならMJDにする場所。
+          (exports.judgeMJD = function (data) {
+            let judge =
+              1000000 < data
+                ? 0.5 +
+                  (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS
+                : data;
+            console.log(judge);
+            return judge;
+          })(
+            //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+            //8301行目のbにデータを返す。
+            (exports.getRollingAverageBin = function (t, e, n, r) {
+              var o = r[0],
+                a = r[1],
+                i = r[2], //i以降は2，3，4の光度曲線のデータはないため必要ない。
+                u = r[3],
+                l = r[4],
+                c = r[5],
+                s = r[6],
+                f = r[7];
+              return [
+                t,
+                e - 0.5,
+                n + 0.5,
+                a / o,
+                Math.pow(o, -0.5),
+                u / i, //これ以降は光度曲線のデータがないため必要ない
+                Math.pow(i, -0.5),
+                c / l,
+                Math.pow(l, -0.5),
+                f / s,
+                Math.pow(s, -0.5),
+              ];
+            })
+          ),
           //bins、minX、minYの設定
           //rにjson_data、oにはbinsizeが入っている
           (exports.getRollingAverage = function (r, o) {
@@ -8267,7 +8284,7 @@ ParcelRequire = (function (e, r, t, n) {
                     u = [0, 0, 0, 0, 0, 0, 0, 0],
                     l = function (t) {
                       //console.log(t); //json_data
-                      var e = t[0],
+                      var e = exports.judgeMJD(t[0]),
                         n = exports.getAB(t[1], t[2]), //t[1]にはデータの2個目が、t[2]にはデータの3個目が入っている。
                         r = n[0],
                         o = n[1],
@@ -8354,7 +8371,9 @@ ParcelRequire = (function (e, r, t, n) {
             });
           });
       },
-      {},
+      {
+        "./constants": "Aa4L",
+      },
     ],
     "/cZZ": [
       function (require, module, exports) {
@@ -9108,7 +9127,7 @@ ParcelRequire = (function (e, r, t, n) {
                 min: t.getTime(),
                 max: i.getTime(),
                 toString: function (e) {
-                  console.log(new Date(e).toISOString().slice(0, -14)); //こうすると年月日で表示できる
+                  //console.log(new Date(e).toISOString().slice(0, -14)); //こうすると年月日で表示できる
                   return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                 },
               };
