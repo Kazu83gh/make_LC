@@ -1,4 +1,8 @@
 let json_data = [
+  // [1250121600, 0.040581, 0.021283],
+  // [1250208000, -0.02832, 0.017064],
+  // [1250294400, 0.010407, 0.016655],
+  // [1250380800, 0.006743, 0.017407],
   [55056.5, 0.040581, 0.021283],
   [55057.5, -0.02832, 0.017064],
   [55058.5, 0.010407, 0.016655],
@@ -7752,7 +7756,6 @@ ParcelRequire = (function (e, r, t, n) {
         });
         var e = require("./constants");
         exports.mjdToDate = function (t) {
-          //console.log((1640995200000 - e.MJDEpochDate) / e.DAY_MS);
           return new Date(e.MJDEpochDate + t * e.DAY_MS);
         };
 
@@ -8218,7 +8221,6 @@ ParcelRequire = (function (e, r, t, n) {
                 ? 0.5 +
                   (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS
                 : data;
-            console.log(judge);
             return judge;
           })(
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -8251,6 +8253,11 @@ ParcelRequire = (function (e, r, t, n) {
           //bins、minX、minYの設定
           //rにjson_data、oにはbinsizeが入っている
           (exports.getRollingAverage = function (r, o) {
+            //dptcをMJDにして再代入。
+            for (let i = 0; i < r.length; i++) {
+              r[i][0] = exports.judgeMJD(r[i][0]);
+            }
+            console.log(r);
             return t(n, void 0, Promise, function () {
               var t,
                 n,
@@ -8274,7 +8281,6 @@ ParcelRequire = (function (e, r, t, n) {
                 A,
                 M,
                 B;
-
               return e(this, function (e) {
                 for (
                   t = [],
@@ -8284,7 +8290,7 @@ ParcelRequire = (function (e, r, t, n) {
                     u = [0, 0, 0, 0, 0, 0, 0, 0],
                     l = function (t) {
                       //console.log(t); //json_data
-                      var e = exports.judgeMJD(t[0]),
+                      var e = t[0],
                         n = exports.getAB(t[1], t[2]), //t[1]にはデータの2個目が、t[2]にはデータの3個目が入っている。
                         r = n[0],
                         o = n[1],
@@ -8319,14 +8325,14 @@ ParcelRequire = (function (e, r, t, n) {
                   p++
                 ) {
                   for (
-                    g = r[p][0] /*ここでjson_dataの時間を抜き出している。*/,
-                      v = g + s;
+                    g = r[p][0],
+                      /*ここでjson_dataの時間を抜き出している。*/ v = g + s;
                     h < f && (x = r[h]) && x[0] < v;
 
                   )
                     l(x), h++;
                   for (w = g - s; i[0][0] < w; ) c();
-
+                  console.log(g);
                   for (
                     b = exports.getRollingAverageBin(
                       g,
@@ -9998,6 +10004,7 @@ ParcelRequire = (function (e, r, t, n) {
         (exports.getInitialSelectedObjects = function () {
           var e = location.pathname.match(/^\/objects\/([^\/]+)$/),
             t = [];
+
           return (
             e &&
               (t = e[1].split(/\s*,\s*/).filter(function (e) {
