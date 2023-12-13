@@ -3,33 +3,60 @@ let json_data = [
   // [1250208000, -0.02832, 0.017064],
   // [1250294400, 0.010407, 0.016655],
   // [1250380800, 0.006743, 0.017407],
-  [55056.5, 0.040581, 0.021283],
-  [55057.5, -0.02832, 0.017064],
-  [55058.5, 0.010407, 0.016655],
-  [55059.5, 0.006743, 0.017407],
-  [55060.5, 0.024298, 0.01678],
-  [55061.5, 0.023789, 0.025379],
-  [55062.5, 0.006899, 0.018207],
-  [55063.5, 0.009546, 0.014457],
-  [55064.5, -0.018476, 0.013083],
-  [55065.5, -0.003264, 0.01182],
-  [55066.5, 0.006812, 0.010913],
-  [55067.5, 0.016414, 0.01046],
-  [55068.5, -0.001398, 0.010063],
-  [55069.5, 0.000353, 0.00936],
-  [55070.5, 0.006722, 0.009428],
-  [55073.5, 0.002849, 0.012604],
-  [55074.5, -0.004067, 0.026721],
-  [55075.5, -0.054995, 0.034765],
-  [55076.5, 0.039431, 0.035789],
-  [55077.5, -0.03055, 0.036352],
-  [55078.5, -0.022473, 0.032311],
-  [55079.5, 0.001724, 0.017948],
-  [55080.5, 0.008084, 0.013696],
-  [55081.5, 0.004721, 0.012508],
-  [55082.5, -0.008621, 0.011771],
-  [55083.5, -0.006709, 0.009287],
-  [55084.5, -0.018568, 0.009321],
+  // [55056.5, 0.040581, 0.021283],
+  // [55057.5, -0.02832, 0.017064],
+  // [55058.5, 0.010407, 0.016655],
+  // [55059.5, 0.006743, 0.017407],
+  // [55060.5, 0.024298, 0.01678],
+  // [55061.5, 0.023789, 0.025379],
+  // [55062.5, 0.006899, 0.018207],
+  // [55063.5, 0.009546, 0.014457],
+  // [55064.5, -0.018476, 0.013083],
+  // [55065.5, -0.003264, 0.01182],
+  // [55066.5, 0.006812, 0.010913],
+  // [55067.5, 0.016414, 0.01046],
+  // [55068.5, -0.001398, 0.010063],
+  // [55069.5, 0.000353, 0.00936],
+  // [55070.5, 0.006722, 0.009428],
+  // [55073.5, 0.002849, 0.012604],
+  // [55074.5, -0.004067, 0.026721],
+  // [55075.5, -0.054995, 0.034765],
+  // [55076.5, 0.039431, 0.035789],
+  // [55077.5, -0.03055, 0.036352],
+  // [55078.5, -0.022473, 0.032311],
+  // [55079.5, 0.001724, 0.017948],
+  // [55080.5, 0.008084, 0.013696],
+  // [55081.5, 0.004721, 0.012508],
+  // [55082.5, -0.008621, 0.011771],
+  // [55083.5, -0.006709, 0.009287],
+  // [55084.5, -0.018568, 0.009321],
+  [976454043, 1, 1.0],
+  [976454044, 1, 1.0],
+  [976454046, 1, 1.0],
+  [976454047, 1, 1.0],
+  [976454051, 1, 1.0],
+  [976454056, 1, 1.0],
+  [976454057, 1, 1.0],
+  [976454058, 2, 1.4142135623730951],
+  [976454059, 2, 1.4142135623730951],
+  [976454060, 2, 1.4142135623730951],
+  [976454064, 1, 1.0],
+  [976454065, 2, 1.4142135623730951],
+  [976454066, 1, 1.0],
+  [976454068, 5, 2.23606797749979],
+  [976454070, 1, 1.0],
+  [976454071, 2, 1.4142135623730951],
+  [976454072, 1, 1.0],
+  [976454073, 2, 1.4142135623730951],
+  [976454075, 2, 1.4142135623730951],
+  [976454076, 1, 1.0],
+  [976454077, 4, 2.0],
+  [976454078, 1, 1.0],
+  [976454079, 2, 1.4142135623730951],
+  [976454080, 1, 1.0],
+  [976454081, 3, 1.7320508075688772],
+  [976454082, 2, 1.4142135623730951],
+  [976454083, 4, 2.0],
 ];
 //json_dataの形
 //[時間, 黒線bandを構成するデータ, 赤線bandを構成するデータ, 緑線bandを構成するデータ, 青線bandを構成するデータ]
@@ -7838,7 +7865,8 @@ ParcelRequire = (function (e, r, t, n) {
             (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
             // (e.font = "font");
           })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
-          (exports.epochMJD = n.dateToMJD(new Date("2009-08-01T00:00:00Z"))),
+          console.log(new Date(json_data[0][0] * 1000)),
+          (exports.epochMJD = n.dateToMJD(new Date(json_data[0][0] * 1000))), //横範囲のスタート地点
           //ページのタイトルを表示
           // (exports.pageTitle = "MAXI GSC Data Viewer"),
           (exports.pageTitle = "光度曲線テスト"),
@@ -8304,9 +8332,6 @@ ParcelRequire = (function (e, r, t, n) {
                         g = [e, r, o, l, c, f, h, p[0], p[1]]; //ここにはすべてのデータが格納されている
                       i.push(g), //iの中にすべて入れている
                         u.forEach(function (t, e) {
-                          // console.log(t);
-                          // console.log(g[e + 1]);
-                          // console.log(u[e]);
                           u[e] = t + g[e + 1];
                         });
                     },
@@ -8332,7 +8357,6 @@ ParcelRequire = (function (e, r, t, n) {
                   )
                     l(x), h++;
                   for (w = g - s; i[0][0] < w; ) c();
-                  console.log(g);
                   for (
                     b = exports.getRollingAverageBin(
                       g,
@@ -8477,7 +8501,10 @@ ParcelRequire = (function (e, r, t, n) {
           return t.clamp((e && Math.round(Number(e))) || 20, 1, 100);
         }),
           (exports.filterMJDRange = function (e) {
-            var i = [r.epochMJD, n.dateToMJD(new Date())];
+            var i = [
+              r.epochMJD,
+              n.dateToMJD(new Date(json_data[0][0] * 1000 + 86400000)), //終了地点
+            ];
             if ("string" == typeof e) {
               var a = e.match(/\d+(\.\d+)?/g);
               a &&
@@ -8502,6 +8529,7 @@ ParcelRequire = (function (e, r, t, n) {
               mjdRange: exports.filterMJDRange(
                 e.get(r.URLParameterKey.mjdRange)
               ),
+
               plotType: exports.filterPlotType(
                 e.get(r.URLParameterKey.plotType)
               ),
@@ -8875,6 +8903,7 @@ ParcelRequire = (function (e, r, t, n) {
         exports.getTicks = function (t, r, s, i) {
           void 0 === i &&
             (i = function (e) {
+              console.log(e);
               return e.toFixed(0);
             });
           var u = e.getTickScale(t, r, s, [1, 2, 5]);
@@ -9051,13 +9080,14 @@ ParcelRequire = (function (e, r, t, n) {
                 min: i.getTime(),
                 max: r.getTime(),
                 toString: function (e) {
-                  return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                  return new Date(e).toISOString().slice(0, -8); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                 },
               };
             }
             return null;
           }),
           (exports.getHourTicks = function (t, r, n) {
+            console.log(i);
             var s = t.getTime() / i,
               a = r.getTime() / i,
               u = e.getTickScale(s, a, n, [6, 12, 24], 12);
@@ -9075,13 +9105,15 @@ ParcelRequire = (function (e, r, t, n) {
                 min: t.getTime(),
                 max: r.getTime(),
                 toString: function (e) {
-                  return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                  console.log(new Date(e));
+                  return new Date(e).toISOString().slice(0, -8); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                 },
               };
             }
             return null;
           }),
           (exports.getDayTicks = function (t, i, n) {
+            console.log(r);
             var s = t.getTime() / r,
               a = i.getTime() / r,
               u = e.getTickScale(s, a, n, [5, 10, 20], 10);
@@ -9099,7 +9131,7 @@ ParcelRequire = (function (e, r, t, n) {
                 min: t.getTime(),
                 max: i.getTime(),
                 toString: function (e) {
-                  return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                  return new Date(e).getTime() / 1000; //new Date(e).toISOString().slice(0, -14);  //秒で表示にするために1000で割る。
                 },
               };
             }
@@ -9108,7 +9140,8 @@ ParcelRequire = (function (e, r, t, n) {
           (exports.getMonthTicks = function (t, i, r) {
             var n = 12 * t.getFullYear() + t.getMonth() + 1,
               s = 12 * i.getFullYear() + i.getMonth() + 1,
-              a = e.getTickScale(n, s, r, [6, 12, 24], 12);
+              a = e.getTickScale(n, s, r, [1, 12, 24], 12); //[1,12,24]一番左が時間の間隔
+            console.log(a);
             if (a) {
               for (
                 var u = [], g = Math.max(a.mainScale, 1), f = a.firstMain;
@@ -9133,16 +9166,21 @@ ParcelRequire = (function (e, r, t, n) {
                 min: t.getTime(),
                 max: i.getTime(),
                 toString: function (e) {
-                  //console.log(new Date(e).toISOString().slice(0, -14)); //こうすると年月日で表示できる
-                  return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                  let month = new Date(e).getMonth() + 1;
+                  let day = new Date(e).getDate();
+
+                  //console.log(new +Date(e).toISOString().slice(0, -14)); //こうすると年月日で表示できる
+                  return month + "月" + day + "日"; //new Date(e).toISOString().slice(0, -14); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                 },
               };
             }
             return null;
           }),
           (exports.getDateTicks = function (e, n, s) {
-            var a = n.getTime() - e.getTime();
-
+            var a = n.getTime() - e.getTime(); //現時刻からデータ時刻の差
+            console.log(e.getTime());
+            console.log(n);
+            console.log(s);
             return a < 1e3
               ? exports.getMillisecondsTicks(e, n, s)
               : a < 2 * t
@@ -9215,13 +9253,14 @@ ParcelRequire = (function (e, r, t, n) {
                   v.sub
                     .map(function (e, t) {
                       var i = (t - v.stepOffset) % v.step == 0;
+
                       return (
                         "M" +
                         y(a.dateToMJD(e)) +
                         "," +
                         d +
                         "v" +
-                        (i ? n.mainTickSize : n.subTickSize)
+                        (i ? n.mainTickSize : n.subTickSize) //目盛りの長さ
                       );
                     })
                     .join(""),
@@ -9657,6 +9696,7 @@ ParcelRequire = (function (e, r, t, n) {
               };
         }),
           (exports.LightCurve = function (e) {
+            console.log(t.useState(e.preferences.mjdRange));
             var u = t.useRef(null),
               s = t.useState(0.94 * window.innerWidth),
               a = s[0],
@@ -10034,7 +10074,7 @@ ParcelRequire = (function (e, r, t, n) {
               S = n.useReducer(function (e, t) {
                 return {
                   binSize: t.binSize || e.binSize,
-                  mjdRange: t.mjdRange || e.mjdRange,
+                  mjdRange: t.mjdRange || e.mjdRange, //データのMJDと現時刻のMJD
                   plotType: t.plotType || e.plotType,
                   //font: t.font || e.font,
                 };
