@@ -7846,11 +7846,11 @@ ParcelRequire = (function (e, r, t, n) {
           (exports.developMode = Boolean(
             document.querySelector('meta[name="preprocessor"]')
           )),
-          (exports.APIBaseURL = new URL(
-            exports.developMode
-              ? location.protocol + "//" + location.hostname + ":80"
-              : location.protocol + "//" + location.host + ":80"
-          )),
+          // (exports.APIBaseURL = new URL(
+          //   exports.developMode
+          //     ? location.protocol + "//" + location.hostname + ":80"
+          //     : location.protocol + "//" + location.host + ":80"
+          // )),
           //両plottypeを配列として格納
           (exports.AvailablePlotTypes = [r.PlotType.Point, r.PlotType.Line]),
           (exports.AvailablePlotTypeTitles =
@@ -8265,8 +8265,8 @@ ParcelRequire = (function (e, r, t, n) {
                 f = r[7];
               return [
                 t,
-                e - 0.5,
-                n + 0.5,
+                e - 0.5 / 86400,
+                n + 0.5 / 86400,
                 a / o,
                 Math.pow(o, -0.5),
                 u / i, //これ以降は光度曲線のデータがないため必要ない
@@ -8497,8 +8497,13 @@ ParcelRequire = (function (e, r, t, n) {
           r = require("./constants"),
           i = require("./isAvailablePlotType"),
           n = require("@maxi-js/date-tools");
+        ////引数eを受け取りそれを数値に変換（1〜100の範囲、デフォルトは20）
         (exports.filterBinSize = function (e) {
-          return t.clamp((e && Math.round(Number(e))) || 20, 1, 100);
+          return t.clamp(
+            (e && Math.round(Number(e))) || 1 / 86400,
+            1 / 86400,
+            100
+          );
         }),
           (exports.filterMJDRange = function (e) {
             var i = [
@@ -8525,6 +8530,7 @@ ParcelRequire = (function (e, r, t, n) {
           // }),
           (exports.getDefaultPreferences = function (e) {
             return {
+              //ここのbinsizeを変更することでも光度曲線の十字の数を変更することができる
               binSize: exports.filterBinSize(e.get(r.URLParameterKey.binSize)),
               mjdRange: exports.filterMJDRange(
                 e.get(r.URLParameterKey.mjdRange)
@@ -9301,7 +9307,7 @@ ParcelRequire = (function (e, r, t, n) {
                 )
               );
             }),
-              //光度曲線上部のdptcという文字の表示
+              //光度曲線上部のUTCという文字の表示
               E.push(
                 e.createElement(
                   "text",
@@ -9313,7 +9319,7 @@ ParcelRequire = (function (e, r, t, n) {
                     dominantBaseline: "baseline",
                     textAnchor: "end",
                   },
-                  "dptc"
+                  "UTC"
                 )
               );
           }
@@ -9350,7 +9356,7 @@ ParcelRequire = (function (e, r, t, n) {
                   dominantBaseline: "hanging",
                   textAnchor: "end",
                 },
-                "MJD"
+                "dptc"
               )
             );
           }
@@ -9528,22 +9534,15 @@ ParcelRequire = (function (e, r, t, n) {
                         r = P(e[w]),
                         a = e[A] * B,
                         o = [];
-
-                      return (
-                        l < n &&
-                          i < s &&
-                          (o.push(
-                            "M" +
-                              Math.max(l, i) +
-                              "," +
-                              r +
-                              "H" +
-                              Math.min(s, n) //sとnで小さいほうの数字が入れられる。
-                          ),
-                          S(t) &&
-                            o.push("M" + t + "," + (r - a) + "v" + 2 * a)),
-                        o.join("")
-                      );
+                      if (l < n && i < s) {
+                        o.push(
+                          "M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
+                        ); //sとnで小さいほうの数字が入れられる。
+                        if (S(t)) {
+                          o.push("M" + t + "," + (r - a) + "v" + 2 * a);
+                        }
+                      }
+                      return o.join("");
                     })
                     .join(""),
                   stroke: E,
