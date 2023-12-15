@@ -1,4 +1,4 @@
-let dict_LCdata = [
+let json_data = [
   // [1250121600, 0.040581, 0.021283],
   // [1250208000, -0.02832, 0.017064],
   // [1250294400, 0.010407, 0.016655],
@@ -57,40 +57,6 @@ let dict_LCdata = [
   [976454081, 3, 1.7320508075688772],
   [976454082, 2, 1.4142135623730951],
   [976454083, 4, 2.0],
-  [976454084, 2, 1.4142135623730951], 
-  [976454085, 1, 1.0], 
-  [976454086, 1, 1.0], 
-  [976454087, 1, 1.0], 
-  [976454088, 1, 1.0], 
-  [976454091, 1, 1.0], 
-  [976454093, 1, 1.0], 
-  [976454094, 2, 1.4142135623730951], 
-  [976454095, 1, 1.0], 
-  [976454096, 1, 1.0], 
-  [976454097, 1, 1.0], 
-  [976454098, 2, 1.4142135623730951], 
-  [976454099, 1, 1.0], 
-  [976454100, 1, 1.0], 
-  [976454105, 3, 1.7320508075688772], 
-  [976454106, 2, 1.4142135623730951], 
-  [976454107, 1, 1.0], 
-  [976454110, 1, 1.0], 
-  [976454114, 1, 1.0], 
-  [976454115, 1, 1.0], 
-  [976454116, 2, 1.4142135623730951], 
-  [976454117, 3, 1.7320508075688772], 
-  [976454121, 2, 1.4142135623730951], 
-  [976454124, 1, 1.0], 
-  [976454125, 2, 1.4142135623730951], 
-  [976454128, 1, 1.0], 
-  [976454129, 2, 1.4142135623730951], 
-  [976454130, 4, 2.0],
-  [976454131, 1, 1.0], 
-  [976454132, 2, 1.4142135623730951], 
-  [976454134, 3, 1.7320508075688772], 
-  [976454135, 1, 1.0], 
-  [976454136, 2, 1.4142135623730951], 
-  [976454138, 1, 1.0], 
 ];
 //json_dataの形
 //[時間, 黒線bandを構成するデータ, 赤線bandを構成するデータ, 緑線bandを構成するデータ, 青線bandを構成するデータ]
@@ -7880,11 +7846,11 @@ ParcelRequire = (function (e, r, t, n) {
           (exports.developMode = Boolean(
             document.querySelector('meta[name="preprocessor"]')
           )),
-          // (exports.APIBaseURL = new URL(
-          //   exports.developMode
-          //     ? location.protocol + "//" + location.hostname + ":80"
-          //     : location.protocol + "//" + location.host + ":80"
-          // )),
+          (exports.APIBaseURL = new URL(
+            exports.developMode
+              ? location.protocol + "//" + location.hostname + ":80"
+              : location.protocol + "//" + location.host + ":80"
+          )),
           //両plottypeを配列として格納
           (exports.AvailablePlotTypes = [r.PlotType.Point, r.PlotType.Line]),
           (exports.AvailablePlotTypeTitles =
@@ -7899,8 +7865,8 @@ ParcelRequire = (function (e, r, t, n) {
             (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
             // (e.font = "font");
           })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
-          console.log(new Date(dict_LCdata[0][0] * 1000)),//DBに繋いで動かすときはdict_LCdataに変更
-          (exports.epochMJD = n.dateToMJD(new Date(dict_LCdata[0][0] * 1000))), //横範囲のスタート地点
+          console.log(new Date(json_data[0][0] * 1000)),
+          (exports.epochMJD = n.dateToMJD(new Date(json_data[0][0] * 1000))), //横範囲のスタート地点
           //ページのタイトルを表示
           // (exports.pageTitle = "MAXI GSC Data Viewer"),
           (exports.pageTitle = "光度曲線テスト"),
@@ -8299,8 +8265,8 @@ ParcelRequire = (function (e, r, t, n) {
                 f = r[7];
               return [
                 t,
-                e - 0.5 / 86400, //エラーバーの長さを調整
-                n + 0.5 / 86400,
+                e - 0.5,
+                n + 0.5,
                 a / o,
                 Math.pow(o, -0.5),
                 u / i, //これ以降は光度曲線のデータがないため必要ない
@@ -8531,14 +8497,13 @@ ParcelRequire = (function (e, r, t, n) {
           r = require("./constants"),
           i = require("./isAvailablePlotType"),
           n = require("@maxi-js/date-tools");
-          //引数eを受け取りそれを数値に変換（1〜100の範囲、デフォルトは20）
         (exports.filterBinSize = function (e) {
-          return t.clamp((e && Math.round(Number(e))) || 1 / 86400, 1 / 86400, 100);
+          return t.clamp((e && Math.round(Number(e))) || 20, 1, 100);
         }),
           (exports.filterMJDRange = function (e) {
             var i = [
               r.epochMJD,
-              n.dateToMJD(new Date(dict_LCdata[0][0] * 1000 + 86400000)), //終了地点
+              n.dateToMJD(new Date(json_data[0][0] * 1000 + 86400000)), //終了地点
             ];
             if ("string" == typeof e) {
               var a = e.match(/\d+(\.\d+)?/g);
@@ -8560,7 +8525,6 @@ ParcelRequire = (function (e, r, t, n) {
           // }),
           (exports.getDefaultPreferences = function (e) {
             return {
-              //ここのbinsizeを変更することでも光度曲線の十字の数を変更することができる
               binSize: exports.filterBinSize(e.get(r.URLParameterKey.binSize)),
               mjdRange: exports.filterMJDRange(
                 e.get(r.URLParameterKey.mjdRange)
@@ -8936,11 +8900,12 @@ ParcelRequire = (function (e, r, t, n) {
         "use strict";
         exports.__esModule = !0;
         var e = require("./getTickScale");
+        let MJDChange = require("@maxi-js/date-tools");
         exports.getTicks = function (t, r, s, i) {
           void 0 === i &&
             (i = function (e) {
               console.log(e);
-              return e.toFixed(0);
+              return MJDChange.mjdToDptc(e); //MJDをdptcに変更して返す
             });
           var u = e.getTickScale(t, r, s, [1, 2, 5]);
           if (u) {
@@ -8963,6 +8928,7 @@ ParcelRequire = (function (e, r, t, n) {
       },
       {
         "./getTickScale": "CKjx",
+        "@maxi-js/date-tools": "LNvY",
       },
     ],
     //縦目盛りの作成、設定
@@ -9068,7 +9034,7 @@ ParcelRequire = (function (e, r, t, n) {
               min: t.getTime(),
               max: i.getTime(),
               toString: function (e) {
-                return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                return new Date(e).toISOString(); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
               },
             };
           }
@@ -9092,7 +9058,7 @@ ParcelRequire = (function (e, r, t, n) {
                 min: t.getTime(),
                 max: i.getTime(),
                 toString: function (e) {
-                  return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                  return new Date(e).toISOString().slice(0, -5); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                 },
               };
             }
@@ -9167,7 +9133,7 @@ ParcelRequire = (function (e, r, t, n) {
                 min: t.getTime(),
                 max: i.getTime(),
                 toString: function (e) {
-                  return new Date(e).getTime() / 1000; //new Date(e).toISOString().slice(0, -14);  //秒で表示にするために1000で割る。
+                  return new Date(e).toISOString().slice(0, -14); //new Date(e).getTime() / 1000;  //秒で表示にするために1000で割る。
                 },
               };
             }
@@ -9202,11 +9168,8 @@ ParcelRequire = (function (e, r, t, n) {
                 min: t.getTime(),
                 max: i.getTime(),
                 toString: function (e) {
-                  let month = new Date(e).getMonth() + 1;
-                  let day = new Date(e).getDate();
-
                   //console.log(new +Date(e).toISOString().slice(0, -14)); //こうすると年月日で表示できる
-                  return month + "月" + day + "日"; //new Date(e).toISOString().slice(0, -14); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                  return new Date(e).toISOString().slice(0, -14); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                 },
               };
             }
@@ -9274,8 +9237,8 @@ ParcelRequire = (function (e, r, t, n) {
             g = o.mjdToString,
             x = o.dateToString,
             p = o.lineHeight,
-            T = t.getTicks(c, s, k / 200),
-            v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200);
+            T = t.getTicks(c, s, k / 200), //横軸下部のMJDの設定
+            v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200); //横軸上部のdptcの設定
           if (!T || !v) return null;
           var j = k / (s - c),
             y = function (e) {
@@ -9338,7 +9301,7 @@ ParcelRequire = (function (e, r, t, n) {
                 )
               );
             }),
-              //光度曲線上部のUTCという文字の表示
+              //光度曲線上部のdptcという文字の表示
               E.push(
                 e.createElement(
                   "text",
@@ -9565,13 +9528,22 @@ ParcelRequire = (function (e, r, t, n) {
                         r = P(e[w]),
                         a = e[A] * B,
                         o = [];
-                      if (l < n && i < s) {
-                        o.push("M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)); //sとnで小さいほうの数字が入れられる。
-                        if (S(t)) {
-                          o.push("M" + t + "," + (r - a) + "v" + 2 * a);
-                        }
-                      }
-                      return o.join("");
+
+                      return (
+                        l < n &&
+                          i < s &&
+                          (o.push(
+                            "M" +
+                              Math.max(l, i) +
+                              "," +
+                              r +
+                              "H" +
+                              Math.min(s, n) //sとnで小さいほうの数字が入れられる。
+                          ),
+                          S(t) &&
+                            o.push("M" + t + "," + (r - a) + "v" + 2 * a)),
+                        o.join("")
+                      );
                     })
                     .join(""),
                   stroke: E,
@@ -10125,7 +10097,7 @@ ParcelRequire = (function (e, r, t, n) {
               O = i.useCache({
                 keys: F,
                 getter: function (e) {
-                  var t = dict_LCdata; /*_.get(e)とりあえず今は直接入れる。*/
+                  var t = json_data; /*_.get(e)とりあえず今は直接入れる。*/
                   //console.log(t ? a.getRollingAverage(t, y.binSize) : null);
                   return t ? a.getRollingAverage(t, y.binSize) : null;
                 },
