@@ -1,4 +1,4 @@
-let json_data = [
+let dict_LCdata = [
   // [1250121600, 0.040581, 0.021283],
   // [1250208000, -0.02832, 0.017064],
   // [1250294400, 0.010407, 0.016655],
@@ -58,7 +58,7 @@ let json_data = [
   [976454082, 2, 1.4142135623730951],
   [976454083, 4, 2.0],
 ];
-//json_dataの形
+//dict_LCdataの形
 //[時間, 黒線bandを構成するデータ, 赤線bandを構成するデータ, 緑線bandを構成するデータ, 青線bandを構成するデータ]
 
 ParcelRequire = (function (e, r, t, n) {
@@ -7865,8 +7865,8 @@ ParcelRequire = (function (e, r, t, n) {
             (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
             // (e.font = "font");
           })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
-          console.log(new Date(json_data[0][0] * 1000)),
-          (exports.epochMJD = n.dateToMJD(new Date(json_data[0][0] * 1000))), //横範囲のスタート地点
+          console.log(new Date(dict_LCdata[0][0] * 1000)),
+          (exports.epochMJD = n.dateToMJD(new Date(dict_LCdata[0][0] * 1000))), //横範囲のスタート地点
           //ページのタイトルを表示
           // (exports.pageTitle = "MAXI GSC Data Viewer"),
           (exports.pageTitle = "光度曲線テスト"),
@@ -8066,7 +8066,7 @@ ParcelRequire = (function (e, r, t, n) {
             return t(this, function (t) {
               switch (t.label) {
                 case 0:
-                  return; //[4, json_data];
+                  return; //[4, dict_LCdata];
                 case 1:
                   if (200 !== (e = t.sent()).status)
                     throw a.createError(
@@ -8279,7 +8279,7 @@ ParcelRequire = (function (e, r, t, n) {
             })
           ),
           //bins、minX、minYの設定
-          //rにjson_data、oにはbinsizeが入っている
+          //rにdict_LCdata、oにはbinsizeが入っている
           (exports.getRollingAverage = function (r, o) {
             //dptcをMJDにして再代入。
             for (let i = 0; i < r.length; i++) {
@@ -8317,7 +8317,7 @@ ParcelRequire = (function (e, r, t, n) {
                     i = [],
                     u = [0, 0, 0, 0, 0, 0, 0, 0],
                     l = function (t) {
-                      //console.log(t); //json_data
+                      //console.log(t); //dict_LCdata
                       var e = t[0],
                         n = exports.getAB(t[1], t[2]), //t[1]にはデータの2個目が、t[2]にはデータの3個目が入っている。
                         r = n[0],
@@ -8351,7 +8351,7 @@ ParcelRequire = (function (e, r, t, n) {
                 ) {
                   for (
                     g = r[p][0],
-                      /*ここでjson_dataの時間を抜き出している。*/ v = g + s;
+                      /*ここでdict_LCdataの時間を抜き出している。*/ v = g + s;
                     h < f && (x = r[h]) && x[0] < v;
 
                   )
@@ -8508,7 +8508,7 @@ ParcelRequire = (function (e, r, t, n) {
           (exports.filterMJDRange = function (e) {
             var i = [
               r.epochMJD, //初期表示の開始時刻
-              n.dateToMJD(new Date(json_data[0][0] * 1000 + 86400000)), //初期表示の終了時刻
+              n.dateToMJD(new Date(dict_LCdata[0][0] * 1000 + 86400000)), //初期表示の終了時刻
             ];
             if ("string" == typeof e) {
               var a = e.match(/\d+(\.\d+)?/g);
@@ -10101,7 +10101,7 @@ ParcelRequire = (function (e, r, t, n) {
               O = i.useCache({
                 keys: F,
                 getter: function (e) {
-                  var t = json_data; /*_.get(e)とりあえず今は直接入れる。*/
+                  var t = dict_LCdata; /*_.get(e)とりあえず今は直接入れる。*/
                   //console.log(t ? a.getRollingAverage(t, y.binSize) : null);
                   return t ? a.getRollingAverage(t, y.binSize) : null;
                 },
