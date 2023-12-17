@@ -7770,8 +7770,8 @@ ParcelRequire = (function (e, r, t, n) {
           (exports.SECOND_MS = 1e3),
           (exports.MINUTE_MS = 6e4),
           (exports.HOUR_MS = 36e5),
-          (exports.DAY_MS = 864e5),
-          (exports.MJDEpochDate = -35067168e5); //1970/1/1/9:00:00からこのミリ秒分変えた日にする場所1858年になっている(この秒数にしてる意味はわからない)
+          (exports.DAY_MS = 864e5), //１日をミリ秒で表している。
+          (exports.MJDEpochDate = -35067168e5); //1970/1/1/9:00:00からこのミリ秒分変えた日にする場所1858年になっているMJDの基準日が1858年
       },
       {},
     ],
@@ -7788,7 +7788,7 @@ ParcelRequire = (function (e, r, t, n) {
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        //MJDをdptcに変える(使っていないが一応)
+        //MJDをdptcに変える
         exports.mjdToDptc = function (mjd) {
           return ((e.MJDEpochDate + mjd * e.DAY_MS) / 1000).toFixed();
         };
@@ -8245,7 +8245,7 @@ ParcelRequire = (function (e, r, t, n) {
           //受け取ったデータがdptcならMJDにする場所。
           (exports.judgeMJD = function (data) {
             let judge =
-              1000000 < data
+              10000000 < data
                 ? 0.5 +
                   (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS
                 : data;
@@ -8285,7 +8285,7 @@ ParcelRequire = (function (e, r, t, n) {
             for (let i = 0; i < r.length; i++) {
               r[i][0] = exports.judgeMJD(r[i][0]);
             }
-            console.log(r);
+
             return t(n, void 0, Promise, function () {
               var t,
                 n,
@@ -8507,8 +8507,8 @@ ParcelRequire = (function (e, r, t, n) {
         }),
           (exports.filterMJDRange = function (e) {
             var i = [
-              r.epochMJD,
-              n.dateToMJD(new Date(json_data[0][0] * 1000 + 86400000)), //終了地点
+              r.epochMJD, //初期表示の開始時刻
+              n.dateToMJD(new Date(json_data[0][0] * 1000 + 86400000)), //初期表示の終了時刻
             ];
             if ("string" == typeof e) {
               var a = e.match(/\d+(\.\d+)?/g);
@@ -8778,6 +8778,16 @@ ParcelRequire = (function (e, r, t, n) {
             m = function (e) {
               return c + (e / n) * s;
             };
+
+          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+          let date = new Date(t.mjdToDptc(m(i.x)) * 1000 - 32400000); //new Dateの()内について、表示はUTCなので9時間引かなければいけない。
+          let Hour = ("00" + date.getHours()).slice(-2); //時間
+          let Minute = ("00" + date.getMinutes()).slice(-2); //分
+          let Second = ("00" + date.getSeconds()).slice(-2); //秒
+
+          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
           //縦線の作成
           return e.createElement(
             "g",
@@ -8796,7 +8806,7 @@ ParcelRequire = (function (e, r, t, n) {
                 fill: r.Color.black,
                 opacity: 0.7,
               },
-              m(i.x).toFixed(0) + "MJD"
+              t.mjdToDptc(m(i.x)) + " " + "dptc"
             ),
             e.createElement(
               "text",
@@ -8807,7 +8817,7 @@ ParcelRequire = (function (e, r, t, n) {
                 fill: r.Color.black,
                 opacity: 0.7,
               },
-              t.mjdToDate(m(i.x)).toISOString().split("T")[0] //表示を整えているのとカーソルの場所の年月日を取得
+              Hour + ":" + Minute + ":" + Second + " " + "Time" //カーソルの場所の時間を表示
               //m(i.x)はカーソル位置のMJD
             )
           );
@@ -8910,7 +8920,6 @@ ParcelRequire = (function (e, r, t, n) {
         exports.getTicks = function (t, r, s, i) {
           void 0 === i &&
             (i = function (e) {
-              console.log(e);
               return MJDChange.mjdToDptc(e); //MJDをdptcに変更して返す
             });
           var u = e.getTickScale(t, r, s, [1, 2, 5]);
@@ -9113,7 +9122,6 @@ ParcelRequire = (function (e, r, t, n) {
                 min: t.getTime(),
                 max: r.getTime(),
                 toString: function (e) {
-                  console.log(new Date(e));
                   return new Date(e).toISOString().slice(0, -8); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                 },
               };
@@ -9183,9 +9191,7 @@ ParcelRequire = (function (e, r, t, n) {
           }),
           (exports.getDateTicks = function (e, n, s) {
             var a = n.getTime() - e.getTime(); //現時刻からデータ時刻の差
-            console.log(e.getTime());
-            console.log(n);
-            console.log(s);
+
             return a < 1e3
               ? exports.getMillisecondsTicks(e, n, s)
               : a < 2 * t
@@ -9694,7 +9700,6 @@ ParcelRequire = (function (e, r, t, n) {
               };
         }),
           (exports.LightCurve = function (e) {
-            console.log(t.useState(e.preferences.mjdRange));
             var u = t.useRef(null),
               s = t.useState(0.94 * window.innerWidth),
               a = s[0],
