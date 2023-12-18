@@ -60,7 +60,6 @@ let dict_LCdata = [
 ];
 //dict_LCdataの形
 //[時間, 黒線bandを構成するデータ, 赤線bandを構成するデータ, 緑線bandを構成するデータ, 青線bandを構成するデータ]
-
 ParcelRequire = (function (e, r, t, n) {
   var i,
     o = "function" == typeof parcelRequire && parcelRequire,
@@ -7841,6 +7840,7 @@ ParcelRequire = (function (e, r, t, n) {
         exports.__esModule = !0;
         var t,
           r = require("../types"),
+          data_day = require("../../util/getRollingAverage"),
           n = require("@maxi-js/date-tools");
         (exports.SVGNS = "http://www.w3.org/2000/svg"),
           (exports.developMode = Boolean(
@@ -7865,8 +7865,14 @@ ParcelRequire = (function (e, r, t, n) {
             (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
             // (e.font = "font");
           })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
-          console.log(new Date(dict_LCdata[0][0] * 1000)),
-          (exports.epochMJD = n.dateToMJD(new Date(dict_LCdata[0][0] * 1000))), //横範囲のスタート地点
+          /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+          (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 20)), //横範囲のスタート地点、データから20秒前から表示開始
+          (exports.endMJD = data_day.judgeMJD(
+            dict_LCdata[dict_LCdata.length - 1][0] + 20
+          )), //横範囲のスタート地点、最後のデータから20秒後まで表示する。
+          //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
           //ページのタイトルを表示
           // (exports.pageTitle = "MAXI GSC Data Viewer"),
           (exports.pageTitle = "光度曲線テスト"),
@@ -7880,6 +7886,7 @@ ParcelRequire = (function (e, r, t, n) {
       {
         "../types": "ZHoe",
         "@maxi-js/date-tools": "LNvY",
+        "../../util/getRollingAverage": "WubQ",
       },
     ],
     //エラーが出た時に使われる処理
@@ -8255,6 +8262,7 @@ ParcelRequire = (function (e, r, t, n) {
 
             //8301行目のbにデータを返す。
             (exports.getRollingAverageBin = function (t, e, n, r) {
+              //工事中
               var o = r[0],
                 a = r[1],
                 i = r[2], //i以降は2，3，4の光度曲線のデータはないため必要ない。
@@ -8359,6 +8367,7 @@ ParcelRequire = (function (e, r, t, n) {
                   for (w = g - s; i[0][0] < w; ) c();
                   for (
                     b = exports.getRollingAverageBin(
+                      //工事中
                       g,
                       i[0][0],
                       i[i.length - 1][0],
@@ -8508,7 +8517,7 @@ ParcelRequire = (function (e, r, t, n) {
           (exports.filterMJDRange = function (e) {
             var i = [
               r.epochMJD, //初期表示の開始時刻
-              n.dateToMJD(new Date(dict_LCdata[0][0] * 1000 + 86400000)), //初期表示の終了時刻
+              r.endMJD, //初期表示の終了時刻
             ];
             if ("string" == typeof e) {
               var a = e.match(/\d+(\.\d+)?/g);
@@ -9104,7 +9113,6 @@ ParcelRequire = (function (e, r, t, n) {
             return null;
           }),
           (exports.getHourTicks = function (t, r, n) {
-            console.log(i);
             var s = t.getTime() / i,
               a = r.getTime() / i,
               u = e.getTickScale(s, a, n, [6, 12, 24], 12);
@@ -9129,7 +9137,6 @@ ParcelRequire = (function (e, r, t, n) {
             return null;
           }),
           (exports.getDayTicks = function (t, i, n) {
-            console.log(r);
             var s = t.getTime() / r,
               a = i.getTime() / r,
               u = e.getTickScale(s, a, n, [5, 10, 20], 10);
