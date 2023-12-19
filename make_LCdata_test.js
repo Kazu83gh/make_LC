@@ -7,6 +7,12 @@ function ajax() {
     energy: "High", //a[2],
     ra: 113.32613, //x,
     dec: -26.190498, //y,
+
+    // dptc_zero: 976516509,
+    // timescale: "1day", 
+    // energy: "High", 
+    // ra: 245.19737,
+    // dec: -16.29694, 
   };
 
 // サーバーとのajax通信(非同期通信)
@@ -21,7 +27,7 @@ function ajax() {
 		    console.log(LCdata);	//受信したLCdataはjson(文字列)
 		    console.log('----  rnd ----')
       
-        // var dict_LCdata = JSON.parse(LCdata); //jsonを辞書型にする
+        var pre_LCdata = JSON.parse(LCdata); //jsonを辞書型にする
        
         //dict_LCdata(辞書)からエネルギー毎(要素)を取り出す
         // var all_LCdata = dict_LCdata["All"];
@@ -33,7 +39,30 @@ function ajax() {
         // console.log("High", high_LCdata);
         // console.log("Med", med_LCdata);
         // console.log("Low", low_LCdata);
+
+        //[dptc, count, dptc, count, ...]の形から
+        //[[dptc, count, √count], [dptc, count, √count], ...]の形に変換
+        let Tolist = function (pre_LCdata) {
+          let array = [];
+          let array1 = [];
         
+          for (let i = 1; i < pre_LCdata.length + 1; i++) {
+            if (i % 2 != 0) {
+              array1.push(pre_LCdata[i - 1]);
+              array1.push(pre_LCdata[i]);
+              array1.push(Math.sqrt(pre_LCdata[i]));
+            } else {
+              array.push(array1);
+              array1 = [];
+            }
+          }
+          return array;
+        };
+        console.log(Tolist(pre_LCdata));
+
+        dict_LCdata = Tolist(pre_LCdata);
+        
+        //dict_LCdataをもとに光度曲線の描画
         ParcelRequire = (function (e, r, t, n) {
           var i,
             o = "function" == typeof parcelRequire && parcelRequire,
@@ -7743,8 +7772,8 @@ function ajax() {
                   (exports.SECOND_MS = 1e3),
                   (exports.MINUTE_MS = 6e4),
                   (exports.HOUR_MS = 36e5),
-                  (exports.DAY_MS = 864e5),
-                  (exports.MJDEpochDate = -35067168e5); //1970/1/1/9:00:00からこのミリ秒分変えた日にする場所1858年になっている(この秒数にしてる意味はわからない)
+                  (exports.DAY_MS = 864e5), //１日をミリ秒で表している。
+                  (exports.MJDEpochDate = -35067168e5); //1970/1/1/9:00:00からこのミリ秒分変えた日にする場所1858年になっているMJDの基準日が1858年
               },
               {},
             ],
@@ -7761,7 +7790,7 @@ function ajax() {
         
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
-                //MJDをdptcに変える(使っていないが一応)
+                //MJDをdptcに変える
                 exports.mjdToDptc = function (mjd) {
                   return ((e.MJDEpochDate + mjd * e.DAY_MS) / 1000).toFixed();
                 };
@@ -7814,16 +7843,17 @@ function ajax() {
                 exports.__esModule = !0;
                 var t,
                   r = require("../types"),
+                  data_day = require("../../util/getRollingAverage"),
                   n = require("@maxi-js/date-tools");
                 (exports.SVGNS = "http://www.w3.org/2000/svg"),
                   (exports.developMode = Boolean(
                     document.querySelector('meta[name="preprocessor"]')
                   )),
-                  (exports.APIBaseURL = new URL(
-                    exports.developMode
-                      ? location.protocol + "//" + location.hostname + ":80"
-                      : location.protocol + "//" + location.host + ":80"
-                  )),
+                  // (exports.APIBaseURL = new URL(
+                  //   exports.developMode
+                  //     ? location.protocol + "//" + location.hostname + ":80"
+                  //     : location.protocol + "//" + location.host + ":80"
+                  // )),
                   //両plottypeを配列として格納
                   (exports.AvailablePlotTypes = [r.PlotType.Point, r.PlotType.Line]),
                   (exports.AvailablePlotTypeTitles =
@@ -7838,7 +7868,14 @@ function ajax() {
                     (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
                     // (e.font = "font");
                   })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
-                  (exports.epochMJD = n.dateToMJD(new Date("2009-08-01T00:00:00Z"))),
+                  /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+                  (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 20)), //横範囲のスタート地点、データから20秒前から表示開始
+                  (exports.endMJD = data_day.judgeMJD(
+                    dict_LCdata[dict_LCdata.length - 1][0] + 20
+                  )), //横範囲のスタート地点、最後のデータから20秒後まで表示する。
+                  //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
                   //ページのタイトルを表示
                   // (exports.pageTitle = "MAXI GSC Data Viewer"),
                   (exports.pageTitle = "光度曲線テスト"),
@@ -7852,6 +7889,7 @@ function ajax() {
               {
                 "../types": "ZHoe",
                 "@maxi-js/date-tools": "LNvY",
+                "../../util/getRollingAverage": "WubQ",
               },
             ],
             //エラーが出た時に使われる処理
@@ -8038,7 +8076,7 @@ function ajax() {
                     return t(this, function (t) {
                       switch (t.label) {
                         case 0:
-                          return; //[4, json_data];
+                          return; //[4, dict_LCdata];
                         case 1:
                           if (200 !== (e = t.sent()).status)
                             throw a.createError(
@@ -8217,7 +8255,7 @@ function ajax() {
                   //受け取ったデータがdptcならMJDにする場所。
                   (exports.judgeMJD = function (data) {
                     let judge =
-                      1000000 < data
+                      10000000 < data
                         ? 0.5 +
                           (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS
                         : data;
@@ -8227,6 +8265,7 @@ function ajax() {
         
                     //8301行目のbにデータを返す。
                     (exports.getRollingAverageBin = function (t, e, n, r) {
+                      //工事中
                       var o = r[0],
                         a = r[1],
                         i = r[2], //i以降は2，3，4の光度曲線のデータはないため必要ない。
@@ -8237,8 +8276,8 @@ function ajax() {
                         f = r[7];
                       return [
                         t,
-                        e - 0.5,
-                        n + 0.5,
+                        e - 0.5 / 86400,
+                        n + 0.5 / 86400,
                         a / o,
                         Math.pow(o, -0.5),
                         u / i, //これ以降は光度曲線のデータがないため必要ない
@@ -8251,13 +8290,13 @@ function ajax() {
                     })
                   ),
                   //bins、minX、minYの設定
-                  //rにjson_data、oにはbinsizeが入っている
+                  //rにdict_LCdata、oにはbinsizeが入っている
                   (exports.getRollingAverage = function (r, o) {
                     //dptcをMJDにして再代入。
                     for (let i = 0; i < r.length; i++) {
                       r[i][0] = exports.judgeMJD(r[i][0]);
                     }
-                    console.log(r);
+        
                     return t(n, void 0, Promise, function () {
                       var t,
                         n,
@@ -8289,7 +8328,7 @@ function ajax() {
                             i = [],
                             u = [0, 0, 0, 0, 0, 0, 0, 0],
                             l = function (t) {
-                              //console.log(t); //json_data
+                              //console.log(t); //dict_LCdata
                               var e = t[0],
                                 n = exports.getAB(t[1], t[2]), //t[1]にはデータの2個目が、t[2]にはデータの3個目が入っている。
                                 r = n[0],
@@ -8304,9 +8343,6 @@ function ajax() {
                                 g = [e, r, o, l, c, f, h, p[0], p[1]]; //ここにはすべてのデータが格納されている
                               i.push(g), //iの中にすべて入れている
                                 u.forEach(function (t, e) {
-                                  // console.log(t);
-                                  // console.log(g[e + 1]);
-                                  // console.log(u[e]);
                                   u[e] = t + g[e + 1];
                                 });
                             },
@@ -8326,15 +8362,15 @@ function ajax() {
                         ) {
                           for (
                             g = r[p][0],
-                              /*ここでjson_dataの時間を抜き出している。*/ v = g + s;
+                              /*ここでdict_LCdataの時間を抜き出している。*/ v = g + s;
                             h < f && (x = r[h]) && x[0] < v;
         
                           )
                             l(x), h++;
                           for (w = g - s; i[0][0] < w; ) c();
-                          console.log(g);
                           for (
                             b = exports.getRollingAverageBin(
+                              //工事中
                               g,
                               i[0][0],
                               i[i.length - 1][0],
@@ -8473,11 +8509,19 @@ function ajax() {
                   r = require("./constants"),
                   i = require("./isAvailablePlotType"),
                   n = require("@maxi-js/date-tools");
+                ////引数eを受け取りそれを数値に変換（1〜100の範囲、デフォルトは20）
                 (exports.filterBinSize = function (e) {
-                  return t.clamp((e && Math.round(Number(e))) || 20, 1, 100);
+                  return t.clamp(
+                    (e && Math.round(Number(e))) || 1 / 86400,
+                    1 / 86400,
+                    100
+                  );
                 }),
                   (exports.filterMJDRange = function (e) {
-                    var i = [r.epochMJD, n.dateToMJD(new Date())];
+                    var i = [
+                      r.epochMJD, //初期表示の開始時刻
+                      r.endMJD, //初期表示の終了時刻
+                    ];
                     if ("string" == typeof e) {
                       var a = e.match(/\d+(\.\d+)?/g);
                       a &&
@@ -8498,10 +8542,12 @@ function ajax() {
                   // }),
                   (exports.getDefaultPreferences = function (e) {
                     return {
+                      //ここのbinsizeを変更することでも光度曲線の十字の数を変更することができる
                       binSize: exports.filterBinSize(e.get(r.URLParameterKey.binSize)),
                       mjdRange: exports.filterMJDRange(
                         e.get(r.URLParameterKey.mjdRange)
                       ),
+        
                       plotType: exports.filterPlotType(
                         e.get(r.URLParameterKey.plotType)
                       ),
@@ -8744,6 +8790,16 @@ function ajax() {
                     m = function (e) {
                       return c + (e / n) * s;
                     };
+        
+                  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+                  let date = new Date(t.mjdToDptc(m(i.x)) * 1000 - 32400000); //new Dateの()内について、表示はUTCなので9時間引かなければいけない。
+                  let Hour = ("00" + date.getHours()).slice(-2); //時間
+                  let Minute = ("00" + date.getMinutes()).slice(-2); //分
+                  let Second = ("00" + date.getSeconds()).slice(-2); //秒
+        
+                  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        
                   //縦線の作成
                   return e.createElement(
                     "g",
@@ -8762,7 +8818,7 @@ function ajax() {
                         fill: r.Color.black,
                         opacity: 0.7,
                       },
-                      m(i.x).toFixed(0) + "MJD"
+                      t.mjdToDptc(m(i.x)) + " " + "dptc"
                     ),
                     e.createElement(
                       "text",
@@ -8773,7 +8829,7 @@ function ajax() {
                         fill: r.Color.black,
                         opacity: 0.7,
                       },
-                      t.mjdToDate(m(i.x)).toISOString().split("T")[0] //表示を整えているのとカーソルの場所の年月日を取得
+                      Hour + ":" + Minute + ":" + Second + " " + "Time" //カーソルの場所の時間を表示
                       //m(i.x)はカーソル位置のMJD
                     )
                   );
@@ -8872,10 +8928,11 @@ function ajax() {
                 "use strict";
                 exports.__esModule = !0;
                 var e = require("./getTickScale");
+                let MJDChange = require("@maxi-js/date-tools");
                 exports.getTicks = function (t, r, s, i) {
                   void 0 === i &&
                     (i = function (e) {
-                      return e.toFixed(0);
+                      return MJDChange.mjdToDptc(e); //MJDをdptcに変更して返す
                     });
                   var u = e.getTickScale(t, r, s, [1, 2, 5]);
                   if (u) {
@@ -8898,6 +8955,7 @@ function ajax() {
               },
               {
                 "./getTickScale": "CKjx",
+                "@maxi-js/date-tools": "LNvY",
               },
             ],
             //縦目盛りの作成、設定
@@ -9003,7 +9061,7 @@ function ajax() {
                       min: t.getTime(),
                       max: i.getTime(),
                       toString: function (e) {
-                        return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                        return new Date(e).toISOString(); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                       },
                     };
                   }
@@ -9027,7 +9085,7 @@ function ajax() {
                         min: t.getTime(),
                         max: i.getTime(),
                         toString: function (e) {
-                          return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                          return new Date(e).toISOString().slice(0, -5); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                         },
                       };
                     }
@@ -9051,7 +9109,7 @@ function ajax() {
                         min: i.getTime(),
                         max: r.getTime(),
                         toString: function (e) {
-                          return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                          return new Date(e).toISOString().slice(0, -8); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                         },
                       };
                     }
@@ -9075,7 +9133,7 @@ function ajax() {
                         min: t.getTime(),
                         max: r.getTime(),
                         toString: function (e) {
-                          return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                          return new Date(e).toISOString().slice(0, -8); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                         },
                       };
                     }
@@ -9099,7 +9157,7 @@ function ajax() {
                         min: t.getTime(),
                         max: i.getTime(),
                         toString: function (e) {
-                          return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                          return new Date(e).toISOString().slice(0, -14); //new Date(e).getTime() / 1000;  //秒で表示にするために1000で割る。
                         },
                       };
                     }
@@ -9108,7 +9166,8 @@ function ajax() {
                   (exports.getMonthTicks = function (t, i, r) {
                     var n = 12 * t.getFullYear() + t.getMonth() + 1,
                       s = 12 * i.getFullYear() + i.getMonth() + 1,
-                      a = e.getTickScale(n, s, r, [6, 12, 24], 12);
+                      a = e.getTickScale(n, s, r, [1, 12, 24], 12); //[1,12,24]一番左が時間の間隔
+                    console.log(a);
                     if (a) {
                       for (
                         var u = [], g = Math.max(a.mainScale, 1), f = a.firstMain;
@@ -9133,15 +9192,15 @@ function ajax() {
                         min: t.getTime(),
                         max: i.getTime(),
                         toString: function (e) {
-                          //console.log(new Date(e).toISOString().slice(0, -14)); //こうすると年月日で表示できる
-                          return new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                          //console.log(new +Date(e).toISOString().slice(0, -14)); //こうすると年月日で表示できる
+                          return new Date(e).toISOString().slice(0, -14); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                         },
                       };
                     }
                     return null;
                   }),
                   (exports.getDateTicks = function (e, n, s) {
-                    var a = n.getTime() - e.getTime();
+                    var a = n.getTime() - e.getTime(); //現時刻からデータ時刻の差
         
                     return a < 1e3
                       ? exports.getMillisecondsTicks(e, n, s)
@@ -9200,8 +9259,8 @@ function ajax() {
                     g = o.mjdToString,
                     x = o.dateToString,
                     p = o.lineHeight,
-                    T = t.getTicks(c, s, k / 200),
-                    v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200);
+                    T = t.getTicks(c, s, k / 200), //横軸下部のMJDの設定
+                    v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200); //横軸上部のdptcの設定
                   if (!T || !v) return null;
                   var j = k / (s - c),
                     y = function (e) {
@@ -9215,13 +9274,14 @@ function ajax() {
                           v.sub
                             .map(function (e, t) {
                               var i = (t - v.stepOffset) % v.step == 0;
+        
                               return (
                                 "M" +
                                 y(a.dateToMJD(e)) +
                                 "," +
                                 d +
                                 "v" +
-                                (i ? n.mainTickSize : n.subTickSize)
+                                (i ? n.mainTickSize : n.subTickSize) //目盛りの長さ
                               );
                             })
                             .join(""),
@@ -9275,7 +9335,7 @@ function ajax() {
                             dominantBaseline: "baseline",
                             textAnchor: "end",
                           },
-                          "dptc"
+                          "UTC"
                         )
                       );
                   }
@@ -9312,7 +9372,7 @@ function ajax() {
                           dominantBaseline: "hanging",
                           textAnchor: "end",
                         },
-                        "MJD"
+                        "dptc"
                       )
                     );
                   }
@@ -9490,22 +9550,15 @@ function ajax() {
                                 r = P(e[w]),
                                 a = e[A] * B,
                                 o = [];
-        
-                              return (
-                                l < n &&
-                                  i < s &&
-                                  (o.push(
-                                    "M" +
-                                      Math.max(l, i) +
-                                      "," +
-                                      r +
-                                      "H" +
-                                      Math.min(s, n) //sとnで小さいほうの数字が入れられる。
-                                  ),
-                                  S(t) &&
-                                    o.push("M" + t + "," + (r - a) + "v" + 2 * a)),
-                                o.join("")
-                              );
+                              if (l < n && i < s) {
+                                o.push(
+                                  "M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
+                                ); //sとnで小さいほうの数字が入れられる。
+                                if (S(t)) {
+                                  o.push("M" + t + "," + (r - a) + "v" + 2 * a);
+                                }
+                              }
+                              return o.join("");
                             })
                             .join(""),
                           stroke: E,
@@ -10034,7 +10087,7 @@ function ajax() {
                       S = n.useReducer(function (e, t) {
                         return {
                           binSize: t.binSize || e.binSize,
-                          mjdRange: t.mjdRange || e.mjdRange,
+                          mjdRange: t.mjdRange || e.mjdRange, //データのMJDと現時刻のMJD
                           plotType: t.plotType || e.plotType,
                           //font: t.font || e.font,
                         };
@@ -10058,7 +10111,7 @@ function ajax() {
                       O = i.useCache({
                         keys: F,
                         getter: function (e) {
-                          var t = LCdata; /*_.get(e)とりあえず今は直接入れる。*/
+                          var t = dict_LCdata; /*_.get(e)とりあえず今は直接入れる。*/
                           //console.log(t ? a.getRollingAverage(t, y.binSize) : null);
                           return t ? a.getRollingAverage(t, y.binSize) : null;
                         },
@@ -10209,6 +10262,7 @@ function ajax() {
           ["vqK8"],
           null
         );
+                  
         
         
       })
