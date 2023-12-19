@@ -1,0 +1,148 @@
+#! /Library/Frameworks/Python.framework/Versions/3.11/bin/python3
+
+import cgi
+import psycopg2
+from psycopg2 import Error
+import json
+import math
+
+form = cgi.FieldStorage()
+
+try:
+    #データベースからデータを取得する
+    DB =  psycopg2.connect('postgresql://{user}:{password}@{host}:{port}/{dbname}'.format( 
+                user="postgres",        #ユーザ
+                password="sh4741",      #パスワード
+                host="localhost",       #ホスト名
+                port="5432",            #ポート
+                dbname="maxidb_low"))   #データベース名
+
+    #検索条件の変数
+    #form.getvalue(' * ')はjavascriptのajaxで渡されたデータを取得している 
+    #型を宣言したほうが扱いやすくなる   
+    dptc_zero = int(form.getvalue('dptc_zero'))
+    timescale = str(form.getvalue('timescale'))
+    ra = float(form.getvalue('ra'))
+    dec = float(form.getvalue('dec'))
+    energy = str(form.getvalue('energy'))
+    
+    
+    if timescale == '1day':
+        timescale = int(86400)
+    elif timescale == '4orb':
+        timescale = int(22080)
+    elif timescale == '1orb':
+        timescale = int(5520)
+    
+    #検索するdptcを設定
+    start_dptc = dptc_zero - timescale
+    end_dptc = dptc_zero + timescale
+
+    #ra,decの許容範囲を与える。さらに0<=ra<=360, -90<=dec<=90の範囲を超えないようにする。
+    #いらないかも
+    if ra >= 359:
+        plus_ra = 360
+        minus_ra = ra - 1.0
+    elif ra <= 1.0:
+        plus_ra = ra + 1.0
+        minus_ra = 0
+    else:
+        plus_ra = ra + 1.0
+        minus_ra = ra - 1.0
+
+
+    if dec >= 89.75:   
+        plus_dec = 90
+        minus_dec = dec - 1.0 
+    elif dec <= -89.75:
+        plus_dec = dec + 1.0 
+        minus_dec = -90
+    else:
+        plus_dec = dec + 1.0  
+        minus_dec = dec - 1.0  
+
+    #psql文の作成    
+    dptcterm = str(start_dptc) + ' AND dptc <= ' + str(end_dptc)
+    radecterm = ' AND ra >= ' + str(minus_ra) + ' AND ra <= ' + str(plus_ra) + ' AND dec >= ' + str(minus_dec) + ' AND dec <= ' + str(plus_dec)
+    psqlterms = 'SELECT dptc, PI, ra, dec FROM gcaspev8  WHERE dptc >='+ dptcterm + radecterm #+ 'order by dptc asc'  #+ piterm
+
+    #postgeSQLで実行
+    cursor = DB.cursor()
+    cursor.execute(psqlterms) #データの検索条件を与える
+    result = cursor.fetchall() 
+
+    #resultは行をタプルで取得し,リストにしている　
+    #result = [(dptc, camearaid, ra, ..), (dptc, cameraid, ra, ..), .....]
+    #resultの各タプルから同じ要素ごとに取り出し、リストに入れなおす
+    def TUPtoLIS (a):     
+        return [list(tup) for tup in zip(*result)] #zipは複数のリストに対応できる
+        #newresult = [[dptc, dptc, ..], [cameraid, cameraid, ..], [ra, ra, ..], ...]
+
+    newresult = TUPtoLIS(result)
+
+    #dptcだけのリスト
+    columm_dptc = newresult[0]
+    #piだけのリスト
+    columm_pi = newresult[1]
+
+    #piの値を参照してエネルギーバンドごとのdptcリストを作成
+    def high_pifilter (array):
+        highpi = []
+        for k in range(0,len(array)):
+            if 200 <= array[k] <400:
+                highpi.append(columm_dptc[k])
+        return (highpi)
+
+    def med_pifilter(array):
+        medpi = []
+        for k in range(0,len(array)):
+            if 80 <= array[k] <200:
+                medpi.append(columm_dptc[k])
+        return(medpi)
+
+    def low_pifilter(array):
+        lowpi = []
+        for k in range(0,len(array)):
+            if 40 <= array[k] <80:
+                lowpi.append(columm_dptc[k])
+        return(lowpi)
+
+    #dptcを[時間x, xの観測回数, x+1, x+1の回数, ....]とリスト化する
+    def changeLIS (d):
+        list_dptc = [d[0]]
+        i = -1
+        k = -1
+        for c in d:
+            i += 1
+            k += 1
+            if i != 0:
+                if d[i] != d[i-1]:
+                    list_dptc.append(k)
+                    list_dptc.append(d[i])
+                    k = 0
+        n = k +1
+        list_dptc.append(n)
+        return(list_dptc)
+        
+    all_LCdata = changeLIS(columm_dptc)
+    # high_LCdata = changeLIS(high_pifilter(columm_pi))
+    # med_LCdata = changeLIS(med_pifilter(columm_pi))
+    # low_LCdata = changeLIS(low_pifilter(columm_pi))
+
+    #全てのLCdataを辞書型(dict)に格納
+    # dict_LCdata = {"All":all_LCdata, "High":high_LCdata, "Med":med_LCdata, "Low":low_LCdata}
+
+    #javascriptに辞書の受け渡し(java側ではrecieved_data)
+    print('Content-type: text/htmml\n')
+    print(json.dumps(all_LCdata))
+    # print(json.dumps(dict_LCdata))
+
+
+except(Exception, Error) as error:
+       print('Content-type: text/htmml\n')
+       print("An error occurred while connecting to the database")
+
+
+finally:
+    cursor.close()
+    DB.close()
