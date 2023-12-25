@@ -7867,9 +7867,9 @@ ParcelRequire = (function (e, r, t, n) {
           })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
           /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-          (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 20)), //横範囲のスタート地点、データから20秒前から表示開始
+          (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)), //横範囲のスタート地点、データから20秒前から表示開始
           (exports.endMJD = data_day.judgeMJD(
-            dict_LCdata[dict_LCdata.length - 1][0] + 20
+            dict_LCdata[dict_LCdata.length - 1][0] + 3600
           )), //横範囲のスタート地点、最後のデータから20秒後まで表示する。
           //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
