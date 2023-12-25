@@ -3,8 +3,9 @@
 import cgi
 import psycopg2
 from psycopg2 import Error
+import numpy as np     # 数学計算モジュール
 import json
-import math
+#import math
 
 form = cgi.FieldStorage()
 
@@ -24,8 +25,10 @@ try:
     timescale = str(form.getvalue('timescale'))
     ra = float(form.getvalue('ra'))
     dec = float(form.getvalue('dec'))
+    r_out = 1.0 #DBからデータを取得する際の半径
     energy = str(form.getvalue('energy'))
-    
+
+    tmp = []    # 取得する四角領域の範囲を格納する
     
     if timescale == '1day':
         timescale = int(86400)
@@ -33,45 +36,105 @@ try:
         timescale = int(22080)
     elif timescale == '1orb':
         timescale = int(5520)
-    
-    #検索するdptcを設定
-    start_dptc = dptc_zero - timescale
-    end_dptc = dptc_zero + timescale
 
     #ra,decの許容範囲を与える。さらに0<=ra<=360, -90<=dec<=90の範囲を超えないようにする。
     #いらないかも
-    if ra >= 359:
-        plus_ra = 360
-        minus_ra = ra - 1.0
-    elif ra <= 1.0:
-        plus_ra = ra + 1.0
-        minus_ra = 0
+    # if ra >= 359:
+    #     plus_ra = 360
+    #     minus_ra = ra - 1.0
+    # elif ra <= 1.0:
+    #     plus_ra = ra + 1.0
+    #     minus_ra = 0
+    # else:
+    #     plus_ra = ra + 1.0
+    #     minus_ra = ra - 1.0
+
+
+    # if dec >= 89.75:   
+    #     plus_dec = 90
+    #     minus_dec = dec - 1.0 
+    # elif dec <= -89.75:
+    #     plus_dec = dec + 1.0 
+    #     minus_dec = -90
+    # else:
+    #     plus_dec = dec + 1.0  
+    #     minus_dec = dec - 1.0 
+
+    #ra,decの許容範囲を与える。さらに0<=ra<=360, -90<=dec<=90の範囲を超えないようにする。
+
+    # radec_sqlの設定
+    #######################################################################################################
+    # 正方領域で値を取得後に円領域で範囲を得るためのSQL 文の作成
+    xy  = np.cos(np.deg2rad(dec))
+    z0  = np.sin(np.deg2rad(dec))
+    d   = np.cos(np.deg2rad(r_out))
+
+    if (dec + r_out) <= 90 and (dec - r_out) >= -90:
+        d_ra = np.rad2deg(np.arccos(np.sqrt(d*d - z0*z0) / xy))
+
+    if (dec + r_out) >= 90:
+        tmp.append(dec - r_out)
+        radec_sql = " WHERE dec > {0}".format(*tmp)
+    elif (dec - r_out) <= -90:
+        tmp.append(dec - r_out)
+        radec_sql = " WHERE dec > {0}".format(*tmp)
     else:
-        plus_ra = ra + 1.0
-        minus_ra = ra - 1.0
+        if (d_ra <= 2*r_out):
+            if (ra + d_ra) > 360:
+                tmp.append(ra - d_ra)
+                tmp.append(ra + d_ra - 360)
+                tmp.append(dec - r_out)
+                tmp.append(dec + r_out)
+                radec_sql = " WHERE (ra > {0} or ra < {1}) and (dec between {2} and {3})".format(*tmp)
+            elif (ra - d_ra) < 0:
+                tmp.append(360 + ra - d_ra)
+                tmp.append(ra + d_ra)
+                tmp.append(dec - r_out)
+                tmp.append(dec + r_out)
+                radec_sql = " WHERE (ra > {0} or ra < {1}) and (dec between {2} and {3})".format(*tmp)
+            else:
+                tmp.append(ra - d_ra)
+                tmp.append(ra + d_ra)
+                tmp.append(dec - r_out)
+                tmp.append(dec + r_out)
+                radec_sql = " WHERE  ra between {0} and {1} and (dec between {2} and {3})".format(*tmp)
+        else:
+            if (ra + d_ra) > 360:
+                tmp.append(dec - r_out)
+                tmp.append(dec + r_out)
+                tmp.append(ra - d_ra)
+                tmp.append(ra + d_ra - 360)
+                radec_sql = " WHERE dec between {0} and {1} and (ra > {2} or ra < {3})".format(*tmp)
+            elif (ra - d_ra) < 0:
+                tmp.append(dec - r_out)
+                tmp.append(dec + r_out)
+                tmp.append(ra - d_ra + 360)
+                tmp.append(ra + d_ra)
+                radec_sql = " WHERE dec between {0} and {1} and (ra > {2} or ra < {3})".format(*tmp)
+            else:
+                tmp.append(dec - r_out)
+                tmp.append(dec + r_out)
+                tmp.append(ra - d_ra)
+                tmp.append(ra + d_ra)
+                radec_sql = " WHERE dec between {0} and {1} and (ra between {2} and {3})".format(*tmp)
+    #######################################################################################################
 
+    #dptc_psqlの設定  
+    start_dptc = dptc_zero - timescale
+    end_dptc = dptc_zero + timescale  
 
-    if dec >= 89.75:   
-        plus_dec = 90
-        minus_dec = dec - 1.0 
-    elif dec <= -89.75:
-        plus_dec = dec + 1.0 
-        minus_dec = -90
-    else:
-        plus_dec = dec + 1.0  
-        minus_dec = dec - 1.0  
+    dptc_sql = ' dptc >= ' + str(start_dptc) + ' AND dptc <= ' + str(end_dptc)
 
-    #psql文の作成    
-    dptcterm = str(start_dptc) + ' AND dptc <= ' + str(end_dptc)
-    radecterm = ' AND ra >= ' + str(minus_ra) + ' AND ra <= ' + str(plus_ra) + ' AND dec >= ' + str(minus_dec) + ' AND dec <= ' + str(plus_dec)
-    psqlterms = 'SELECT dptc, PI, ra, dec FROM gcaspev8  WHERE dptc >='+ dptcterm + radecterm #+ 'order by dptc asc'  #+ piterm
+    #実行するSQL文の設定
+    #radecterm = ' AND ra >= ' + str(minus_ra) + ' AND ra <= ' + str(plus_ra) + ' AND dec >= ' + str(minus_dec) + ' AND dec <= ' + str(plus_dec)
+    psqlterms = 'SELECT dptc, PI, ra, dec FROM gcaspev8' + radec_sql + 'AND' + dptc_sql + ' ORDER BY dptc'  #+ piterm
 
     #postgeSQLで実行
     cursor = DB.cursor()
     cursor.execute(psqlterms) #データの検索条件を与える
     result = cursor.fetchall() 
 
-    #resultは行をタプルで取得し,リストにしている　
+    #resultは行をタプルで取得し,リスト化する関数　
     #result = [(dptc, camearaid, ra, ..), (dptc, cameraid, ra, ..), .....]
     #resultの各タプルから同じ要素ごとに取り出し、リストに入れなおす
     def TUPtoLIS (a):     
