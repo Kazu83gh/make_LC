@@ -3,33 +3,6 @@ let dict_LCdata = [
   // [1250208000, -0.02832, 0.017064],
   // [1250294400, 0.010407, 0.016655],
   // [1250380800, 0.006743, 0.017407],
-  // [55056.5, 0.040581, 0.021283],
-  // [55057.5, -0.02832, 0.017064],
-  // [55058.5, 0.010407, 0.016655],
-  // [55059.5, 0.006743, 0.017407],
-  // [55060.5, 0.024298, 0.01678],
-  // [55061.5, 0.023789, 0.025379],
-  // [55062.5, 0.006899, 0.018207],
-  // [55063.5, 0.009546, 0.014457],
-  // [55064.5, -0.018476, 0.013083],
-  // [55065.5, -0.003264, 0.01182],
-  // [55066.5, 0.006812, 0.010913],
-  // [55067.5, 0.016414, 0.01046],
-  // [55068.5, -0.001398, 0.010063],
-  // [55069.5, 0.000353, 0.00936],
-  // [55070.5, 0.006722, 0.009428],
-  // [55073.5, 0.002849, 0.012604],
-  // [55074.5, -0.004067, 0.026721],
-  // [55075.5, -0.054995, 0.034765],
-  // [55076.5, 0.039431, 0.035789],
-  // [55077.5, -0.03055, 0.036352],
-  // [55078.5, -0.022473, 0.032311],
-  // [55079.5, 0.001724, 0.017948],
-  // [55080.5, 0.008084, 0.013696],
-  // [55081.5, 0.004721, 0.012508],
-  // [55082.5, -0.008621, 0.011771],
-  // [55083.5, -0.006709, 0.009287],
-  // [55084.5, -0.018568, 0.009321],
   [976454043, 1, 1.0],
   [976454044, 1, 1.0],
   [976454046, 1, 1.0],
@@ -60,6 +33,7 @@ let dict_LCdata = [
 ];
 //dict_LCdataの形
 //[時間, 黒線bandを構成するデータ, 赤線bandを構成するデータ, 緑線bandを構成するデータ, 青線bandを構成するデータ]
+
 ParcelRequire = (function (e, r, t, n) {
   var i,
     o = "function" == typeof parcelRequire && parcelRequire,
@@ -7862,15 +7836,18 @@ ParcelRequire = (function (e, r, t, n) {
           // (exports.AvailableFontTitles =
           //   (((o = {})[r.Font.sans] = "Sans"), (o[r.Font.serif] = "Serif"), o)),
           (function (e) {
-            (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
+            (e.mjdRange = "mjd"),
+              (e.binSize = "bin"),
+              (e.plotType = "plot"),
+              (e.font = "font");
             // (e.font = "font");
           })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
           /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-          (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)), //横範囲のスタート地点、データから１時間前から表示開始
+          (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)), //表示範囲のスタート地点、データから1時間前から表示開始
           (exports.endMJD = data_day.judgeMJD(
             dict_LCdata[dict_LCdata.length - 1][0] + 3600
-          )), //横範囲のスタート地点、最後のデータから１時間後まで表示する。
+          )), //表示範囲の終了地点、最後のデータから1時間後まで表示する。
           //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
           //ページのタイトルを表示
@@ -8249,20 +8226,18 @@ ParcelRequire = (function (e, r, t, n) {
           }),
           ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-          //受け取ったデータがdptcならMJDにする場所。
+          //受け取ったデータをMJDにする場所。
           (exports.judgeMJD = function (data) {
             let judge =
-              10000000 < data
-                ? 0.5 +
-                  (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS
-                : data;
+              0.5 / 86400 +
+              (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS;
+
             return judge;
           })(
             //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             //8301行目のbにデータを返す。
             (exports.getRollingAverageBin = function (t, e, n, r) {
-              //工事中
               var o = r[0],
                 a = r[1],
                 i = r[2], //i以降は2，3，4の光度曲線のデータはないため必要ない。
@@ -8288,127 +8263,131 @@ ParcelRequire = (function (e, r, t, n) {
           ),
           //bins、minX、minYの設定
           //rにdict_LCdata、oにはbinsizeが入っている
-          (exports.getRollingAverage = function (r, o) {
-            //dptcをMJDにして再代入。
+          (exports.count = true);
+        exports.getRollingAverage = function (r, o) {
+          //dptcをMJDにして再代入。
+          if (this.count) {
             for (let i = 0; i < r.length; i++) {
               r[i][0] = exports.judgeMJD(r[i][0]);
             }
-
-            return t(n, void 0, Promise, function () {
-              var t,
-                n,
-                a,
-                i,
-                u,
-                l,
-                c,
-                s,
-                f,
-                h,
-                p,
-                g,
-                v,
-                x,
-                w,
-                b,
-                y,
-                m,
-                d,
-                A,
-                M,
-                B;
-              return e(this, function (e) {
+          }
+          this.count = false;
+          return t(n, void 0, Promise, function () {
+            var t,
+              n,
+              a,
+              i,
+              u,
+              l,
+              c,
+              s,
+              f,
+              h,
+              p,
+              g,
+              v,
+              x,
+              w,
+              b,
+              y,
+              m,
+              d,
+              A,
+              M,
+              B;
+            return e(this, function (e) {
+              for (
+                t = [],
+                  n = [1 / 0, 1 / 0, 1 / 0, 1 / 0],
+                  a = [0, 0, 0, 0],
+                  i = [],
+                  u = [0, 0, 0, 0, 0, 0, 0, 0],
+                  l = function (t) {
+                    //console.log(t); //dict_LCdata
+                    var e = t[0],
+                      n = exports.getAB(t[1], t[2]), //t[1]にはデータの2個目が、t[2]にはデータの3個目が入っている。
+                      r = n[0],
+                      o = n[1],
+                      a = exports.getAB(t[3], t[4]), //t[3]にはデータの4個目が、t[4]にはデータの5個目が入っている。だがこれ以降はデータ無し
+                      l = a[0],
+                      c = a[1],
+                      s = exports.getAB(t[5], t[6]), //t[5]にはデータの6個目が、t[6]にはデータの7個目が入っている。
+                      f = s[0],
+                      h = s[1],
+                      p = exports.getAB(t[7], t[8]), //t[7]にはデータの8個目が、t[8]にはデータの9個目が入っている。
+                      g = [e, r, o, l, c, f, h, p[0], p[1]]; //ここにはすべてのデータが格納されている
+                    i.push(g), //iの中にすべて入れている
+                      u.forEach(function (t, e) {
+                        u[e] = t + g[e + 1];
+                      });
+                  },
+                  c = function () {
+                    var t = i.shift(); //配列の中の一番初めのデータ以外をtに代入
+                    t &&
+                      u.forEach(function (e, n) {
+                        u[n] = e - t[n + 1];
+                      });
+                  },
+                  //  console.log(u),
+                  s = o / 2,
+                  f = r.length,
+                  h = 0,
+                  p = 0;
+                p < f;
+                p++
+              ) {
                 for (
-                  t = [],
-                    n = [1 / 0, 1 / 0, 1 / 0, 1 / 0],
-                    a = [0, 0, 0, 0],
-                    i = [],
-                    u = [0, 0, 0, 0, 0, 0, 0, 0],
-                    l = function (t) {
-                      //console.log(t); //dict_LCdata
-                      var e = t[0],
-                        n = exports.getAB(t[1], t[2]), //t[1]にはデータの2個目が、t[2]にはデータの3個目が入っている。
-                        r = n[0],
-                        o = n[1],
-                        a = exports.getAB(t[3], t[4]), //t[3]にはデータの4個目が、t[4]にはデータの5個目が入っている。だがこれ以降はデータ無し
-                        l = a[0],
-                        c = a[1],
-                        s = exports.getAB(t[5], t[6]), //t[5]にはデータの6個目が、t[6]にはデータの7個目が入っている。
-                        f = s[0],
-                        h = s[1],
-                        p = exports.getAB(t[7], t[8]), //t[7]にはデータの8個目が、t[8]にはデータの9個目が入っている。
-                        g = [e, r, o, l, c, f, h, p[0], p[1]]; //ここにはすべてのデータが格納されている
-                      i.push(g), //iの中にすべて入れている
-                        u.forEach(function (t, e) {
-                          u[e] = t + g[e + 1];
-                        });
-                    },
-                    c = function () {
-                      var t = i.shift(); //配列の中の一番初めのデータ以外をtに代入
-                      t &&
-                        u.forEach(function (e, n) {
-                          u[n] = e - t[n + 1];
-                        });
-                    },
-                    s = o / 2,
-                    f = r.length,
-                    h = 0,
-                    p = 0;
-                  p < f;
-                  p++
-                ) {
-                  for (
-                    g = r[p][0],
-                      /*ここでdict_LCdataの時間を抜き出している。*/ v = g + s;
-                    h < f && (x = r[h]) && x[0] < v;
+                  g = r[p][0],
+                    /*ここでdict_LCdataの時間を抜き出している。*/ v = g + s;
+                  h < f && (x = r[h]) && x[0] < v;
 
-                  )
-                    l(x), h++;
-                  for (w = g - s; i[0][0] < w; ) c();
-                  for (
-                    b = exports.getRollingAverageBin(
-                      //工事中
-                      g,
-                      i[0][0],
-                      i[i.length - 1][0],
-                      u //このデータは何？
-                    ),
-                      y = 0;
-                    y < 4;
-                    y++
-                  )
-                    (d = b[(m = 2 * y + 3)]),
-                      (A = b[m + 1]),
-                      (n[y] = Math.min(n[y], d - A)),
-                      (a[y] = Math.max(a[y], d + A));
+                )
+                  l(x), h++;
+                for (w = g - s; i[0][0] < w; ) c();
+                for (
+                  b = exports.getRollingAverageBin(
+                    g,
+                    i[0][0],
+                    i[i.length - 1][0],
+                    u //このデータは何？
+                  ),
+                    y = 0;
+                  y < 4;
+                  y++
+                )
+                  (d = b[(m = 2 * y + 3)]),
+                    (A = b[m + 1]),
+                    (n[y] = Math.min(n[y], d - A)),
+                    (a[y] = Math.max(a[y], d + A));
 
-                  t.push(b);
-                }
-                return (
-                  (M = r[0][0]),
-                  (B = r[r.length - 1][0]),
-                  [
-                    2,
-                    {
-                      bins: t,
-                      minX: M,
-                      maxX: B,
-                      rangeX: B - M,
-                      minY: n,
-                      maxY: a,
-                      //各強さのデータの範囲を計算して代入している。(範囲が小さいと散らばり度合いが小さいということ)
-                      rangeY: [
-                        a[0] - n[0],
-                        a[1] - n[1],
-                        a[2] - n[2],
-                        a[3] - n[3],
-                      ],
-                    },
-                  ]
-                );
-              });
+                t.push(b);
+              }
+              console.log(n, a);
+              return (
+                (M = r[0][0]),
+                (B = r[r.length - 1][0]),
+                [
+                  2,
+                  {
+                    bins: t,
+                    minX: M,
+                    maxX: B,
+                    rangeX: B - M,
+                    minY: n,
+                    maxY: a,
+                    //各強さのデータの範囲を計算して代入している。(範囲が小さいと散らばり度合いが小さいということ)
+                    rangeY: [
+                      a[0] - n[0],
+                      a[1] - n[1],
+                      a[2] - n[2],
+                      a[3] - n[3],
+                    ],
+                  },
+                ]
+              );
             });
           });
+        };
       },
       {
         "./constants": "Aa4L",
@@ -8508,11 +8487,9 @@ ParcelRequire = (function (e, r, t, n) {
           n = require("@maxi-js/date-tools");
         ////引数eを受け取りそれを数値に変換（1〜100の範囲、デフォルトは20）
         (exports.filterBinSize = function (e) {
-          return t.clamp(
-            (e && Math.round(Number(e))) || 1 / 86400,
-            1 / 86400,
-            100
-          );
+          let num = (1 / 86400).toFixed(5); //桁数限定したものを格納。
+
+          return t.clamp((e && Number(e)) || num * 4, num, 1);
         }),
           (exports.filterMJDRange = function (e) {
             var i = [
@@ -8538,6 +8515,8 @@ ParcelRequire = (function (e, r, t, n) {
           //   return a.isAvailableFont(t) ? t : e.Font.sans;
           // }),
           (exports.getDefaultPreferences = function (e) {
+            //工事中
+            //e.get(r.URLParameterKey.binSize);
             return {
               //ここのbinsizeを変更することでも光度曲線の十字の数を変更することができる
               binSize: exports.filterBinSize(e.get(r.URLParameterKey.binSize)),
@@ -8558,6 +8537,7 @@ ParcelRequire = (function (e, r, t, n) {
         "./constants": "39BI",
         "./isAvailablePlotType": "PJvb",
         "@maxi-js/date-tools": "LNvY",
+        "./components/App": "2oAZ",
       },
     ],
     "9aF6": [
@@ -8937,6 +8917,7 @@ ParcelRequire = (function (e, r, t, n) {
               n.push(a);
             var f = [];
             for (a = u.firstSub; a < r; a += u.subScale) f.push(a);
+
             return {
               step: u.step,
               stepOffset: u.stepOffset,
@@ -9050,6 +9031,7 @@ ParcelRequire = (function (e, r, t, n) {
             var f = [];
             for (g = a.firstSub; g < s; g += a.subScale)
               f.push(new Date(g).getTime());
+            console.log("MIllionTicks");
             return {
               step: a.step,
               stepOffset: a.stepOffset,
@@ -9074,6 +9056,8 @@ ParcelRequire = (function (e, r, t, n) {
               var f = [];
               for (g = a.firstSub; g < s; g += a.subScale)
                 f.push(new Date(1e3 * g).getTime());
+              console.log("SecoundsTicks");
+
               return {
                 step: a.step,
                 stepOffset: a.stepOffset,
@@ -9098,6 +9082,7 @@ ParcelRequire = (function (e, r, t, n) {
               var o = [];
               for (f = u.firstSub; f < a; f += u.subScale)
                 o.push(new Date(f * t).getTime());
+              console.log("MinuteTicks");
               return {
                 step: u.step,
                 stepOffset: u.stepOffset,
@@ -9115,13 +9100,14 @@ ParcelRequire = (function (e, r, t, n) {
           (exports.getHourTicks = function (t, r, n) {
             var s = t.getTime() / i,
               a = r.getTime() / i,
-              u = e.getTickScale(s, a, n, [6, 12, 24], 12);
+              u = e.getTickScale(s, a, n, [5, 12, 24], 12);
             if (u) {
               for (var g = [], f = u.firstMain; f < a; f += u.mainScale)
                 g.push(new Date(f * i).getTime());
               var o = [];
               for (f = u.firstSub; f < a; f += u.subScale)
                 o.push(new Date(f * i).getTime());
+              console.log("HourTicks");
               return {
                 step: u.step,
                 stepOffset: u.stepOffset,
@@ -9146,6 +9132,7 @@ ParcelRequire = (function (e, r, t, n) {
               var o = [];
               for (f = u.firstSub; f < a; f += u.subScale)
                 o.push(new Date(f * r).getTime());
+              console.log("DayTicks");
               return {
                 step: u.step,
                 stepOffset: u.stepOffset,
@@ -9164,7 +9151,7 @@ ParcelRequire = (function (e, r, t, n) {
             var n = 12 * t.getFullYear() + t.getMonth() + 1,
               s = 12 * i.getFullYear() + i.getMonth() + 1,
               a = e.getTickScale(n, s, r, [1, 12, 24], 12); //[1,12,24]一番左が時間の間隔
-            console.log(a);
+
             if (a) {
               for (
                 var u = [], g = Math.max(a.mainScale, 1), f = a.firstMain;
@@ -9181,6 +9168,7 @@ ParcelRequire = (function (e, r, t, n) {
                   (c = ("" + (Math.floor(f % 12) + 1)).padStart(2, "0"));
                 m.push(new Date(o + "-" + c + "-01T00:00:00Z").getTime());
               }
+              console.log("MonthTicks");
               return {
                 step: a.step,
                 stepOffset: a.stepOffset,
@@ -9198,7 +9186,6 @@ ParcelRequire = (function (e, r, t, n) {
           }),
           (exports.getDateTicks = function (e, n, s) {
             var a = n.getTime() - e.getTime(); //現時刻からデータ時刻の差
-
             return a < 1e3
               ? exports.getMillisecondsTicks(e, n, s)
               : a < 2 * t
@@ -9418,7 +9405,7 @@ ParcelRequire = (function (e, r, t, n) {
             v = t.BandTitles[o],
             //色を設定
             E = t.BandColors[o],
-            L = 0.5 * (c + m),
+            //L = 0.5 * (c + m),
             //おそらくこれを呼べば作られるようになっている。
             M = [
               //光度曲線の枠組み
@@ -9783,6 +9770,7 @@ ParcelRequire = (function (e, r, t, n) {
               t.useEffect(
                 function () {
                   var e = u.current;
+
                   if (e) {
                     var t = 0,
                       n = 0,
@@ -9937,6 +9925,7 @@ ParcelRequire = (function (e, r, t, n) {
                   maxMJD: g[1],
                   lineHeight: c.lineHeight,
                 }),
+
                 //光度曲線の設定
                 t.createElement(o.Body, {
                   objects: e.objects,
@@ -10070,10 +10059,11 @@ ParcelRequire = (function (e, r, t, n) {
               }, []),
               t = e[0],
               E = e[1],
+              //サイトのURLに表示する項目(binsizeとplottype以外はとりあえずいらない)
               b = n.useReducer(function (e, t) {
                 return {
                   binSize: c.filterBinSize(t.binSize || e.binSize),
-                  mjdRange: c.filterMJDRange(t.mjdRange || e.mjdRange),
+                  //mjdRange: c.filterMJDRange(t.mjdRange || e.mjdRange),
                   plotType: c.filterPlotType(t.plotType || e.plotType),
                   //font: c.filterFont(t.font || e.font),
                 };
@@ -10081,10 +10071,11 @@ ParcelRequire = (function (e, r, t, n) {
               //b[0]にplottypeの情報が入っている。
               y = b[0],
               v = b[1],
+              //サイトのURLに表示する項目(binsizeとplottype以外はとりあえずいらない)
               S = n.useReducer(function (e, t) {
                 return {
                   binSize: t.binSize || e.binSize,
-                  mjdRange: t.mjdRange || e.mjdRange, //データのMJDと現時刻のMJD
+                  //mjdRange: t.mjdRange || e.mjdRange, //データのMJDと現時刻のMJD
                   plotType: t.plotType || e.plotType,
                   //font: t.font || e.font,
                 };
@@ -10100,6 +10091,12 @@ ParcelRequire = (function (e, r, t, n) {
               w = n.useState(exports.getInitialSelectedObjects()),
               F = w[0],
               U = w[1],
+              //サイトのURL名作成
+              x = n.useReducer(function (e, t) {
+                return new URL("?" + t, e.protocol + "//" + e.host);
+              }, new URL(location.href)),
+              A = x[0],
+              k = x[1],
               _ = i.useCache({
                 keys: F,
                 getter: l.getLightCurveData,
@@ -10110,12 +10107,12 @@ ParcelRequire = (function (e, r, t, n) {
                 getter: function (e) {
                   var t = dict_LCdata; /*_.get(e)とりあえず今は直接入れる。*/
                   //console.log(t ? a.getRollingAverage(t, y.binSize) : null);
+
                   return t ? a.getRollingAverage(t, y.binSize) : null;
                 },
                 onError: E,
                 dependencies: [y.binSize, _],
               });
-
             //plottypeを変更を実行する部分
             n.useEffect(
               function () {
@@ -10127,7 +10124,32 @@ ParcelRequire = (function (e, r, t, n) {
                 };
               },
               [R]
-            );
+            ),
+              //サイトのURLに実際にセットする箇所(binsizeとplottype以外はとりあえずいらない)
+              n.useEffect(
+                function () {
+                  var e = new URLSearchParams();
+                  // e.set(
+                  //   o.URLParameterKey.mjdRange,
+                  //   y.mjdRange
+                  //     .map(function (e) {
+                  //       return e.toFixed(0);
+                  //     })
+                  //     .join("-")
+                  // ),
+                  e.set(o.URLParameterKey.binSize, "" + y.binSize),
+                    e.set(o.URLParameterKey.plotType, "" + y.plotType),
+                    //e.set(o.URLParameterKey.font, "" + y.font);
+                    k(e);
+                },
+                [F, y]
+              ),
+              n.useEffect(
+                function () {
+                  return history.replaceState(null, "", "" + A);
+                },
+                [A]
+              );
             //Kに光度曲線のReact要素を作成する。
             var K = n.createElement(s.LightCurve, {
               preferences: y,
@@ -10152,10 +10174,35 @@ ParcelRequire = (function (e, r, t, n) {
                   n.createElement(
                     "article",
                     null,
-                    //光度曲線のPlot typeやBin sizeを設定する場所(今はとりあえずいらない)
+                    //光度曲線のPlot typeやBin sizeを設定する場所
                     n.createElement(
                       "ul",
                       null,
+                      n.createElement(
+                        "li",
+                        null,
+                        n.createElement(
+                          "label",
+                          {
+                            htmlFor: o.URLParameterKey.binSize,
+                          },
+                          "Bin size: "
+                        ),
+                        n.createElement("input", {
+                          id: o.URLParameterKey.binSize,
+                          type: "number",
+                          step: 0.00001, //binsizeの増減間隔
+                          min: 0.00001, //下限の値
+                          max: 1, //上限の値
+                          defaultValue: y.binSize,
+                          onChange: function (e) {
+                            T({
+                              binSize: c.filterBinSize(e.currentTarget.value), //ここでbinsizeの変更をグラフに反映している？
+                            });
+                          },
+                        }),
+                        "day" + (1 === y.binSize ? "" : "s") + "."
+                      ),
                       n.createElement.apply(
                         void 0,
                         [
@@ -10169,7 +10216,6 @@ ParcelRequire = (function (e, r, t, n) {
                               {
                                 className: p.default.radioLabel,
                               },
-                              //plottypeの切り替え機能の追加
                               n.createElement("input", {
                                 type: "radio",
                                 name: o.URLParameterKey.plotType,
@@ -10190,6 +10236,7 @@ ParcelRequire = (function (e, r, t, n) {
                         )
                       )
                     ),
+
                     //光度曲線全体をfigureタグの中に入れている
                     n.createElement("figure", null, K)
                   )
@@ -10211,6 +10258,7 @@ ParcelRequire = (function (e, r, t, n) {
         "../Errors": "hK5F",
       },
     ],
+
     "TC+f": [
       function (require, module, exports) {
         module.exports = {};
