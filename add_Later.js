@@ -53,7 +53,7 @@ let MJD_ms = MJD.getTime() - nine_Hours;
 //JStimeとGPStimeの差
 let num = ten_years + five_days;
 
-//JStime(UTC)をGPStimeに変換
+//GPStimeをにJStime(UTC)変換
 let JStime_to_GPStime = function (data) {
   let time = data / 1000 + num - nine_Hours;
 
