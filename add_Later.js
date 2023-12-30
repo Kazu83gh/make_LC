@@ -53,14 +53,14 @@ let MJD_ms = MJD.getTime() - nine_Hours;
 //JStimeとGPStimeの差
 let num = ten_years + five_days;
 
-//GPStimeをにJStime(UTC)変換
-let JStime_to_GPStime = function (data) {
-  let time = data / 1000 + num - nine_Hours;
+//GPStimeをJStime(UTC)変換
+let GPStime_to_JStime = function (data) {
+  let time = data * 1000 + num - nine_Hours;
 
   return time;
 };
 
-let test = JStime_to_GPStime(nine_Hours * 1000); //GPStimeから9時間後の時間を想定(秒)、(1980年1月6日 9:00:00)
+let test = GPStime_to_JStime(nine_Hours / 1000); //GPStimeから9時間後の時間を想定(秒)、(1980年1月6日 9:00:00)
 console.log(new Date(test)); // UTC表示
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
