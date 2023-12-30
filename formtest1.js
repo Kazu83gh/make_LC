@@ -7836,10 +7836,7 @@ ParcelRequire = (function (e, r, t, n) {
           // (exports.AvailableFontTitles =
           //   (((o = {})[r.Font.sans] = "Sans"), (o[r.Font.serif] = "Serif"), o)),
           (function (e) {
-            (e.mjdRange = "mjd"),
-              (e.binSize = "bin"),
-              (e.plotType = "plot"),
-              (e.font = "font");
+            (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
             // (e.font = "font");
           })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
           /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -8154,6 +8151,7 @@ ParcelRequire = (function (e, r, t, n) {
                             !(o = o.call(r, a[1])).done)
                         )
                           return o;
+
                         switch (
                           ((r = 0), o && (a = [2 & a[0], o.value]), a[0])
                         ) {
@@ -8271,6 +8269,7 @@ ParcelRequire = (function (e, r, t, n) {
               r[i][0] = exports.judgeMJD(r[i][0]);
             }
           }
+
           this.count = false;
           return t(n, void 0, Promise, function () {
             var t,
@@ -8316,8 +8315,10 @@ ParcelRequire = (function (e, r, t, n) {
                       h = s[1],
                       p = exports.getAB(t[7], t[8]), //t[7]にはデータの8個目が、t[8]にはデータの9個目が入っている。
                       g = [e, r, o, l, c, f, h, p[0], p[1]]; //ここにはすべてのデータが格納されている
+                    //console.log(g);
                     i.push(g), //iの中にすべて入れている
                       u.forEach(function (t, e) {
+                        //console.log(t);
                         u[e] = t + g[e + 1];
                       });
                   },
@@ -8326,9 +8327,9 @@ ParcelRequire = (function (e, r, t, n) {
                     t &&
                       u.forEach(function (e, n) {
                         u[n] = e - t[n + 1];
+                        //console.log(u[n]);
                       });
                   },
-                  //  console.log(u),
                   s = o / 2,
                   f = r.length,
                   h = 0,
@@ -8351,6 +8352,7 @@ ParcelRequire = (function (e, r, t, n) {
                     i[i.length - 1][0],
                     u //このデータは何？
                   ),
+                    // console.log(b),
                     y = 0;
                   y < 4;
                   y++
@@ -8358,11 +8360,10 @@ ParcelRequire = (function (e, r, t, n) {
                   (d = b[(m = 2 * y + 3)]),
                     (A = b[m + 1]),
                     (n[y] = Math.min(n[y], d - A)),
-                    (a[y] = Math.max(a[y], d + A));
-
-                t.push(b);
+                    (a[y] = Math.max(a[y], d + A)),
+                    t.push(b);
               }
-              console.log(n, a);
+              console.log(n[0]); //minとmax//工事中
               return (
                 (M = r[0][0]),
                 (B = r[r.length - 1][0]),
@@ -8486,10 +8487,14 @@ ParcelRequire = (function (e, r, t, n) {
           i = require("./isAvailablePlotType"),
           n = require("@maxi-js/date-tools");
         ////引数eを受け取りそれを数値に変換（1〜100の範囲、デフォルトは20）
+        exports.default_binsize = 10; //binsizeの初期設定
         (exports.filterBinSize = function (e) {
-          let num = (1 / 86400).toFixed(5); //桁数限定したものを格納。
-
-          return t.clamp((e && Number(e)) || num * 4, num, 1);
+          let num = 1 / 86400; //桁数限定したものを格納。
+          return t.clamp(
+            (e && Number(e)) || num * this.default_binsize,
+            num,
+            0.001
+          );
         }),
           (exports.filterMJDRange = function (e) {
             var i = [
@@ -8515,7 +8520,6 @@ ParcelRequire = (function (e, r, t, n) {
           //   return a.isAvailableFont(t) ? t : e.Font.sans;
           // }),
           (exports.getDefaultPreferences = function (e) {
-            //工事中
             //e.get(r.URLParameterKey.binSize);
             return {
               //ここのbinsizeを変更することでも光度曲線の十字の数を変更することができる
@@ -8537,7 +8541,6 @@ ParcelRequire = (function (e, r, t, n) {
         "./constants": "39BI",
         "./isAvailablePlotType": "PJvb",
         "@maxi-js/date-tools": "LNvY",
-        "./components/App": "2oAZ",
       },
     ],
     "9aF6": [
@@ -8636,7 +8639,7 @@ ParcelRequire = (function (e, r, t, n) {
       },
       {},
     ],
-    //サイトで言う上のデータの集まりの部分(Mrk 335しか今は残していない)
+    //サイトで言う上のデータの集まりの部分(Mrk 335しか今は残していない)(いらない)
     hnqh: [
       function (require, module, exports) {
         "use strict";
@@ -9100,7 +9103,7 @@ ParcelRequire = (function (e, r, t, n) {
           (exports.getHourTicks = function (t, r, n) {
             var s = t.getTime() / i,
               a = r.getTime() / i,
-              u = e.getTickScale(s, a, n, [5, 12, 24], 12);
+              u = e.getTickScale(s, a, n, [6, 12, 24], 12);
             if (u) {
               for (var g = [], f = u.firstMain; f < a; f += u.mainScale)
                 g.push(new Date(f * i).getTime());
@@ -10113,6 +10116,7 @@ ParcelRequire = (function (e, r, t, n) {
                 onError: E,
                 dependencies: [y.binSize, _],
               });
+
             //plottypeを変更を実行する部分
             n.useEffect(
               function () {
@@ -10191,17 +10195,20 @@ ParcelRequire = (function (e, r, t, n) {
                         n.createElement("input", {
                           id: o.URLParameterKey.binSize,
                           type: "number",
-                          step: 0.00001, //binsizeの増減間隔
-                          min: 0.00001, //下限の値
-                          max: 1, //上限の値
-                          defaultValue: y.binSize,
+                          min: 1, //min: 0.00001, //下限の値
+                          max: 100, //max: 0.001, //上限の値
+                          defaultValue: c.default_binsize,
                           onChange: function (e) {
+                            console.log(y.binSize);
+                            //工事中
                             T({
-                              binSize: c.filterBinSize(e.currentTarget.value), //ここでbinsizeの変更をグラフに反映している？
+                              binSize: c.filterBinSize(
+                                e.currentTarget.value * (1 / 86400)
+                              ), //ここでbinsizeの変更をグラフに反映している？
                             });
                           },
                         }),
-                        "day" + (1 === y.binSize ? "" : "s") + "."
+                        "s"
                       ),
                       n.createElement.apply(
                         void 0,
