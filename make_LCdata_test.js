@@ -39,16 +39,62 @@ function ajax() {
         // console.log("High", high_LCdata);
         // console.log("Med", med_LCdata);
         // console.log("Low", low_LCdata);
+        
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        //GPStimeからJStime(UTC)に変換とか色々
+        //9時間分(ミリ秒)
+        let nine_Hours = 32400000;
+
+        //差5日分(ミリ秒)
+        let five_days = 432000000;
+
+        //10年分の時間差(GPSTimeからの経過時間にしたい場合これを足す)
+        let start = new Date(80, 0, 2).getTime();
+        let end = new Date(90, 0, 1).getTime();
+        let ten_years = Math.abs(start - end);
+
+        //日本標準時間
+        let JStime = new Date(0);
+        let GPStime = new Date(Date.UTC(80, 0, 6));
+        let MJD = new Date(Date.UTC(1858, 10, 17));
+
+        //UTC
+        let JStime_UTC = JStime.toUTCString();
+        let GPStime_UTC = GPStime.toUTCString();
+        let MJD_UTC = MJD.toUTCString();
+
+        //UTCのミリ秒時間
+        let JStime_ms = JStime.getTime() - nine_Hours;
+        let GPStime_ms = GPStime.getTime() - nine_Hours;
+        let MJD_ms = MJD.getTime() - nine_Hours;
+
+        //JStimeとGPStimeの差
+        let num = ten_years + five_days;
+
+        //GPStimeをJStime(UTC)変換
+        let GPStime_to_JStime = function (data) {
+          let time = data * 1000 + num - nine_Hours;
+        
+          return time;
+        };
+
+        let test = GPStime_to_JStime(976516502);//nine_Hours / 1000); //GPStimeから9時間後の時間を想定(秒)、(1980年1月6日 9:00:00)
+        console.log(test)//new Date(test)); // UTC表示
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
 
         //[dptc, count, dptc, count, ...]の形から
         //[[dptc, count, √count], [dptc, count, √count], ...]の形に変換
         let Tolist = function (pre_LCdata) {
           let array = [];
           let array1 = [];
-        
+
           for (let i = 1; i < pre_LCdata.length + 1; i++) {
             if (i % 2 != 0) {
-              array1.push(pre_LCdata[i - 1]);
+              // array1.push(pre_LCdata[i - 1]);
+              let convertedValue = GPStime_to_JStime(pre_LCdata[i - 1]) / 1000;
+              array1.push(convertedValue);
               array1.push(pre_LCdata[i]);
               array1.push(Math.sqrt(pre_LCdata[i]));
             } else {
@@ -61,6 +107,8 @@ function ajax() {
         console.log(Tolist(pre_LCdata));
 
         dict_LCdata = Tolist(pre_LCdata);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         
         //dict_LCdataをもとに光度曲線の描画
         ParcelRequire = (function (e, r, t, n) {
@@ -7870,10 +7918,10 @@ function ajax() {
                   })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
                   /////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
-                  (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)), //横範囲のスタート地点、データから20秒前から表示開始
+                  (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)), //表示範囲のスタート地点、データから1時間前から表示開始
                   (exports.endMJD = data_day.judgeMJD(
                     dict_LCdata[dict_LCdata.length - 1][0] + 3600
-                  )), //横範囲のスタート地点、最後のデータから20秒後まで表示する。
+                  )), //表示範囲の終了地点、最後のデータから1時間後まで表示する。
                   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
                   //ページのタイトルを表示
@@ -8180,6 +8228,7 @@ function ajax() {
                                     !(o = o.call(r, a[1])).done)
                                 )
                                   return o;
+        
                                 switch (
                                   ((r = 0), o && (a = [2 & a[0], o.value]), a[0])
                                 ) {
@@ -8252,20 +8301,18 @@ function ajax() {
                   }),
                   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
-                  //受け取ったデータがdptcならMJDにする場所。
+                  //受け取ったデータをMJDにする場所。
                   (exports.judgeMJD = function (data) {
                     let judge =
-                      10000000 < data
-                        ? 0.5 +
-                          (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS
-                        : data;
+                      0.5 / 86400 +
+                      (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS;
+        
                     return judge;
                   })(
                     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
                     //8301行目のbにデータを返す。
                     (exports.getRollingAverageBin = function (t, e, n, r) {
-                      //工事中
                       var o = r[0],
                         a = r[1],
                         i = r[2], //i以降は2，3，4の光度曲線のデータはないため必要ない。
@@ -8291,127 +8338,134 @@ function ajax() {
                   ),
                   //bins、minX、minYの設定
                   //rにdict_LCdata、oにはbinsizeが入っている
-                  (exports.getRollingAverage = function (r, o) {
-                    //dptcをMJDにして再代入。
+                  (exports.count = true);
+                exports.getRollingAverage = function (r, o) {
+                  //dptcをMJDにして再代入。
+                  if (this.count) {
                     for (let i = 0; i < r.length; i++) {
                       r[i][0] = exports.judgeMJD(r[i][0]);
                     }
+                  }
         
-                    return t(n, void 0, Promise, function () {
-                      var t,
-                        n,
-                        a,
-                        i,
-                        u,
-                        l,
-                        c,
-                        s,
-                        f,
-                        h,
-                        p,
-                        g,
-                        v,
-                        x,
-                        w,
-                        b,
-                        y,
-                        m,
-                        d,
-                        A,
-                        M,
-                        B;
-                      return e(this, function (e) {
+                  this.count = false;
+                  return t(n, void 0, Promise, function () {
+                    var t,
+                      n,
+                      a,
+                      i,
+                      u,
+                      l,
+                      c,
+                      s,
+                      f,
+                      h,
+                      p,
+                      g,
+                      v,
+                      x,
+                      w,
+                      b,
+                      y,
+                      m,
+                      d,
+                      A,
+                      M,
+                      B;
+                    return e(this, function (e) {
+                      for (
+                        t = [],
+                          n = [1 / 0, 1 / 0, 1 / 0, 1 / 0],
+                          a = [0, 0, 0, 0],
+                          i = [],
+                          u = [0, 0, 0, 0, 0, 0, 0, 0],
+                          l = function (t) {
+                            //console.log(t); //dict_LCdata
+                            var e = t[0],
+                              n = exports.getAB(t[1], t[2]), //t[1]にはデータの2個目が、t[2]にはデータの3個目が入っている。
+                              r = n[0],
+                              o = n[1],
+                              a = exports.getAB(t[3], t[4]), //t[3]にはデータの4個目が、t[4]にはデータの5個目が入っている。だがこれ以降はデータ無し
+                              l = a[0],
+                              c = a[1],
+                              s = exports.getAB(t[5], t[6]), //t[5]にはデータの6個目が、t[6]にはデータの7個目が入っている。
+                              f = s[0],
+                              h = s[1],
+                              p = exports.getAB(t[7], t[8]), //t[7]にはデータの8個目が、t[8]にはデータの9個目が入っている。
+                              g = [e, r, o, l, c, f, h, p[0], p[1]]; //ここにはすべてのデータが格納されている
+                            //console.log(g);
+                            i.push(g), //iの中にすべて入れている
+                              u.forEach(function (t, e) {
+                                //console.log(t);
+                                u[e] = t + g[e + 1];
+                              });
+                          },
+                          c = function () {
+                            var t = i.shift(); //配列の中の一番初めのデータ以外をtに代入
+                            t &&
+                              u.forEach(function (e, n) {
+                                u[n] = e - t[n + 1];
+                                //console.log(u[n]);
+                              });
+                          },
+                          s = o / 2,
+                          f = r.length,
+                          h = 0,
+                          p = 0;
+                        p < f;
+                        p++
+                      ) {
                         for (
-                          t = [],
-                            n = [1 / 0, 1 / 0, 1 / 0, 1 / 0],
-                            a = [0, 0, 0, 0],
-                            i = [],
-                            u = [0, 0, 0, 0, 0, 0, 0, 0],
-                            l = function (t) {
-                              //console.log(t); //dict_LCdata
-                              var e = t[0],
-                                n = exports.getAB(t[1], t[2]), //t[1]にはデータの2個目が、t[2]にはデータの3個目が入っている。
-                                r = n[0],
-                                o = n[1],
-                                a = exports.getAB(t[3], t[4]), //t[3]にはデータの4個目が、t[4]にはデータの5個目が入っている。だがこれ以降はデータ無し
-                                l = a[0],
-                                c = a[1],
-                                s = exports.getAB(t[5], t[6]), //t[5]にはデータの6個目が、t[6]にはデータの7個目が入っている。
-                                f = s[0],
-                                h = s[1],
-                                p = exports.getAB(t[7], t[8]), //t[7]にはデータの8個目が、t[8]にはデータの9個目が入っている。
-                                g = [e, r, o, l, c, f, h, p[0], p[1]]; //ここにはすべてのデータが格納されている
-                              i.push(g), //iの中にすべて入れている
-                                u.forEach(function (t, e) {
-                                  u[e] = t + g[e + 1];
-                                });
-                            },
-                            c = function () {
-                              var t = i.shift(); //配列の中の一番初めのデータ以外をtに代入
-                              t &&
-                                u.forEach(function (e, n) {
-                                  u[n] = e - t[n + 1];
-                                });
-                            },
-                            s = o / 2,
-                            f = r.length,
-                            h = 0,
-                            p = 0;
-                          p < f;
-                          p++
-                        ) {
-                          for (
-                            g = r[p][0],
-                              /*ここでdict_LCdataの時間を抜き出している。*/ v = g + s;
-                            h < f && (x = r[h]) && x[0] < v;
+                          g = r[p][0],
+                            /*ここでdict_LCdataの時間を抜き出している。*/ v = g + s;
+                          h < f && (x = r[h]) && x[0] < v;
         
-                          )
-                            l(x), h++;
-                          for (w = g - s; i[0][0] < w; ) c();
-                          for (
-                            b = exports.getRollingAverageBin(
-                              //工事中
-                              g,
-                              i[0][0],
-                              i[i.length - 1][0],
-                              u //このデータは何？
-                            ),
-                              y = 0;
-                            y < 4;
-                            y++
-                          )
-                            (d = b[(m = 2 * y + 3)]),
-                              (A = b[m + 1]),
-                              (n[y] = Math.min(n[y], d - A)),
-                              (a[y] = Math.max(a[y], d + A));
-        
-                          t.push(b);
-                        }
-                        return (
-                          (M = r[0][0]),
-                          (B = r[r.length - 1][0]),
-                          [
-                            2,
-                            {
-                              bins: t,
-                              minX: M,
-                              maxX: B,
-                              rangeX: B - M,
-                              minY: n,
-                              maxY: a,
-                              //各強さのデータの範囲を計算して代入している。(範囲が小さいと散らばり度合いが小さいということ)
-                              rangeY: [
-                                a[0] - n[0],
-                                a[1] - n[1],
-                                a[2] - n[2],
-                                a[3] - n[3],
-                              ],
-                            },
-                          ]
-                        );
-                      });
+                        )
+                          l(x), h++;
+                        for (w = g - s; i[0][0] < w; ) c();
+                        for (
+                          b = exports.getRollingAverageBin(
+                            g,
+                            i[0][0],
+                            i[i.length - 1][0],
+                            u //このデータは何？
+                          ),
+                            // console.log(b),
+                            y = 0;
+                          y < 4;
+                          y++
+                        )
+                          (d = b[(m = 2 * y + 3)]),
+                            (A = b[m + 1]),
+                            (n[y] = Math.min(n[y], d - A)),
+                            (a[y] = Math.max(a[y], d + A)),
+                            t.push(b);
+                      }
+                      console.log(n[0]); //minとmax//工事中
+                      return (
+                        (M = r[0][0]),
+                        (B = r[r.length - 1][0]),
+                        [
+                          2,
+                          {
+                            bins: t,
+                            minX: M,
+                            maxX: B,
+                            rangeX: B - M,
+                            minY: n,
+                            maxY: a,
+                            //各強さのデータの範囲を計算して代入している。(範囲が小さいと散らばり度合いが小さいということ)
+                            rangeY: [
+                              a[0] - n[0],
+                              a[1] - n[1],
+                              a[2] - n[2],
+                              a[3] - n[3],
+                            ],
+                          },
+                        ]
+                      );
                     });
                   });
+                };
               },
               {
                 "./constants": "Aa4L",
@@ -8510,11 +8564,13 @@ function ajax() {
                   i = require("./isAvailablePlotType"),
                   n = require("@maxi-js/date-tools");
                 ////引数eを受け取りそれを数値に変換（1〜100の範囲、デフォルトは20）
+                exports.default_binsize = 10; //binsizeの初期設定
                 (exports.filterBinSize = function (e) {
+                  let num = 1 / 86400; //桁数限定したものを格納。
                   return t.clamp(
-                    (e && Math.round(Number(e))) || 1 / 86400,
-                    1 / 86400,
-                    100
+                    (e && Number(e)) || num * this.default_binsize,
+                    num,
+                    0.001
                   );
                 }),
                   (exports.filterMJDRange = function (e) {
@@ -8541,6 +8597,7 @@ function ajax() {
                   //   return a.isAvailableFont(t) ? t : e.Font.sans;
                   // }),
                   (exports.getDefaultPreferences = function (e) {
+                    //e.get(r.URLParameterKey.binSize);
                     return {
                       //ここのbinsizeを変更することでも光度曲線の十字の数を変更することができる
                       binSize: exports.filterBinSize(e.get(r.URLParameterKey.binSize)),
@@ -8659,7 +8716,7 @@ function ajax() {
               },
               {},
             ],
-            //サイトで言う上のデータの集まりの部分(Mrk 335しか今は残していない)
+            //サイトで言う上のデータの集まりの部分(Mrk 335しか今は残していない)(いらない)
             hnqh: [
               function (require, module, exports) {
                 "use strict";
@@ -8940,6 +8997,7 @@ function ajax() {
                       n.push(a);
                     var f = [];
                     for (a = u.firstSub; a < r; a += u.subScale) f.push(a);
+        
                     return {
                       step: u.step,
                       stepOffset: u.stepOffset,
@@ -9053,6 +9111,7 @@ function ajax() {
                     var f = [];
                     for (g = a.firstSub; g < s; g += a.subScale)
                       f.push(new Date(g).getTime());
+                    console.log("MIllionTicks");
                     return {
                       step: a.step,
                       stepOffset: a.stepOffset,
@@ -9077,6 +9136,8 @@ function ajax() {
                       var f = [];
                       for (g = a.firstSub; g < s; g += a.subScale)
                         f.push(new Date(1e3 * g).getTime());
+                      console.log("SecoundsTicks");
+        
                       return {
                         step: a.step,
                         stepOffset: a.stepOffset,
@@ -9101,6 +9162,7 @@ function ajax() {
                       var o = [];
                       for (f = u.firstSub; f < a; f += u.subScale)
                         o.push(new Date(f * t).getTime());
+                      console.log("MinuteTicks");
                       return {
                         step: u.step,
                         stepOffset: u.stepOffset,
@@ -9125,6 +9187,7 @@ function ajax() {
                       var o = [];
                       for (f = u.firstSub; f < a; f += u.subScale)
                         o.push(new Date(f * i).getTime());
+                      console.log("HourTicks");
                       return {
                         step: u.step,
                         stepOffset: u.stepOffset,
@@ -9149,6 +9212,7 @@ function ajax() {
                       var o = [];
                       for (f = u.firstSub; f < a; f += u.subScale)
                         o.push(new Date(f * r).getTime());
+                      console.log("DayTicks");
                       return {
                         step: u.step,
                         stepOffset: u.stepOffset,
@@ -9167,7 +9231,7 @@ function ajax() {
                     var n = 12 * t.getFullYear() + t.getMonth() + 1,
                       s = 12 * i.getFullYear() + i.getMonth() + 1,
                       a = e.getTickScale(n, s, r, [1, 12, 24], 12); //[1,12,24]一番左が時間の間隔
-                    console.log(a);
+        
                     if (a) {
                       for (
                         var u = [], g = Math.max(a.mainScale, 1), f = a.firstMain;
@@ -9184,6 +9248,7 @@ function ajax() {
                           (c = ("" + (Math.floor(f % 12) + 1)).padStart(2, "0"));
                         m.push(new Date(o + "-" + c + "-01T00:00:00Z").getTime());
                       }
+                      console.log("MonthTicks");
                       return {
                         step: a.step,
                         stepOffset: a.stepOffset,
@@ -9201,7 +9266,6 @@ function ajax() {
                   }),
                   (exports.getDateTicks = function (e, n, s) {
                     var a = n.getTime() - e.getTime(); //現時刻からデータ時刻の差
-        
                     return a < 1e3
                       ? exports.getMillisecondsTicks(e, n, s)
                       : a < 2 * t
@@ -9421,7 +9485,7 @@ function ajax() {
                     v = t.BandTitles[o],
                     //色を設定
                     E = t.BandColors[o],
-                    L = 0.5 * (c + m),
+                    //L = 0.5 * (c + m),
                     //おそらくこれを呼べば作られるようになっている。
                     M = [
                       //光度曲線の枠組み
@@ -9786,6 +9850,7 @@ function ajax() {
                       t.useEffect(
                         function () {
                           var e = u.current;
+        
                           if (e) {
                             var t = 0,
                               n = 0,
@@ -9940,6 +10005,7 @@ function ajax() {
                           maxMJD: g[1],
                           lineHeight: c.lineHeight,
                         }),
+        
                         //光度曲線の設定
                         t.createElement(o.Body, {
                           objects: e.objects,
@@ -10073,10 +10139,11 @@ function ajax() {
                       }, []),
                       t = e[0],
                       E = e[1],
+                      //サイトのURLに表示する項目(binsizeとplottype以外はとりあえずいらない)
                       b = n.useReducer(function (e, t) {
                         return {
                           binSize: c.filterBinSize(t.binSize || e.binSize),
-                          mjdRange: c.filterMJDRange(t.mjdRange || e.mjdRange),
+                          //mjdRange: c.filterMJDRange(t.mjdRange || e.mjdRange),
                           plotType: c.filterPlotType(t.plotType || e.plotType),
                           //font: c.filterFont(t.font || e.font),
                         };
@@ -10084,10 +10151,11 @@ function ajax() {
                       //b[0]にplottypeの情報が入っている。
                       y = b[0],
                       v = b[1],
+                      //サイトのURLに表示する項目(binsizeとplottype以外はとりあえずいらない)
                       S = n.useReducer(function (e, t) {
                         return {
                           binSize: t.binSize || e.binSize,
-                          mjdRange: t.mjdRange || e.mjdRange, //データのMJDと現時刻のMJD
+                          //mjdRange: t.mjdRange || e.mjdRange, //データのMJDと現時刻のMJD
                           plotType: t.plotType || e.plotType,
                           //font: t.font || e.font,
                         };
@@ -10103,6 +10171,12 @@ function ajax() {
                       w = n.useState(exports.getInitialSelectedObjects()),
                       F = w[0],
                       U = w[1],
+                      //サイトのURL名作成
+                      x = n.useReducer(function (e, t) {
+                        return new URL("?" + t, e.protocol + "//" + e.host);
+                      }, new URL(location.href)),
+                      A = x[0],
+                      k = x[1],
                       _ = i.useCache({
                         keys: F,
                         getter: l.getLightCurveData,
@@ -10113,6 +10187,7 @@ function ajax() {
                         getter: function (e) {
                           var t = dict_LCdata; /*_.get(e)とりあえず今は直接入れる。*/
                           //console.log(t ? a.getRollingAverage(t, y.binSize) : null);
+        
                           return t ? a.getRollingAverage(t, y.binSize) : null;
                         },
                         onError: E,
@@ -10130,7 +10205,32 @@ function ajax() {
                         };
                       },
                       [R]
-                    );
+                    ),
+                      //サイトのURLに実際にセットする箇所(binsizeとplottype以外はとりあえずいらない)
+                      n.useEffect(
+                        function () {
+                          var e = new URLSearchParams();
+                          // e.set(
+                          //   o.URLParameterKey.mjdRange,
+                          //   y.mjdRange
+                          //     .map(function (e) {
+                          //       return e.toFixed(0);
+                          //     })
+                          //     .join("-")
+                          // ),
+                          e.set(o.URLParameterKey.binSize, "" + y.binSize),
+                            e.set(o.URLParameterKey.plotType, "" + y.plotType),
+                            //e.set(o.URLParameterKey.font, "" + y.font);
+                            k(e);
+                        },
+                        [F, y]
+                      ),
+                      n.useEffect(
+                        function () {
+                          return history.replaceState(null, "", "" + A);
+                        },
+                        [A]
+                      );
                     //Kに光度曲線のReact要素を作成する。
                     var K = n.createElement(s.LightCurve, {
                       preferences: y,
@@ -10155,10 +10255,38 @@ function ajax() {
                           n.createElement(
                             "article",
                             null,
-                            //光度曲線のPlot typeやBin sizeを設定する場所(今はとりあえずいらない)
+                            //光度曲線のPlot typeやBin sizeを設定する場所
                             n.createElement(
                               "ul",
                               null,
+                              n.createElement(
+                                "li",
+                                null,
+                                n.createElement(
+                                  "label",
+                                  {
+                                    htmlFor: o.URLParameterKey.binSize,
+                                  },
+                                  "Bin size: "
+                                ),
+                                n.createElement("input", {
+                                  id: o.URLParameterKey.binSize,
+                                  type: "number",
+                                  min: 1, //min: 0.00001, //下限の値
+                                  max: 100, //max: 0.001, //上限の値
+                                  defaultValue: c.default_binsize,
+                                  onChange: function (e) {
+                                    console.log(y.binSize);
+                                    //工事中
+                                    T({
+                                      binSize: c.filterBinSize(
+                                        e.currentTarget.value * (1 / 86400)
+                                      ), //ここでbinsizeの変更をグラフに反映している？
+                                    });
+                                  },
+                                }),
+                                "s"
+                              ),
                               n.createElement.apply(
                                 void 0,
                                 [
@@ -10172,7 +10300,6 @@ function ajax() {
                                       {
                                         className: p.default.radioLabel,
                                       },
-                                      //plottypeの切り替え機能の追加
                                       n.createElement("input", {
                                         type: "radio",
                                         name: o.URLParameterKey.plotType,
@@ -10193,6 +10320,7 @@ function ajax() {
                                 )
                               )
                             ),
+        
                             //光度曲線全体をfigureタグの中に入れている
                             n.createElement("figure", null, K)
                           )
@@ -10214,6 +10342,7 @@ function ajax() {
                 "../Errors": "hK5F",
               },
             ],
+        
             "TC+f": [
               function (require, module, exports) {
                 module.exports = {};
@@ -10262,6 +10391,8 @@ function ajax() {
           ["vqK8"],
           null
         );
+        
+        
                   
         
         
