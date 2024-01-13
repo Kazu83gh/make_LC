@@ -8564,7 +8564,7 @@ function ajax() {
                   i = require("./isAvailablePlotType"),
                   n = require("@maxi-js/date-tools");
                 ////引数eを受け取りそれを数値に変換（1〜100の範囲、デフォルトは20）
-                exports.default_binsize = 10; //binsizeの初期設定
+                exports.default_binsize = 1; //binsizeの初期設定
                 (exports.filterBinSize = function (e) {
                   let num = 1 / 86400; //桁数限定したものを格納。
                   return t.clamp(
@@ -8591,7 +8591,7 @@ function ajax() {
                     return i;
                   }),
                   (exports.filterPlotType = function (t) {
-                    return i.isAvailablePlotType(t) ? t : e.PlotType.Line;
+                    return i.isAvailablePlotType(t) ? t : e.PlotType.Point;
                   }),
                   // (exports.filterFont = function (t) {
                   //   return a.isAvailableFont(t) ? t : e.Font.sans;
