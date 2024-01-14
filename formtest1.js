@@ -1,36 +1,138 @@
-let dict_LCdata = [
-  // [1250121600, 0.040581, 0.021283],
-  // [1250208000, -0.02832, 0.017064],
-  // [1250294400, 0.010407, 0.016655],
-  // [1250380800, 0.006743, 0.017407],
-  [976454043, 1, 1.0],
-  [976454044, 1, 1.0],
-  [976454046, 1, 1.0],
-  [976454047, 1, 1.0],
-  [976454051, 1, 1.0],
-  [976454056, 1, 1.0],
-  [976454057, 1, 1.0],
-  [976454058, 2, 1.4142135623730951],
-  [976454059, 2, 1.4142135623730951],
-  [976454060, 2, 1.4142135623730951],
-  [976454064, 1, 1.0],
-  [976454065, 2, 1.4142135623730951],
-  [976454066, 1, 1.0],
-  [976454068, 5, 2.23606797749979],
-  [976454070, 1, 1.0],
-  [976454071, 2, 1.4142135623730951],
-  [976454072, 1, 1.0],
-  [976454073, 2, 1.4142135623730951],
-  [976454075, 2, 1.4142135623730951],
-  [976454076, 1, 1.0],
-  [976454077, 4, 2.0],
-  [976454078, 1, 1.0],
-  [976454079, 2, 1.4142135623730951],
-  [976454080, 1, 1.0],
-  [976454081, 3, 1.7320508075688772],
-  [976454082, 2, 1.4142135623730951],
-  [976454083, 4, 2.0],
+let test_data = [
+  976454002, 1, 976454003, 1, 976454005, 1, 976454007, 2, 976454009, 1,
+  976454010, 2, 976454013, 1, 976454014, 2, 976454016, 1, 976454017, 1,
+  976454018, 1, 976454020, 1, 976454021, 2, 976454022, 1, 976454043, 1,
+  976454044, 1, 976454046, 1, 976454047, 1, 976454051, 1, 976454056, 1,
+  976454057, 1, 976454058, 2, 976454059, 2, 976454060, 2, 976454064, 1,
+  976454065, 2, 976454066, 1, 976454068, 5, 976454070, 1, 976454071, 2,
+  976454072, 1, 976454073, 2, 976454075, 2, 976454076, 1, 976454077, 4,
+  976454078, 1, 976454079, 2, 976454080, 1, 976454081, 3, 976454082, 2,
+  976454083, 4, 976454084, 2, 976454085, 1, 976454086, 1, 976454087, 1,
+  976454088, 1, 976454091, 1, 976454093, 1, 976454094, 2, 976454095, 1,
+  976454096, 1, 976454097, 1, 976454098, 2, 976454099, 1, 976454100, 1,
+  976454105, 3, 976454106, 2, 976454107, 1, 976454110, 1, 976454114, 1,
+  976454115, 1, 976454116, 2, 976454117, 3, 976454121, 2, 976454124, 1,
+  976454125, 2, 976454128, 1, 976454129, 2, 976454130, 4, 976454131, 1,
+  976454132, 2, 976454134, 3, 976454135, 1, 976454136, 3, 976454138, 1,
+  976454140, 1, 976454142, 1, 976454143, 1, 976454144, 2, 976454146, 1,
+  976454147, 3, 976454150, 1, 976459504, 1, 976459508, 2, 976459509, 1,
+  976459510, 1, 976459511, 2, 976459512, 1, 976459513, 1, 976459514, 1,
+  976459515, 2, 976459516, 2, 976459527, 1, 976459528, 1, 976459529, 1,
+  976459531, 4, 976459532, 1, 976459533, 3, 976459534, 1, 976459535, 2,
+  976459536, 2, 976459547, 1, 976459548, 2, 976459549, 1, 976459550, 2,
+  976459551, 2, 976459552, 3, 976459554, 1, 976459555, 2, 976459558, 2,
+  976459559, 1, 976459561, 1, 976459565, 1, 976459567, 3, 976459568, 1,
+  976459570, 3, 976459572, 1, 976459573, 1, 976459574, 2, 976459575, 1,
+  976459577, 1, 976459578, 2, 976459579, 1, 976459581, 1, 976459582, 1,
+  976459583, 1, 976459584, 2, 976459585, 1, 976459586, 2, 976459587, 2,
+  976459588, 1, 976459589, 2, 976459591, 1, 976459592, 2, 976459594, 1,
+  976459595, 2, 976459597, 2, 976459600, 2, 976459601, 2, 976459602, 4,
+  976459604, 2, 976459617, 2, 976459618, 1, 976459621, 1, 976459622, 4,
+  976459623, 1, 976459624, 1, 976459627, 2, 976459629, 1, 976459630, 2,
+  976459631, 1, 976459632, 2, 976459633, 4, 976459635, 1, 976459636, 1,
+  976459637, 1, 976459639, 2, 976459640, 1, 976459641, 1, 976459642, 2,
+  976459646, 1, 976459647, 1, 976465047, 2, 976465050, 1, 976465052, 2,
+  976465053, 2, 976465054, 3, 976465055, 2, 976465056, 1, 976465057, 1,
+  976465058, 2, 976465061, 1, 976465062, 1, 976465063, 2, 976465064, 1,
+  976465066, 1, 976465068, 1, 976465069, 1, 976465070, 2, 976465071, 1,
+  976465072, 3, 976465073, 4, 976465074, 1, 976465075, 1, 976465076, 3,
+  976465087, 1, 976465092, 2, 976465093, 3, 976465094, 1, 976465095, 1,
+  976465096, 1, 976465097, 3, 976465098, 1, 976465099, 2, 976465100, 1,
+  976465101, 1, 976465102, 1, 976465103, 2, 976465104, 2, 976465105, 1,
+  976465106, 2, 976465107, 1, 976465109, 2, 976465110, 2, 976465111, 2,
+  976465113, 2, 976465114, 2, 976465116, 1, 976465117, 2, 976465118, 1,
+  976465119, 4, 976465120, 1, 976465121, 2, 976465122, 2, 976465123, 1,
+  976465126, 2, 976465127, 1, 976465130, 1, 976465133, 1, 976465134, 3,
+  976470526, 1, 976470527, 1, 976470530, 1, 976470532, 1, 976470533, 1,
+  976470534, 1, 976470535, 1, 976470537, 2, 976470538, 4, 976470539, 1,
+  976470540, 4, 976470541, 2, 976470542, 1, 976470543, 1, 976470544, 1,
+  976470545, 1, 976470546, 2, 976470547, 1, 976470549, 1, 976470550, 2,
+  976470551, 1, 976470552, 2, 976470553, 5, 976470554, 2, 976470556, 3,
+  976470557, 2, 976470558, 1, 976470559, 2, 976470561, 2, 976470562, 1,
+  976470564, 1, 976470565, 1, 976470567, 1, 976470568, 1, 976470569, 3,
+  976470571, 2, 976470572, 1, 976470573, 2, 976470574, 1, 976470576, 2,
+  976470577, 1, 976470580, 1, 976470582, 2, 976470584, 1, 976470585, 1,
+  976470588, 2, 976470591, 1, 976470592, 2, 976470594, 2, 976470596, 2,
+  976470597, 1, 976470598, 1, 976470600, 1, 976470601, 1, 976470602, 1,
+  976470603, 1, 976470607, 1, 976470608, 4, 976470610, 1, 976470614, 3,
+  976470615, 1, 976470616, 3, 976470617, 1, 976470618, 1, 976470619, 4,
+  976470623, 3, 976470625, 1, 976470626, 2, 976470627, 2, 976470629, 1,
+  976470630, 1, 976470631, 1, 976470632, 1, 976470634, 2, 976470635, 2,
+  976470637, 2, 976470638, 1, 976470639, 1, 976470640, 1, 976470641, 4,
+  976470642, 1, 976470643, 1, 976470644, 1, 976470647, 2, 976470648, 1,
+  976470650, 2, 976470651, 2, 976470652, 2, 976470653, 1, 976470654, 1,
+  976470655, 2, 976470657, 2, 976470658, 1, 976470660, 2, 976470661, 1,
+  976470662, 1, 976470663, 1, 976470664, 1, 976470666, 1, 976470667, 1,
+  976470669, 2, 976476038, 2, 976476039, 2, 976476040, 1, 976476041, 2,
+  976476042, 2, 976476043, 1, 976476044, 3, 976476046, 2, 976476048, 1,
+  976476049, 1, 976476053, 1, 976476054, 1, 976476056, 2, 976476057, 2,
+  976476058, 1, 976476059, 3, 976476060, 1, 976476061, 3, 976476062, 3,
+  976476064, 2, 976476065, 1, 976476066, 2, 976476067, 2, 976476068, 2,
+  976476070, 1, 976476071, 4, 976476073, 1, 976476074, 1, 976476075, 1,
+  976476076, 1, 976476078, 5, 976476079, 2, 976476082, 1, 976476083, 2,
+  976476084, 2, 976476085, 2, 976476087, 1, 976476089, 1, 976476090, 1,
+  976476091, 1, 976476092, 1, 976476093, 2, 976476094, 1, 976476096, 2,
+  976476097, 2, 976476098, 2, 976476099, 1, 976476102, 1, 976476104, 1,
+  976476105, 1, 976476106, 2, 976476107, 1, 976476108, 1, 976476109, 2,
+  976476110, 3, 976476111, 3, 976476112, 4, 976476114, 1, 976476115, 2,
+  976476116, 1, 976476117, 1, 976476118, 4, 976476119, 2, 976476120, 4,
+  976476121, 2, 976476122, 3, 976476123, 1, 976476124, 3, 976476126, 1,
+  976476127, 5, 976476128, 1, 976476129, 2, 976476131, 2, 976476132, 2,
+  976476133, 2, 976476134, 2, 976476135, 1, 976476138, 1, 976476139, 1,
+  976476144, 1, 976476145, 1, 976476146, 3, 976476147, 3, 976476148, 5,
+  976476149, 4, 976476150, 1, 976476151, 1, 976476152, 1, 976476154, 3,
+  976476155, 5, 976476156, 2, 976476157, 2, 976476158, 3, 976476159, 5,
 ];
+
+//LCdataの作成
+let create_LCdata = function (test_LCdata) {
+  let array = [];
+  let array1 = [];
+  let i;
+
+  for (i = 1; i < test_LCdata.length + 1; i++) {
+    if (i % 2 != 0) {
+      array1.push(test_LCdata[i - 1]);
+      array1.push(test_LCdata[i]);
+      array1.push(Math.sqrt(test_LCdata[i]));
+    } else {
+      array.push(array1);
+      array1 = [];
+    }
+  }
+  return array;
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//各グラフを一つのまとまりとして再び配列に格納する。
+let graph_Summarize = function (data) {
+  let i;
+  let array = [];
+  let graph_data = [];
+
+  //92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
+  for (i = 0; i < data.length - 1; i++) {
+    if (Math.abs(data[i][0] - data[i + 1][0]) < 4000) {
+      array.push(data[i]);
+    } else {
+      graph_data.push(array);
+      array = [];
+    }
+  }
+  graph_data.push(array); //最後のarrayを代入。
+
+  return graph_data;
+};
+
+let dict_LCdata = create_LCdata(test_data);
+let graph_data = graph_Summarize(dict_LCdata);
+let scale_change = true;
+let graph_scale_change = [0, 0];
+
+console.log(graph_data);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //dict_LCdataの形
 //[時間, 黒線bandを構成するデータ, 赤線bandを構成するデータ, 緑線bandを構成するデータ, 青線bandを構成するデータ]
 
@@ -7839,14 +7941,10 @@ ParcelRequire = (function (e, r, t, n) {
             (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
             // (e.font = "font");
           })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
-          /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
           (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)), //表示範囲のスタート地点、データから1時間前から表示開始
           (exports.endMJD = data_day.judgeMJD(
             dict_LCdata[dict_LCdata.length - 1][0] + 3600
           )), //表示範囲の終了地点、最後のデータから1時間後まで表示する。
-          //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
           //ページのタイトルを表示
           // (exports.pageTitle = "MAXI GSC Data Viewer"),
           (exports.pageTitle = "光度曲線テスト"),
@@ -8363,7 +8461,6 @@ ParcelRequire = (function (e, r, t, n) {
                     (a[y] = Math.max(a[y], d + A)),
                     t.push(b);
               }
-              console.log(n[0]); //minとmax//工事中
               return (
                 (M = r[0][0]),
                 (B = r[r.length - 1][0]),
@@ -8486,6 +8583,10 @@ ParcelRequire = (function (e, r, t, n) {
           r = require("./constants"),
           i = require("./isAvailablePlotType"),
           n = require("@maxi-js/date-tools");
+        exports.test = [
+          r.epochMJD, //初期表示の開始時刻
+          r.endMJD, //初期表示の終了時刻
+        ];
         ////引数eを受け取りそれを数値に変換（1〜100の範囲、デフォルトは20）
         exports.default_binsize = 1; //binsizeの初期設定
         (exports.filterBinSize = function (e) {
@@ -8497,10 +8598,8 @@ ParcelRequire = (function (e, r, t, n) {
           );
         }),
           (exports.filterMJDRange = function (e) {
-            var i = [
-              r.epochMJD, //初期表示の開始時刻
-              r.endMJD, //初期表示の終了時刻
-            ];
+            var i = exports.test;
+
             if ("string" == typeof e) {
               var a = e.match(/\d+(\.\d+)?/g);
               a &&
@@ -8770,15 +8869,60 @@ ParcelRequire = (function (e, r, t, n) {
             m = function (e) {
               return c + (e / n) * s;
             };
+          ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          //カーソルの位置がどのデータに近いかを判定;
+          let cursor_position = function (data, cursor_x) {
+            let i, array_num; //array_numは配列内で最小の値が入っている場所。
+            let dptc = [];
+
+            //カーソルの位置のdptcと各データの中央のdptcの差を代入。
+            for (i = 0; i < data.length; i++) {
+              dptc.push(
+                Math.abs(
+                  t.mjdToDptc(data[i][Math.round(data[i].length / 2)][0]) -
+                    cursor_x
+                )
+              );
+            }
+            console.log(dptc);
+
+            //データの中央の時間からカーソルが200秒未満の距離でクリックされたらなら、配列の番号をarray_numに格納。そうでない時はnull。
+            array_num =
+              dptc[dptc.indexOf(Math.min(...dptc))] < 200
+                ? dptc.indexOf(Math.min(...dptc))
+                : (array_num = null);
+
+            return array_num;
+          };
+
+          //ダブルクリックした時に呼ばれる。
+          document.ondblclick = function () {
+            let graph_num = cursor_position(graph_data, t.mjdToDptc(m(i.x)));
+
+            if (!scale_change && event.target.id == "can_zoom") {
+              graph_scale_change[0] = 0;
+              graph_scale_change[1] = 0;
+              scale_change = true;
+            } else if (
+              graph_num != null &&
+              scale_change &&
+              event.target.id == "can_zoom"
+            ) {
+              graph_scale_change[0] = graph_data[graph_num][0][0] - 20 / 86400;
+              graph_scale_change[1] =
+                graph_data[graph_num][graph_data[graph_num].length - 1][0] +
+                20 / 86400;
+              scale_change = false;
+            }
+          };
+
+          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
           let date = new Date(t.mjdToDptc(m(i.x)) * 1000 - 32400000); //new Dateの()内について、表示はUTCなので9時間引かなければいけない。
           let Hour = ("00" + date.getHours()).slice(-2); //時間
           let Minute = ("00" + date.getMinutes()).slice(-2); //分
           let Second = ("00" + date.getSeconds()).slice(-2); //秒
-
-          //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
           //縦線の作成
           return e.createElement(
@@ -8786,6 +8930,7 @@ ParcelRequire = (function (e, r, t, n) {
             null,
             e.createElement("path", {
               d: "M" + (a + i.x) + ",1V" + (l - 1),
+              id: "can_zoom",
               stroke: r.Color.black,
               opacity: 0.3,
             }),
@@ -9189,6 +9334,7 @@ ParcelRequire = (function (e, r, t, n) {
           }),
           (exports.getDateTicks = function (e, n, s) {
             var a = n.getTime() - e.getTime(); //現時刻からデータ時刻の差
+
             return a < 1e3
               ? exports.getMillisecondsTicks(e, n, s)
               : a < 2 * t
@@ -9248,6 +9394,7 @@ ParcelRequire = (function (e, r, t, n) {
             p = o.lineHeight,
             T = t.getTicks(c, s, k / 200), //横軸下部のMJDの設定
             v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200); //横軸上部のdptcの設定
+
           if (!T || !v) return null;
           var j = k / (s - c),
             y = function (e) {
@@ -9275,6 +9422,7 @@ ParcelRequire = (function (e, r, t, n) {
                   T.sub
                     .map(function (e, t) {
                       var i = (t - T.stepOffset) % T.step == 0;
+
                       return (
                         "M" +
                         y(e) +
@@ -9510,12 +9658,14 @@ ParcelRequire = (function (e, r, t, n) {
                   M.push(
                     e.createElement("path", {
                       key: t.PlotType.Line + "-error",
+                      id: "can_zoom",
                       d: D.join(""),
                       fill: E,
                       opacity: 0.2,
                     }),
                     e.createElement("path", {
                       key: t.PlotType.Line,
+                      id: "can_zoom",
                       d: "M" + X.slice(1),
                       stroke: E,
                     })
@@ -9526,6 +9676,7 @@ ParcelRequire = (function (e, r, t, n) {
               M.push(
                 e.createElement("path", {
                   key: t.PlotType.Point,
+                  id: "can_zoom",
                   d: x.bins
                     //eには色々計算されたデータが入っている。
                     .map(function (e) {
@@ -9612,6 +9763,7 @@ ParcelRequire = (function (e, r, t, n) {
                 var v = o.length * r + b,
                   y = p.top + d * (v + 1) + p.gap * v,
                   M = y - d;
+
                 m.push(
                   t.createElement(a.Area, {
                     key: v,
@@ -9697,6 +9849,13 @@ ParcelRequire = (function (e, r, t, n) {
               };
         }),
           (exports.LightCurve = function (e) {
+            let h = t.useState(e.preferences.mjdRange);
+
+            //graph_scale_changeにMJDrangeが入ったら、そのMJDrangeに固定する。
+            if (graph_scale_change[0] != 0) {
+              h[0] = [graph_scale_change[0], graph_scale_change[1]];
+            }
+
             var u = t.useRef(null),
               s = t.useState(0.94 * window.innerWidth),
               a = s[0],
@@ -9706,7 +9865,6 @@ ParcelRequire = (function (e, r, t, n) {
               f = v[0],
               m = v[1],
               d = a - c.left - c.right,
-              h = t.useState(e.preferences.mjdRange),
               g = h[0],
               p = h[1],
               E = t.useState(null),
@@ -9743,6 +9901,7 @@ ParcelRequire = (function (e, r, t, n) {
                       Range: g,
                     });
                   }, 800);
+
                   return function () {
                     return clearTimeout(t);
                   };
@@ -9773,7 +9932,6 @@ ParcelRequire = (function (e, r, t, n) {
               t.useEffect(
                 function () {
                   var e = u.current;
-
                   if (e) {
                     var t = 0,
                       n = 0,
@@ -9830,6 +9988,7 @@ ParcelRequire = (function (e, r, t, n) {
                       o = function i(r) {
                         var o = r.touches.item(0),
                           u = r.touches.item(1);
+
                         if (o && u) {
                           r.preventDefault();
                           var s = e.getBoundingClientRect().left + c.left,
@@ -9882,6 +10041,7 @@ ParcelRequire = (function (e, r, t, n) {
                             );
                         }
                       };
+
                     return (
                       e.addEventListener("wheel", i),
                       e.addEventListener("mousedown", r),
@@ -9907,7 +10067,9 @@ ParcelRequire = (function (e, r, t, n) {
               //svgの設定
               t.createElement(
                 "svg",
+
                 {
+                  id: "can_zoom",
                   width: a,
                   height: w + 10,
                   className: n.default.svg,
@@ -10043,7 +10205,7 @@ ParcelRequire = (function (e, r, t, n) {
           h = e(require("../../util/catalog")),
           p = t(require("./style.css")),
           g = require("../Errors");
-        (exports.getInitialSelectedObjects = function () {
+        exports.getInitialSelectedObjects = function () {
           var e = location.pathname.match(/^\/objects\/([^\/]+)$/),
             t = [];
 
@@ -10055,200 +10217,196 @@ ParcelRequire = (function (e, r, t, n) {
             0 === t.length && t.push(h.firstObjectId),
             t
           );
-        }),
-          (exports.App = function () {
-            var e = n.useReducer(function (e, t) {
-                return e.concat(t);
-              }, []),
-              t = e[0],
-              E = e[1],
-              //サイトのURLに表示する項目(binsizeとplottype以外はとりあえずいらない)
-              b = n.useReducer(function (e, t) {
-                return {
-                  binSize: c.filterBinSize(t.binSize || e.binSize),
-                  //mjdRange: c.filterMJDRange(t.mjdRange || e.mjdRange),
-                  plotType: c.filterPlotType(t.plotType || e.plotType),
-                  //font: c.filterFont(t.font || e.font),
-                };
-              }, c.getDefaultPreferences(new URLSearchParams(location.search))),
-              //b[0]にplottypeの情報が入っている。
-              y = b[0],
-              v = b[1],
-              //サイトのURLに表示する項目(binsizeとplottype以外はとりあえずいらない)
-              S = n.useReducer(function (e, t) {
-                return {
-                  binSize: t.binSize || e.binSize,
-                  //mjdRange: t.mjdRange || e.mjdRange, //データのMJDと現時刻のMJD
-                  plotType: t.plotType || e.plotType,
-                  //font: t.font || e.font,
-                };
-              }, c.getDefaultPreferences(new URLSearchParams(location.search))),
-              R = S[0],
-              T = S[1],
-              j = n.useState(!1),
-              L = j[0],
-              z = j[1],
-              P = n.useState(""),
-              C = P[0],
-              q = P[1],
-              w = n.useState(exports.getInitialSelectedObjects()),
-              F = w[0],
-              U = w[1],
-              //サイトのURL名作成
-              x = n.useReducer(function (e, t) {
-                return new URL("?" + t, e.protocol + "//" + e.host);
-              }, new URL(location.href)),
-              A = x[0],
-              k = x[1],
-              _ = i.useCache({
-                keys: F,
-                getter: l.getLightCurveData,
-                onError: E,
-              }),
-              O = i.useCache({
-                keys: F,
-                getter: function (e) {
-                  var t = dict_LCdata; /*_.get(e)とりあえず今は直接入れる。*/
-                  //console.log(t ? a.getRollingAverage(t, y.binSize) : null);
+        };
+        exports.App = function () {
+          var e = n.useReducer(function (e, t) {
+              return e.concat(t);
+            }, []),
+            t = e[0],
+            E = e[1],
+            //サイトのURLに表示する項目(binsizeとplottype以外はとりあえずいらない)
+            b = n.useReducer(function (e, t) {
+              return {
+                binSize: c.filterBinSize(t.binSize || e.binSize),
+                //mjdRange: c.filterMJDRange(t.mjdRange || e.mjdRange),
+                plotType: c.filterPlotType(t.plotType || e.plotType),
+                //font: c.filterFont(t.font || e.font),
+              };
+            }, c.getDefaultPreferences(new URLSearchParams(location.search))),
+            //b[0]にplottypeの情報が入っている。
+            y = b[0],
+            v = b[1],
+            //サイトのURLに表示する項目(binsizeとplottype以外はとりあえずいらない)
+            S = n.useReducer(function (e, t) {
+              return {
+                binSize: t.binSize || e.binSize,
+                //mjdRange: t.mjdRange || e.mjdRange, //データのMJDと現時刻のMJD
+                plotType: t.plotType || e.plotType,
+                //font: t.font || e.font,
+              };
+            }, c.getDefaultPreferences(new URLSearchParams(location.search))),
+            R = S[0],
+            T = S[1],
+            j = n.useState(!1),
+            L = j[0],
+            z = j[1],
+            P = n.useState(""),
+            C = P[0],
+            q = P[1],
+            w = n.useState(exports.getInitialSelectedObjects()),
+            F = w[0],
+            U = w[1],
+            //サイトのURL名作成
+            x = n.useReducer(function (e, t) {
+              return new URL("?" + t, e.protocol + "//" + e.host);
+            }, new URL(location.href)),
+            A = x[0],
+            k = x[1],
+            _ = i.useCache({
+              keys: F,
+              getter: l.getLightCurveData,
+              onError: E,
+            }),
+            O = i.useCache({
+              keys: F,
+              getter: function (e) {
+                var t = dict_LCdata; /*_.get(e)とりあえず今は直接入れる。*/
 
-                  return t ? a.getRollingAverage(t, y.binSize) : null;
-                },
-                onError: E,
-                dependencies: [y.binSize, _],
-              });
-
-            //plottypeを変更を実行する部分
+                return t ? a.getRollingAverage(t, y.binSize) : null;
+              },
+              onError: E,
+              dependencies: [y.binSize, _],
+            });
+          //plottypeを変更を実行する部分
+          n.useEffect(
+            function () {
+              var e = setTimeout(function () {
+                return v(R);
+              }, 300);
+              return function () {
+                return clearTimeout(e);
+              };
+            },
+            [R]
+          ),
+            //サイトのURLに実際にセットする箇所(binsizeとplottype以外はとりあえずいらない)
             n.useEffect(
               function () {
-                var e = setTimeout(function () {
-                  return v(R);
-                }, 300);
-                return function () {
-                  return clearTimeout(e);
-                };
+                var e = new URLSearchParams();
+                // e.set(
+                //   o.URLParameterKey.mjdRange,
+                //   y.mjdRange
+                //     .map(function (e) {
+                //       return e.toFixed(0);
+                //     })
+                //     .join("-")
+                // ),
+                e.set(o.URLParameterKey.binSize, "" + y.binSize),
+                  e.set(o.URLParameterKey.plotType, "" + y.plotType),
+                  //e.set(o.URLParameterKey.font, "" + y.font);
+                  k(e);
               },
-              [R]
+              [F, y]
             ),
-              //サイトのURLに実際にセットする箇所(binsizeとplottype以外はとりあえずいらない)
-              n.useEffect(
-                function () {
-                  var e = new URLSearchParams();
-                  // e.set(
-                  //   o.URLParameterKey.mjdRange,
-                  //   y.mjdRange
-                  //     .map(function (e) {
-                  //       return e.toFixed(0);
-                  //     })
-                  //     .join("-")
-                  // ),
-                  e.set(o.URLParameterKey.binSize, "" + y.binSize),
-                    e.set(o.URLParameterKey.plotType, "" + y.plotType),
-                    //e.set(o.URLParameterKey.font, "" + y.font);
-                    k(e);
-                },
-                [F, y]
-              ),
-              n.useEffect(
-                function () {
-                  return history.replaceState(null, "", "" + A);
-                },
-                [A]
-              );
-            //Kに光度曲線のReact要素を作成する。
-            var K = n.createElement(s.LightCurve, {
-              preferences: y,
-              objects: 0 < F.length ? F : [""],
-              cache: O,
-              setPreferences: v,
-            });
-            return L
-              ? n.createElement(n.Fragment, null, K)
-              : n.createElement(
-                  n.Fragment,
+            n.useEffect(
+              function () {
+                return history.replaceState(null, "", "" + A);
+              },
+              [A]
+            );
+          //Kに光度曲線のReact要素を作成する。
+          var K = n.createElement(s.LightCurve, {
+            preferences: y,
+            objects: 0 < F.length ? F : [""],
+            cache: O,
+            setPreferences: v,
+          });
+          return L
+            ? n.createElement(n.Fragment, null, K)
+            : n.createElement(
+                n.Fragment,
+                null,
+                n.createElement(
+                  "header",
                   null,
                   n.createElement(
-                    "header",
-                    null,
-                    n.createElement(
-                      "h1",
-                      null /*{className: 'Title'}*/,
-                      o.pageTitle
-                    )
-                  ),
+                    "h1",
+                    null /*{className: 'Title'}*/,
+                    o.pageTitle
+                  )
+                ),
+                n.createElement(
+                  "article",
+                  null,
+                  //光度曲線のPlot typeやBin sizeを設定する場所
                   n.createElement(
-                    "article",
+                    "ul",
                     null,
-                    //光度曲線のPlot typeやBin sizeを設定する場所
                     n.createElement(
-                      "ul",
+                      "li",
                       null,
                       n.createElement(
+                        "label",
+                        {
+                          htmlFor: o.URLParameterKey.binSize,
+                        },
+                        "Bin size: "
+                      ),
+                      n.createElement("input", {
+                        id: o.URLParameterKey.binSize,
+                        type: "number",
+                        min: 1, //min: 0.00001, //下限の値
+                        max: 100, //max: 0.001, //上限の値
+                        defaultValue: c.default_binsize,
+                        onChange: function (e) {
+                          T({
+                            binSize: c.filterBinSize(
+                              e.currentTarget.value * (1 / 86400)
+                            ), //ここでbinsizeの変更をグラフに反映している？
+                          });
+                        },
+                      }),
+                      "s"
+                    ),
+                    n.createElement.apply(
+                      void 0,
+                      [
                         "li",
                         null,
-                        n.createElement(
-                          "label",
-                          {
-                            htmlFor: o.URLParameterKey.binSize,
-                          },
-                          "Bin size: "
-                        ),
-                        n.createElement("input", {
-                          id: o.URLParameterKey.binSize,
-                          type: "number",
-                          min: 1, //min: 0.00001, //下限の値
-                          max: 100, //max: 0.001, //上限の値
-                          defaultValue: c.default_binsize,
-                          onChange: function (e) {
-                            console.log(y.binSize);
-                            //工事中
-                            T({
-                              binSize: c.filterBinSize(
-                                e.currentTarget.value * (1 / 86400)
-                              ), //ここでbinsizeの変更をグラフに反映している？
-                            });
-                          },
-                        }),
-                        "s"
-                      ),
-                      n.createElement.apply(
-                        void 0,
-                        [
-                          "li",
-                          null,
-                          n.createElement("label", null, "Plot type: "),
-                        ].concat(
-                          o.AvailablePlotTypes.map(function (e) {
-                            return n.createElement(
-                              "label",
-                              {
-                                className: p.default.radioLabel,
+                        n.createElement("label", null, "Plot type: "),
+                      ].concat(
+                        o.AvailablePlotTypes.map(function (e) {
+                          return n.createElement(
+                            "label",
+                            {
+                              className: p.default.radioLabel,
+                            },
+                            n.createElement("input", {
+                              type: "radio",
+                              name: o.URLParameterKey.plotType,
+                              value: e,
+                              defaultChecked: y.plotType === e,
+                              onChange: function (e) {
+                                T({
+                                  plotType: c.filterPlotType(
+                                    e.currentTarget.value
+                                  ),
+                                });
                               },
-                              n.createElement("input", {
-                                type: "radio",
-                                name: o.URLParameterKey.plotType,
-                                value: e,
-                                defaultChecked: y.plotType === e,
-                                onChange: function (e) {
-                                  T({
-                                    plotType: c.filterPlotType(
-                                      e.currentTarget.value
-                                    ),
-                                  });
-                                },
-                              }),
-                              o.AvailablePlotTypeTitles[e]
-                            );
-                          }),
-                          ["."]
-                        )
+                            }),
+                            o.AvailablePlotTypeTitles[e]
+                          );
+                        }),
+                        ["."]
                       )
-                    ),
+                    )
+                  ),
 
-                    //光度曲線全体をfigureタグの中に入れている
-                    n.createElement("figure", null, K)
-                  )
-                );
-          });
+                  //光度曲線全体をfigureタグの中に入れている
+                  n.createElement("figure", null, K)
+                )
+              );
+        };
       },
       {
         react: "SAdv",
