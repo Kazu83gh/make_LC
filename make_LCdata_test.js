@@ -27,8 +27,8 @@ function ajax() {
 		    console.log(LCdata);	//受信したLCdataはjson(文字列)
 		    console.log('----  rnd ----')
       
-        var pre_LCdata = JSON.parse(LCdata); //jsonを辞書型にする
-       
+        var recive_LCdata = JSON.parse(LCdata); //jsonデータの受け取り・jsonを辞書型にする
+
         //dict_LCdata(辞書)からエネルギー毎(要素)を取り出す
         // var all_LCdata = dict_LCdata["All"];
         // var high_LCdata = dict_LCdata["High"];
@@ -39,9 +39,28 @@ function ajax() {
         // console.log("High", high_LCdata);
         // console.log("Med", med_LCdata);
         // console.log("Low", low_LCdata);
-        
+
+        all_LCdata = recive_LCdata.All;
+        high_LCdata = recive_LCdata.High;
+        med_LCdata = recive_LCdata.Med;
+        low_LCdata = recive_LCdata.Low;
+
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        
+
+        // var select_LCdata = all_LCdata;
+        // select_LCdata.createElement("input", {
+        //   type: "radio",
+        //   name: select_LCdata,
+        //   value: all_LCdata,
+        //   defaultChecked: all_LCdata,
+        //   onChange: function (e) {
+        //     e = e + 1
+        //     return ;
+        //   },
+        // }),
+        pre_LCdata = all_LCdata;
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         //GPStimeからJStime(UTC)に変換とか色々
         //9時間分(ミリ秒)
         let nine_Hours = 32400000;
@@ -74,16 +93,12 @@ function ajax() {
 
         //GPStimeをJStime(UTC)変換
         let GPStime_to_JStime = function (data) {
-          let time = data * 1000 + num - nine_Hours;
+          let time = data * 1000 + num; //- nine_Hours;
         
           return time;
         };
 
-        let test = GPStime_to_JStime(976516502);//nine_Hours / 1000); //GPStimeから9時間後の時間を想定(秒)、(1980年1月6日 9:00:00)
-        console.log(test)//new Date(test)); // UTC表示
-
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-
         //[dptc, count, dptc, count, ...]の形から
         //[[dptc, count, √count], [dptc, count, √count], ...]の形に変換
         let Tolist = function (pre_LCdata) {
@@ -109,7 +124,10 @@ function ajax() {
         dict_LCdata = Tolist(pre_LCdata);
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        
+        //基準となるdptc(赤線)を描画するのに使用
+        let dptczero_to_GPStime = GPStime_to_JStime(send.dptc_zero) / 1000;
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         //dict_LCdataをもとに光度曲線の描画
         ParcelRequire = (function (e, r, t, n) {
           var i,
@@ -8306,10 +8324,10 @@ function ajax() {
                     let judge =
                       0.5 / 86400 +
                       (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS;
-        
+  
                     return judge;
                   })(
-                    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+                  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
                     //8301行目のbにデータを返す。
                     (exports.getRollingAverageBin = function (t, e, n, r) {
@@ -9295,6 +9313,7 @@ function ajax() {
                   r = require("../../util/getDateTicks"),
                   a = require("@maxi-js/date-tools"),
                   dptc = require("./Cursor"),
+                  redline = require("../../util/getRollingAverage"),
                   l = function (e, t, i, n, r) {
                     return n || r
                       ? function (a) {
@@ -9324,7 +9343,9 @@ function ajax() {
                     x = o.dateToString,
                     p = o.lineHeight,
                     T = t.getTicks(c, s, k / 200), //横軸下部のMJDの設定
-                    v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200); //横軸上部のdptcの設定
+                    v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),
+                    redline_mjd = redline.judgeMJD(dptczero_to_GPStime);
+                  //横軸上部のdptcの設定
                   if (!T || !v) return null;
                   var j = k / (s - c),
                     y = function (e) {
@@ -9338,7 +9359,6 @@ function ajax() {
                           v.sub
                             .map(function (e, t) {
                               var i = (t - v.stepOffset) % v.step == 0;
-        
                               return (
                                 "M" +
                                 y(a.dateToMJD(e)) +
@@ -9365,6 +9385,27 @@ function ajax() {
                         ].join(""),
                         stroke: i.Color.black,
                       }),
+                      //基準となるdptc(赤線)を描画
+                      e.createElement("path", {
+                        d: [ 
+                          "M" +
+                          y(redline_mjd) + 
+                          ", 1v" +
+                          "221.6"
+                        ],
+                        stroke: i.Color.red,
+                      }),
+                      e.createElement(
+                        "text",
+                        {
+                          x: y(redline_mjd) + 2,
+                          y: 10,
+                          fontSize: "80%",
+                          fill: i.Color.black,
+                          opacity: 0.7,
+                        },
+                        "trigger"
+                      ),
                     ];
                   if (h) {
                     var S = v.main.length - 1;
@@ -9453,6 +9494,7 @@ function ajax() {
                 "../../util/getDateTicks": "vCs1",
                 "./Cursor": "0fuv",
                 "@maxi-js/date-tools": "LNvY",
+                "../../util/getRollingAverage": "WubQ",
               },
             ],
             //縦の目盛りや横の目盛りをここで合体させてタグに追加
@@ -10391,11 +10433,7 @@ function ajax() {
           ["vqK8"],
           null
         );
-        
-        
-                  
-        
-        
+      
       })
       .fail(() => {
         console.log("failed");
