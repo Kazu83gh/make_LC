@@ -139,7 +139,32 @@ let graph_scale_change = [0, 0],
   time_over = 230, //制限時間
   timer = null,
   clickCount = 0, //クリックされた回数。
+  delete_child = 0, //子要素を何個削除したかカウントする変数。
   Re_Reload = 0; //再リロードするか
+
+let Create_LightCurve = function () {
+  setTimeout(function () {
+    if (graph_scale_change[0] != 0) {
+      console.log("来た");
+      if (Re_Reload == 0) {
+        Re_Reload += 1;
+
+        all_program();
+      }
+      //初期化部分
+      Re_Reload = 0;
+      graph_scale_change[0] = 0;
+      graph_scale_change[1] = 0;
+    } else if (graph_scale_change[0] == 0 && shift_event) {
+      console.log("シフト押されてる");
+      shift_event = false;
+      all_program();
+    }
+  }, 540);
+};
+
+// 文字の色変える変数。
+let font_color = "red";
 
 console.log(dict_LCdata);
 console.log(graph_data);
@@ -8963,6 +8988,8 @@ let all_program = function () {
           exports.__esModule = !0;
           var e = require("react"),
             t = require("@maxi-js/date-tools"),
+            reima = require("../LightCurve/index"),
+            rino = require("./Body"),
             r = require("../../types");
           exports.Cursor = e.memo(function (o) {
             var i = o.cursor,
@@ -8980,7 +9007,7 @@ let all_program = function () {
               };
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            //カーソルの位置がどのデータに近いかを判定; 発表
+            //カーソルの位置がどのデータに近いかを判定;
             let cursor_position = function (data, cursor_time) {
               let i, array_num; //array_numは配列内で最小の値が入っている場所。
               let dptc = [];
@@ -9006,8 +9033,8 @@ let all_program = function () {
 
               return array_num;
             };
-            //制限時間内にクリックした回数でダブルクリックかを変数
 
+            //制限時間内にクリックした回数でダブルクリックかを判定
             //ダブルクリックした時に呼ばれる。工事中
             document.onclick = function () {
               clickCount += 1;
@@ -9029,60 +9056,66 @@ let all_program = function () {
                       graph_scale_change[0] == 0 &&
                       target_id
                     ) {
-                      //初期表示範囲から選択したデータの時間を比べ差異を格納。
+                      //初期表示範囲から選択したデータの時間を比べ差異を格納。発表
                       let start_MJDRange =
                         graph_data[graph_num][0][0] -
-                        20 / 86400 -
+                        10 / 86400 -
                         initial_MJDRange[0];
                       let end_MJDRange =
                         initial_MJDRange[1] -
                         (graph_data[graph_num][
                           graph_data[graph_num].length - 1
                         ][0] +
-                          20 / 86400);
+                          10 / 86400);
 
                       //shiftを押されていた場合初期表示画面に戻す。
                       if (shift_on) {
                         start_MJDRange = 0;
                         end_MJDRange = 0;
+                        // graph_scale_change = [0, 0];
                         shift_event = true;
                       }
 
                       //拡大時一回すべて消した後変更したものを表示。
                       function child_remove() {
                         setTimeout(function () {
-                          //一旦bodyタグの子要素すべて削除
-                          while (exports.parent.lastChild) {
+                          //初めはすべて削除するが２回目からは一つ目の子要素のみ削除する。
+                          while (exports.parent.firstChild) {
                             exports.parent.removeChild(
-                              exports.parent.lastChild
+                              exports.parent.firstChild
                             );
+                            if (delete_child == 4) {
+                              break;
+                            }
+                            delete_child++;
                           }
+
                           graph_scale_change[0] = start_MJDRange;
                           graph_scale_change[1] = end_MJDRange;
-                          console.log("削除完了");
+                          console.log("子要素 削除完了");
                         }, 540); //この処理を540ミリ秒経過後に完了させる。
+
+                        //ダブルクリックされたときに新しい光度曲線を作成して、画面に表示
+                        Create_LightCurve();
 
                         //divタグ内の要素がもしもなくなってしまった時の対処。
                         setTimeout(function () {
-                          if (exports.parent.childElementCount == 0) {
+                          if (exports.parent.childElementCount != 1) {
                             //一旦全部初期化
-                            // console.log(exports.parent.child);
                             console.log("表示エラーが発生しました");
-                            // console.log(graph_scale_change);
+
                             graph_scale_change = [0, 0];
                             all_program(); //一旦初期表示画面にする。
-                            //なぜか。。。
-                          } else if (exports.parent.childElementCount != 0) {
+                          } else if (exports.parent.childElementCount == 1) {
                             console.log("正常に動作している。");
                             console.log(graph_scale_change);
                           }
-                        }, 600); //この判定は600ミリ秒経過後に実行される。
+                        }, 700); //この判定は700ミリ秒経過後に実行される。
                       }
-
                       child_remove();
                     }
                   } else {
-                    console.log(clickCount);
+                    console.log("クリックカウント" + clickCount);
                   }
                   //変数をリセット
                   timer = null;
@@ -9138,6 +9171,8 @@ let all_program = function () {
           react: "SAdv",
           "@maxi-js/date-tools": "LNvY",
           "../../types": "ZHoe",
+          "./Body": "mWuP",
+          "../LightCurve/index": "JLzx",
         },
       ],
       "4NfL": [
@@ -9703,43 +9738,43 @@ let all_program = function () {
                 )
               );
             }
-            if (b) {
-              var C = T.main.length - 1;
-              T.main.forEach(function (t, n) {
-                var r = y(t);
-                //光度曲線下部の数字を表示。
-                E.push(
-                  e.createElement(
-                    "text",
-                    {
-                      key: "mjdLabel-" + n,
-                      x: r,
-                      y: f + 4,
-                      fill: i.Color.black,
-                      dominantBaseline: "hanging",
-                      textAnchor: "middle",
-                      ref: l(r, u, m, 0 === n, n === C),
-                    },
-                    (g || T.toString)(t)
-                  )
-                );
-              });
-              //光度曲線右下にMJDを表示
-              E.push(
-                e.createElement(
-                  "text",
-                  {
-                    key: "mjdLabel",
-                    x: y(s),
-                    y: f + 4 + p,
-                    fill: i.Color.black,
-                    dominantBaseline: "hanging",
-                    textAnchor: "end",
-                  },
-                  "dptc"
-                )
-              );
-            }
+            // if (b) {
+            //   var C = T.main.length - 1;
+            //   T.main.forEach(function (t, n) {
+            //     var r = y(t);
+            //     //光度曲線下部の数字を表示。
+            //     E.push(
+            //       e.createElement(
+            //         "text",
+            //         {
+            //           key: "mjdLabel-" + n,
+            //           x: r,
+            //           y: f + 4,
+            //           fill: i.Color.black,
+            //           dominantBaseline: "hanging",
+            //           textAnchor: "middle",
+            //           ref: l(r, u, m, 0 === n, n === C),
+            //         },
+            //         (g || T.toString)(t)
+            //       )
+            //     );
+            //   });
+            //   //光度曲線右下にMJDを表示
+            //   E.push(
+            //     e.createElement(
+            //       "text",
+            //       {
+            //         key: "mjdLabel",
+            //         x: y(s),
+            //         y: f + 4 + p,
+            //         fill: i.Color.black,
+            //         dominantBaseline: "hanging",
+            //         textAnchor: "end",
+            //       },
+            //       "dptc"
+            //     )
+            //   );
+            // }
             return e.createElement("g", {
               children: E,
             });
@@ -10090,26 +10125,10 @@ let all_program = function () {
                 };
           }),
             (exports.LightCurve = function (e) {
-              let h = t.useState(e.preferences.mjdRange);
-              h[0][0] += graph_scale_change[0];
-              h[0][1] -= graph_scale_change[1];
+              exports.h = t.useState(e.preferences.mjdRange);
 
-              //graph_scale_changeにMJDrangeが入ったら、そのMJDrangeに固定する。発表
-              if (graph_scale_change[0] != 0) {
-                //工事中
-                if (Re_Reload == 0) {
-                  Re_Reload += 1;
-
-                  all_program();
-                }
-                //初期化部分
-                Re_Reload = 0;
-                graph_scale_change[0] = 0;
-                graph_scale_change[1] = 0;
-              } else if (graph_scale_change[0] == 0 && shift_event) {
-                shift_event = false;
-                all_program();
-              }
+              exports.h[0][0] += graph_scale_change[0];
+              exports.h[0][1] -= graph_scale_change[1];
 
               var u = t.useRef(null),
                 s = t.useState(0.94 * window.innerWidth),
@@ -10120,8 +10139,8 @@ let all_program = function () {
                 f = v[0],
                 m = v[1],
                 d = a - c.left - c.right,
-                g = h[0],
-                p = h[1],
+                g = exports.h[0],
+                p = exports.h[1],
                 E = t.useState(null),
                 L = E[0],
                 b = E[1],
@@ -10607,6 +10626,7 @@ let all_program = function () {
                           "label",
                           {
                             htmlFor: o.URLParameterKey.binSize,
+                            style: { color: font_color },
                           },
                           "Bin size: "
                         ),
@@ -10625,22 +10645,28 @@ let all_program = function () {
                             choice_binsize = e.currentTarget.value;
                           },
                         }),
-                        "s"
+                        n.createElement("font", { color: font_color }, "s")
                       ),
                       n.createElement.apply(
                         void 0,
                         [
                           "li",
                           null,
-                          n.createElement("label", null, "Plot type: "),
+                          n.createElement(
+                            "label",
+                            { style: { color: font_color } }, //文字色変更
+                            "Plot type: "
+                          ),
                         ].concat(
                           o.AvailablePlotTypes.map(function (e) {
                             return n.createElement(
                               "label",
                               {
                                 className: p.default.radioLabel,
+                                style: { color: font_color },
                               },
                               n.createElement("input", {
+                                //工事中
                                 type: "radio",
                                 name: o.URLParameterKey.plotType,
                                 value: e,
