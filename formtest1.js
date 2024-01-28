@@ -8988,8 +8988,6 @@ let all_program = function () {
           exports.__esModule = !0;
           var e = require("react"),
             t = require("@maxi-js/date-tools"),
-            reima = require("../LightCurve/index"),
-            rino = require("./Body"),
             r = require("../../types");
           exports.Cursor = e.memo(function (o) {
             var i = o.cursor,
@@ -9171,8 +9169,6 @@ let all_program = function () {
           react: "SAdv",
           "@maxi-js/date-tools": "LNvY",
           "../../types": "ZHoe",
-          "./Body": "mWuP",
-          "../LightCurve/index": "JLzx",
         },
       ],
       "4NfL": [
