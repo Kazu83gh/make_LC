@@ -164,7 +164,7 @@ let Create_LightCurve = function () {
 };
 
 // 文字の色変える変数。
-let font_color = "red";
+let font_color = "black";
 
 console.log(dict_LCdata);
 console.log(graph_data);
