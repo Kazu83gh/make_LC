@@ -1,20 +1,25 @@
-function ajax() {
+function createLC() {
+  //document.getElementById('e').innerHTML = '';
+  var divs = document.getElementsByTagName('div');
+  for(var i = 0; i < divs.length; i++){
+    divs[i].innerHTML = '';
+  };
+
   console.log('-----program start-----');
 
   var send = {
-    dptc_zero: 976454075, //a[0],
-    timescale: "1day", //a[1],
-    energy: "High", //a[2],
-    ra: 113.32613, //x,
-    dec: -26.190498, //y,
+    // dptc_zero: 976454075, //a[0],
+    // timescale: "1day", //a[1],
+    // energy: "High", //a[2],
+    // ra: 113.32613, //x,
+    // dec: -26.190498, //y,
 
-    // dptc_zero: 976516509,
-    // timescale: "1day", 
-    // energy: "High", 
-    // ra: 245.19737,
-    // dec: -16.29694, 
+    dptc_zero: 976516509,
+    timescale: "1day", 
+    energy: "High", 
+    ra: 245.19737,
+    dec: -16.29694,
   };
-
 // サーバーとのajax通信(非同期通信)
   $.ajax({
       url: "/cgi-bin/make_LCdata.py", //どこへ
@@ -29,36 +34,26 @@ function ajax() {
       
         var recive_LCdata = JSON.parse(LCdata); //jsonデータの受け取り・jsonを辞書型にする
 
-        //dict_LCdata(辞書)からエネルギー毎(要素)を取り出す
-        // var all_LCdata = dict_LCdata["All"];
-        // var high_LCdata = dict_LCdata["High"];
-        // var med_LCdata = dict_LCdata["Med"];
-        // var low_LCdata = dict_LCdata["Low"];
-        
-        // console.log("All", all_LCdata);
-        // console.log("High", high_LCdata);
-        // console.log("Med", med_LCdata);
-        // console.log("Low", low_LCdata);
+        var all_LCdata = recive_LCdata.All;
+        var high_LCdata = recive_LCdata.High;
+        var med_LCdata = recive_LCdata.Med;
+        var low_LCdata = recive_LCdata.Low;
 
-        all_LCdata = recive_LCdata.All;
-        high_LCdata = recive_LCdata.High;
-        med_LCdata = recive_LCdata.Med;
-        low_LCdata = recive_LCdata.Low;
-
-        ////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        // var select_LCdata = all_LCdata;
-        // select_LCdata.createElement("input", {
-        //   type: "radio",
-        //   name: select_LCdata,
-        //   value: all_LCdata,
-        //   defaultChecked: all_LCdata,
-        //   onChange: function (e) {
-        //     e = e + 1
-        //     return ;
-        //   },
-        // }),
-        pre_LCdata = all_LCdata;
+        var pre_LCdata = all_LCdata;
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        //変数
+        let num = [];
+            graph_scale_change = [0, 0],
+            choice_binsize = 1, //設定されているbinsizeを格納
+            choice_PlotType = "point", //設定されているPlotTypeを格納
+            initial_MJDRange = [], //初期の表示範囲を格納
+            shift_event = false, //shiftが押されているか。
+            width_error_anti = 0, //エラー防止処置
+            time_over = 230, //制限時間
+            timer = null,
+            clickCount = 0, //クリックされた回数。
+            delete_child = 0, //子要素を何個削除したかカウントする変数。
+            Re_Reload = 0; //再リロードするか
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         //GPStimeからJStime(UTC)に変換とか色々
@@ -89,11 +84,11 @@ function ajax() {
         let MJD_ms = MJD.getTime() - nine_Hours;
 
         //JStimeとGPStimeの差
-        let num = ten_years + five_days;
+        let diff_num = ten_years + five_days;
 
         //GPStimeをJStime(UTC)変換
         let GPStime_to_JStime = function (data) {
-          let time = data * 1000 + num; //- nine_Hours;
+          let time = data * 1000 + diff_num; 
         
           return time;
         };
@@ -127,6 +122,57 @@ function ajax() {
         //基準となるdptc(赤線)を描画するのに使用
         let dptczero_to_GPStime = GPStime_to_JStime(send.dptc_zero) / 1000;
 
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //各グラフを一つのまとまりとして再び配列に格納する。
+        let graph_Summarize = function (data) {
+          let i;
+          let array = [];
+          let graph_data = [];
+        
+          //92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
+          for (i = 0; i < data.length - 1; i++) {
+            if (Math.abs(data[i][0] - data[i + 1][0]) < 2000) {
+              array.push(data[i]);
+            } else {
+              graph_data.push(array);
+              array = [];
+            }
+          }
+          graph_data.push(array); //最後のarrayを格納。
+        
+          return graph_data;
+        };
+
+        console.log(graph_Summarize(dict_LCdata));
+
+        //形を整えたデータを格納する変数。
+        let graph_data = graph_Summarize(dict_LCdata);
+
+        let Create_LightCurve = function () {
+          setTimeout(function () {
+            if (graph_scale_change[0] != 0) {
+              console.log("来た");
+              if (Re_Reload == 0) {
+                Re_Reload += 1;
+        
+                abcmart();
+              }
+              //初期化部分
+              Re_Reload = 0;
+              graph_scale_change[0] = 0;
+              graph_scale_change[1] = 0;
+            } else if (graph_scale_change[0] == 0 && shift_event) {
+              console.log("シフト押されてる");
+              shift_event = false;
+              abcmart();
+            }
+          }, 540);
+        };
+
+
+        function abcmart() {
+          dict_LCdata = Tolist(pre_LCdata);
+          graph_data = graph_Summarize(dict_LCdata);
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         //dict_LCdataをもとに光度曲線の描画
         ParcelRequire = (function (e, r, t, n) {
@@ -1309,7 +1355,7 @@ function ajax() {
                 function L(e) {
                   return e[M] || null;
                 }
-                //------------------------------追加して部分------------------------------
+                //------------------------------追加した部分------------------------------
                 function A(e) {
                   do {
                     e = e.return;
@@ -1323,7 +1369,7 @@ function ajax() {
                     for (t = 0; t < n.length; t++) W(n[t], "bubbled", e);
                   }
                 }
-                //------------------------------追加して部分------------------------------
+                //------------------------------追加した部分------------------------------
                 function j(e, t, n) {
                   e &&
                     n &&
@@ -7814,13 +7860,13 @@ function ajax() {
                     (e[s.$10_20] = "10-20keV"),
                     e)),
                   (function (e) {
-                    (e.black = "#000000"),
+                    (e.white = "#ffffff"),
                       (e.red = "#ff0000"),
                       (e.green = "#007f00"),
                       (e.blue = "#0000ff");
                   })((p = exports.Color || (exports.Color = {}))),
                   (exports.BandColors =
-                    (((o = {})[s.$2_20] = p.black),
+                    (((o = {})[s.$2_20] = p.white),
                     (o[s.$2_4] = p.red),
                     (o[s.$4_10] = p.green),
                     (o[s.$10_20] = p.blue),
@@ -7941,14 +7987,15 @@ function ajax() {
                     dict_LCdata[dict_LCdata.length - 1][0] + 3600
                   )), //表示範囲の終了地点、最後のデータから1時間後まで表示する。
                   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
+                  (initial_MJDRange = [exports.epochMJD, exports.endMJD]),
                   //ページのタイトルを表示
-                  // (exports.pageTitle = "MAXI GSC Data Viewer"),
-                  (exports.pageTitle = "光度曲線テスト"),
+                  //(exports.pageTitle = "MAXI GSC Data Viewer"),
+                  //(exports.pageTitle = "光度曲線テスト"),
                   (exports.mainTickSize = 10),
                   (exports.subTickSize = 5),
+                  //光度曲線の表示範囲（縦）
                   (exports.getAreaHeight = function () {
-                    return 0.2 * window.innerHeight;
+                    return 160; //0.2 * window.innerHeight;
                   }),
                   (exports.bandCount = 1) /*4*/;
               },
@@ -8860,12 +8907,136 @@ function ajax() {
                     c = o.minMJD,
                     u = o.maxMJD,
                     x = o.lineHeight;
+                  exports.parent = document.getElementById("body");
                   if (!i) return null;
                   var s = u - c,
                     m = function (e) {
                       return c + (e / n) * s;
                     };
-        
+
+                  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+                  //カーソルの位置がどのデータに近いかを判定;
+                  let cursor_position = function (data, cursor_time) {
+                    let i, array_num; //array_numは配列内で最小の値が入っている場所。
+                    let dptc = [];
+                  
+                    //カーソルの位置のdptcと各データの中央のdptcの差を代入。
+                    for (i = 0; i < data.length; i++) {
+                      dptc.push(
+                        Math.abs(
+                          t.mjdToDptc(data[i][Math.round(data[i].length / 2)][0]) -
+                            cursor_time
+                        )
+                      );
+                    }
+                    console.log(dptc);
+                  
+                    //データの中央の時間からカーソルが200秒未満の距離でクリックされたらなら、配列の番号をarray_numに格納。そうでない時はnull。
+                    array_num =
+                      dptc[dptc.indexOf(Math.min(...dptc))] < 200
+                        ? dptc.indexOf(Math.min(...dptc))
+                        : (array_num = null);
+                  
+                    console.log(array_num);
+                  
+                    return array_num;
+                  };
+                
+                  //制限時間内にクリックした回数でダブルクリックかを判定
+                  //ダブルクリックした時に呼ばれる。工事中
+                  document.onclick = function () {
+                    clickCount += 1;
+                    //下の関数の中では使えないため外に出す。
+                    let target_id = event.target.id == "can_zoom" ? true : false;
+                    let shift_on = event.shiftKey ? true : false;
+                  
+                    if (clickCount === 1) {
+                      //タイマーをセットし、タイマー終了時にカウントに応じた処理をする
+                      timer = setTimeout(() => {
+                        if (clickCount === 2) {
+                          let graph_num = cursor_position(
+                            graph_data,
+                            t.mjdToDptc(m(i.x))
+                          );
+                          
+                          if (
+                            graph_num != null &&
+                            graph_scale_change[0] == 0 &&
+                            target_id
+                          ) {
+                            //初期表示範囲から選択したデータの時間を比べ差異を格納。発表
+                            let start_MJDRange =
+                              graph_data[graph_num][0][0] -
+                              10 / 86400 -
+                              initial_MJDRange[0];
+                            let end_MJDRange =
+                              initial_MJDRange[1] -
+                              (graph_data[graph_num][
+                                graph_data[graph_num].length - 1
+                              ][0] +
+                                10 / 86400);
+                            
+                            //shiftを押されていた場合初期表示画面に戻す。
+                            if (shift_on) {
+                              start_MJDRange = 0;
+                              end_MJDRange = 0;
+                              // graph_scale_change = [0, 0];
+                              shift_event = true;
+                            }
+                          
+                            //拡大時一回すべて消した後変更したものを表示。
+                            function child_remove() {
+                              setTimeout(function () {
+                                // 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する。
+                                while (exports.parent.firstChild) {
+                                  exports.parent.removeChild(
+                                    exports.parent.firstChild
+                                  );
+                                  // 全て消えてしまう場合はこのへんを修正
+                                  // if (delete_child == 6) {
+                                  //   break;
+                                  // }
+                                  // delete_child++;
+                                }
+                              
+                                graph_scale_change[0] = start_MJDRange;
+                                graph_scale_change[1] = end_MJDRange;
+                                console.log("子要素 削除完了");
+                                console.log(graph_data[graph_num]);
+                              }, 540); //この処理を540ミリ秒経過後に完了させる。
+                            
+                              //ダブルクリックされたときに新しい光度曲線を作成して、画面に表示
+                              Create_LightCurve();
+                            
+                              //divタグ内の要素がもしもなくなってしまった時の対処。
+                              setTimeout(function () {
+                                if (exports.parent.childElementCount != 1) {
+                                  //一旦全部初期化
+                                  console.log("表示エラーが発生しました");
+                                
+                                  graph_scale_change = [0, 0];
+                                  abcmart(); //一旦初期表示画面にする。
+                                } else if (exports.parent.childElementCount == 1) {
+                                  console.log("正常に動作している。");
+                                  console.log(graph_scale_change);
+                                }
+                              }, 700); //この判定は700ミリ秒経過後に実行される。
+                            }
+                            child_remove();
+                          }
+                        } else {
+                          console.log("クリックカウント" + clickCount);
+                        }
+                        //変数をリセット
+                        timer = null;
+                        clickCount = 0;
+                      }, time_over);
+                    }
+                  };
+                
+                  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+                
                   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
                   let date = new Date(t.mjdToDptc(m(i.x)) * 1000 - 32400000); //new Dateの()内について、表示はUTCなので9時間引かなければいけない。
@@ -8881,7 +9052,8 @@ function ajax() {
                     null,
                     e.createElement("path", {
                       d: "M" + (a + i.x) + ",1V" + (l - 1),
-                      stroke: r.Color.black,
+                      id: "can_zoom",
+                      stroke: r.Color.white,
                       opacity: 0.3,
                     }),
                     e.createElement(
@@ -8890,7 +9062,7 @@ function ajax() {
                         x: a + i.x + 2,
                         y: i.y - 2 - 0.9 * x,
                         fontSize: "80%",
-                        fill: r.Color.black,
+                        fill: r.Color.white,
                         opacity: 0.7,
                       },
                       t.mjdToDptc(m(i.x)) + " " + "dptc"
@@ -8901,7 +9073,7 @@ function ajax() {
                         x: a + i.x + 2,
                         y: i.y - 2,
                         fontSize: "80%",
-                        fill: r.Color.black,
+                        fill: r.Color.white,
                         opacity: 0.7,
                       },
                       Hour + ":" + Minute + ":" + Second + " " + "Time" //カーソルの場所の時間を表示
@@ -9076,7 +9248,7 @@ function ajax() {
                             );
                           })
                           .join(""),
-                        stroke: i.Color.black,
+                        stroke: i.Color.white,
                       }),
                     ];
                   return (
@@ -9089,7 +9261,7 @@ function ajax() {
                             key: "yLabel-" + r,
                             x: o - 4,
                             y: k(t),
-                            fill: i.Color.black,
+                            fill: i.Color.white,
                             dominantBaseline: "middle",
                             textAnchor: "end",
                           },
@@ -9138,7 +9310,11 @@ function ajax() {
                       min: t.getTime(),
                       max: i.getTime(),
                       toString: function (e) {
-                        return new Date(e).toISOString(); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                        num.push(new Date(e).toISOString().slice(0, -8).slice(0, 10));
+                        return new Date(e).toISOString().slice(0, -1).slice(11, 23) ==
+                          "00:00:00.000"
+                        ? new Date(e).toISOString()
+                        : new Date(e).toISOString().slice(0, -1).slice(11, 23); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                       },
                     };
                   }
@@ -9164,7 +9340,15 @@ function ajax() {
                         min: t.getTime(),
                         max: i.getTime(),
                         toString: function (e) {
-                          return new Date(e).toISOString().slice(0, -5); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                          num.push(
+                            new Date(e).toISOString().slice(0, -8).slice(0, 10)
+                          );
+                          return new Date(e)
+                            .toISOString()
+                            .slice(0, -5)
+                            .slice(11, 19) == "00:00:00"
+                            ? new Date(e).toISOString().slice(0, -5)
+                            : new Date(e).toISOString().slice(0, -5).slice(11, 19); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                         },
                       };
                     }
@@ -9189,7 +9373,15 @@ function ajax() {
                         min: i.getTime(),
                         max: r.getTime(),
                         toString: function (e) {
-                          return new Date(e).toISOString().slice(0, -8); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                          num.push(
+                            new Date(e).toISOString().slice(0, -8).slice(0, 10)
+                          );
+                          return new Date(e)
+                            .toISOString()
+                            .slice(0, -8)
+                            .slice(11, 16) == "00:00"
+                            ? new Date(e).toISOString().slice(0, -8)
+                            : new Date(e).toISOString().slice(0, -8).slice(11, 16); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                         },
                       };
                     }
@@ -9214,7 +9406,16 @@ function ajax() {
                         min: t.getTime(),
                         max: r.getTime(),
                         toString: function (e) {
-                          return new Date(e).toISOString().slice(0, -8); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
+                          num.push(
+                            new Date(e).toISOString().slice(0, -8).slice(0, 10) 
+                          );
+                          // console.log(num);
+                          return new Date(e)
+                            .toISOString()
+                            .slice(0, -8)
+                            .slice(11, 16) == "00:00"
+                            ? new Date(e).toISOString().slice(0, -8)
+                            : new Date(e).toISOString().slice(0, -8).slice(11, 16); //new Date(e).getTime() / 1000; //秒で表示にするために1000で割る。
                         },
                       };
                     }
@@ -9343,9 +9544,9 @@ function ajax() {
                     x = o.dateToString,
                     p = o.lineHeight,
                     T = t.getTicks(c, s, k / 200), //横軸下部のMJDの設定
-                    v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),
-                    redline_mjd = redline.judgeMJD(dptczero_to_GPStime);
-                  //横軸上部のdptcの設定
+                    v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
+                    redline_mjd = redline.judgeMJD(dptczero_to_GPStime),
+                    result = "";
                   if (!T || !v) return null;
                   var j = k / (s - c),
                     y = function (e) {
@@ -9383,25 +9584,25 @@ function ajax() {
                             })
                             .join(""),
                         ].join(""),
-                        stroke: i.Color.black,
+                        stroke: i.Color.white,
                       }),
                       //基準となるdptc(赤線)を描画
                       e.createElement("path", {
                         d: [ 
                           "M" +
                           y(redline_mjd) + 
-                          ", 1v" +
-                          "221.6"
+                          ", 1v225"
                         ],
                         stroke: i.Color.red,
                       }),
+                      //triggerという文字を表示
                       e.createElement(
                         "text",
                         {
                           x: y(redline_mjd) + 2,
                           y: 10,
                           fontSize: "80%",
-                          fill: i.Color.black,
+                          fill: i.Color.white,
                           opacity: 0.7,
                         },
                         "trigger"
@@ -9419,7 +9620,7 @@ function ajax() {
                             key: "dateLabel-" + n,
                             x: r,
                             y: d - 4,
-                            fill: i.Color.black,
+                            fill: i.Color.white,
                             dominantBaseline: "baseline",
                             textAnchor: "middle",
                             ref: l(r, u, m, 0 === n, n === S),
@@ -9436,19 +9637,39 @@ function ajax() {
                             key: "dateLabel",
                             x: y(s),
                             y: d - 4 - p,
-                            fill: i.Color.black,
+                            fill: i.Color.white,
                             dominantBaseline: "baseline",
                             textAnchor: "end",
                           },
                           "UTC"
                         )
                       );
+                    ////////////////////////////////////////////////////////////////////////////////////
+                    //表示されている年月日の中で最頻値の年月日を取得
+                    result = num[Math.round(num.length / 2) - 1];
+                    //初期化
+                    num = [];
+                    ////////////////////////////////////////////////////////////////////////////////////
+                    E.push(
+                      e.createElement(
+                        "text",
+                        {
+                          key: "dateLabel",
+                          x: y(c) + 50,
+                          y: d - 4 - p,
+                          fill: i.Color.white,
+                          dominantBaseline: "baseline",
+                          textAnchor: "end",
+                        },
+                        result
+                      )
+                    );
                   }
                   if (b) {
                     var C = T.main.length - 1;
                     T.main.forEach(function (t, n) {
                       var r = y(t);
-                      //光度曲線下部の数字を表示。
+                      //光度曲線下部（dptc）の数字を表示。
                       E.push(
                         e.createElement(
                           "text",
@@ -9456,7 +9677,7 @@ function ajax() {
                             key: "mjdLabel-" + n,
                             x: r,
                             y: f + 4,
-                            fill: i.Color.black,
+                            fill: i.Color.white,
                             dominantBaseline: "hanging",
                             textAnchor: "middle",
                             ref: l(r, u, m, 0 === n, n === C),
@@ -9473,7 +9694,7 @@ function ajax() {
                           key: "mjdLabel",
                           x: y(s),
                           y: f + 4 + p,
-                          fill: i.Color.black,
+                          fill: i.Color.white,
                           dominantBaseline: "hanging",
                           textAnchor: "end",
                         },
@@ -9537,7 +9758,7 @@ function ajax() {
                         y: c,
                         width: h,
                         height: u,
-                        stroke: t.Color.black,
+                        stroke: t.Color.white,
                       }),
                       //光度曲線の目盛り
                       e.createElement(r.XTicks, {
@@ -9629,12 +9850,14 @@ function ajax() {
                           M.push(
                             e.createElement("path", {
                               key: t.PlotType.Line + "-error",
+                              id: "can_zoom",
                               d: D.join(""),
                               fill: E,
                               opacity: 0.2,
                             }),
                             e.createElement("path", {
                               key: t.PlotType.Line,
+                              id: "can_zoom",
                               d: "M" + X.slice(1),
                               stroke: E,
                             })
@@ -9645,6 +9868,7 @@ function ajax() {
                       M.push(
                         e.createElement("path", {
                           key: t.PlotType.Point,
+                          id: "can_zoom",
                           d: x.bins
                             //eには色々計算されたデータが入っている。
                             .map(function (e) {
@@ -9707,6 +9931,12 @@ function ajax() {
                   a = require("./Area"),
                   n = e(require("../../util/catalog"));
                 exports.Body = t.memo(function (e) {
+                  //widthがもし0になってもエラーにならないように。発表
+                  if (e.svgWidth != 0) {
+                    width_error_anti = e.svgWidth;
+                  } else if (e.svgWidth == 0) {
+                    console.log("widthが0になった");
+                  }
                   var o = e.objects,
                     l = e.cache,
                     u = e.minMJD,
@@ -9816,6 +10046,11 @@ function ajax() {
                       };
                 }),
                   (exports.LightCurve = function (e) {
+                    exports.h = t.useState(e.preferences.mjdRange);
+
+                    exports.h[0][0] += graph_scale_change[0];
+                    exports.h[0][1] -= graph_scale_change[1];
+
                     var u = t.useRef(null),
                       s = t.useState(0.94 * window.innerWidth),
                       a = s[0],
@@ -9825,9 +10060,9 @@ function ajax() {
                       f = v[0],
                       m = v[1],
                       d = a - c.left - c.right,
-                      h = t.useState(e.preferences.mjdRange),
-                      g = h[0],
-                      p = h[1],
+                      // h = t.useState(e.preferences.mjdRange),
+                      g = exports.h[0],
+                      p = exports.h[1],
                       E = t.useState(null),
                       L = E[0],
                       b = E[1],
@@ -10027,6 +10262,7 @@ function ajax() {
                       t.createElement(
                         "svg",
                         {
+                          id: "can_zoom",
                           width: a,
                           height: w + 10,
                           className: n.default.svg,
@@ -10308,9 +10544,9 @@ function ajax() {
                                   "label",
                                   {
                                     htmlFor: o.URLParameterKey.binSize,
+                                    style: {color: "white"},
                                   },
-                                  "Bin size: "
-                                ),
+                                  "Bin size: "),
                                 n.createElement("input", {
                                   id: o.URLParameterKey.binSize,
                                   type: "number",
@@ -10318,8 +10554,6 @@ function ajax() {
                                   max: 100, //max: 0.001, //上限の値
                                   defaultValue: c.default_binsize,
                                   onChange: function (e) {
-                                    console.log(y.binSize);
-                                    //工事中
                                     T({
                                       binSize: c.filterBinSize(
                                         e.currentTarget.value * (1 / 86400)
@@ -10327,20 +10561,31 @@ function ajax() {
                                     });
                                   },
                                 }),
-                                "s"
+                                //sの設定
+                                n.createElement(
+                                  "label", 
+                                  {
+                                    style: {color: "white"}
+                                  },
+                                  "s"),
                               ),
                               n.createElement.apply(
                                 void 0,
                                 [
                                   "li",
                                   null,
-                                  n.createElement("label", null, "Plot type: "),
+                                  n.createElement("label", 
+                                  {
+                                    style: {color: "white"}
+                                  }, 
+                                  "Plot type: "),
                                 ].concat(
                                   o.AvailablePlotTypes.map(function (e) {
                                     return n.createElement(
                                       "label",
                                       {
                                         className: p.default.radioLabel,
+                                        style: {color: "white"},
                                       },
                                       n.createElement("input", {
                                         type: "radio",
@@ -10361,8 +10606,44 @@ function ajax() {
                                   ["."]
                                 )
                               )
+                              ///////////////////////////
+                              //all、medなどの選択
+                              ,
+                              n.createElement("input", {
+                                type: "radio",
+                                name: "dataChoice",
+                                value: "ALL",
+                                defaultChecked: true,
+                                onChange: function (e) {
+                                  if (e.currentTarget.value === "ALL") {
+                                    pre_LCdata = all_LCdata;
+                                  } else if (e.currentTarget.value === "HIGH") {
+                                    pre_LCdata = high_LCdata;
+                                  } else if (e.currentTarget.value === "MED") {
+                                    pre_LCdata = med_LCdata;
+                                  } else if (e.currentTarget.value === "LOW") {
+                                    pre_LCdata = low_LCdata;
+                                  }
+                                }
+                              }),
+                              n.createElement("input", {
+                                type: "radio",
+                                name: "dataChoice",
+                                value: "HIGH",
+                                onChange: function (e) {
+                                  if (e.currentTarget.value === "ALL") {
+                                    pre_LCdata = all_LCdata;
+                                  } else if (e.currentTarget.value === "HIGH") {
+                                    pre_LCdata = high_LCdata;
+                                  } else if (e.currentTarget.value === "MED") {
+                                    pre_LCdata = med_LCdata;
+                                  } else if (e.currentTarget.value === "LOW") {
+                                    pre_LCdata = low_LCdata;
+                                  }
+                                }
+                              }),
+                              ///////////////////////////
                             ),
-        
                             //光度曲線全体をfigureタグの中に入れている
                             n.createElement("figure", null, K)
                           )
@@ -10420,6 +10701,7 @@ function ajax() {
                     var t = document.createElement("link");
                     (t.rel = "stylesheet"), (t.href = e), document.head.appendChild(t);
                   });
+                  document.body.setAttribute("id", "body");
               },
               {
                 react: "SAdv",
@@ -10433,9 +10715,13 @@ function ajax() {
           ["vqK8"],
           null
         );
+        }
+        abcmart();
       
       })
       .fail(() => {
         console.log("failed");
       });
 }
+
+
