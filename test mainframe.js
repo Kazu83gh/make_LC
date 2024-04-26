@@ -105,14 +105,14 @@ async function printLightCurve(x, y)
 	var pathArray = ["M" + String(Math.round(x)) + ",-100", "V1000", "M-100," + String(Math.round(y)), "H1000"];
 	lcPath += pathArray.join(" ");
 
-	//pathのタグのdに反映
+	// pathのタグのdに反映
 	document.getElementById("path0nLightCurve").setAttribute("d", lcPath);
 }
 
 function getImgStatus()
 {
-    orgWidth = document.getElementById("image1").naturalWidth;
-    orgHeight = document.getElementById("image1").naturalHeight; // 高さ
+    orgWidth = document.getElementById("image1").naturalWidth; // オリジナルの幅
+    orgHeight = document.getElementById("image1").naturalHeight; // オリジナルの高さ
 	imgWidth = document.getElementById("image1").width; // 幅
 	imgHeight = document.getElementById("image1").height; // 高さ
 	
@@ -324,7 +324,7 @@ function sarchPoint(sekgin)
 		markerDisp(IX,IY,"y");
 	
 	}else if(pointSta = -1){
-		alert("InputError\nα,l : 0.0 ~ 359.9\nδ,b : -90.0 ~ 90.0");
+		alert("InputError nα,l : 0.0 ~ 359.9 nδ,b : -90.0 ~ 90.0");
 	}else{
 		alert("InputError");
 	}
@@ -459,8 +459,8 @@ function parseCSV(str) {
 	var sortcsvData = new Array();
 
 	for (var i = 0; i < lines.length; i++) {
-		var rep1 = lines[i].replace(/,\"/g,'"');
-		var rep2 = rep1.replace(/\",/g,'"');    
+		var rep1 = lines[i].replace(/, "/g,'"');
+		var rep2 = rep1.replace(/ ",/g,'"');    
 		var cells = rep2.split('"');
 	
 		var Data1 = cells.pop();
@@ -1092,19 +1092,19 @@ function handleCandidate(){
 
 function parseCandidateCSV(str) { //γ線バースト？の候補の座標などが書かれたファイルを配列に収める関数
 	//console.log(str);
-	var lines = str.split(/\n|\r\n|\r/);
+	var lines = str.split(/ n| r n| r/);
 	var csvData = new Array();
 
 	console.log(lines);
 	for (var i = 0; i < lines.length - 1; i++) {
 		console.log('parseCandidateCSV');
-		var array1 = lines[i].split(/,\"/);
+		var array1 = lines[i].split(/, "/);
 		var Data1 = Array();
 		Data1.push(array1.shift());
 		var text1 = array1.shift();
 		console.log(Data1);
 		console.log(text1);
-		var array2 = text1.split(/\",/);
+		var array2 = text1.split(/ ",/);
 		//console.log(array2);
 		Data1.push(array2.shift());
 		//console.log(Data1);
@@ -1452,6 +1452,9 @@ function nearCandidate(mousePositionObject) {
 		nCandidate2 = [td, td].map((value, index) => { td[7] = value[7] + index * 10; return td });
 	}
 
+	console.log('nCandidate2 = ' + nCandidate2);
+	console.log('nCandidate2[0][0] = ' + nCandidate2[0][0] + ',  nnCandidate2[0][1] = ' +  nCandidate2[0][1]);
+
 	if (nCandidate2) {
 		return true;
 	} else {
@@ -1465,19 +1468,18 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 
 	if (diff == "") {
 		// 従来の処理
-		var a = detail.split(/\(|\)|\s|,/g).filter(value => value);
+		var a = detail.split(/ (| )| s|,/g).filter(value => value);
 	} else {
 		// 新しく追加した処理
 		// diffをaに追加
 		a.push(diff);
 
 		// detailの3要素以降をaに追加
-		var detailElements = detail.split(/\(|\)|\s|,/g).filter(value => value);
+		var detailElements = detail.split(/ (| )| s|,/g).filter(value => value);
 		var detailElementsFromThird = detailElements.slice(2); 
 		a = a.concat(detailElementsFromThird);
 	};
 
-	console.log(a);
 	var send = {"dptc_zero" :a[0],
 				"timescale" :a[1],
 				"energy"    :a[2],
@@ -1486,6 +1488,7 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 				"ra" 	   	  :x,
 				"dec" 	  :y
 			   };
+	console.log(send);
 
 
 	//テスト用データ
@@ -1499,12 +1502,12 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 
 	// mousePosition2polar(mousePositionObject);
 
-	console.log('Catadata\ndptc:', send.dptc_zero,' timescale:', send.timescale,
-				//'\nsearch dptc', send.dptc_zero - send.timescale, '~', send.dptc_zero + send.timescale, //文字と数字を足し引きしちゃいかんですよ
-				'\nalpha2, delta2:', alpha2, ',', delta2,
-				'\nra, dec:', send.ra, ',', send.dec, 'PI:', send.energy);
+	console.log('Catadata ndptc:', send.dptc_zero,' timescale:', send.timescale,
+				//' nsearch dptc', send.dptc_zero - send.timescale, '~', send.dptc_zero + send.timescale, //文字と数字を足し引きしちゃいかんですよ
+				' nalpha2, delta2:', alpha2, ',', delta2,
+				' nra, dec:', send.ra, ',', send.dec, 'PI:', send.energy);
 
-    // console.log('testdata\ndptc:', test.dptc_zero,'\ntimescale:', test.timescale, '\nra, dec:', test.ra, ',', test.dec, '\nPI:', test.energy);
+    // console.log('testdata ndptc:', test.dptc_zero,' ntimescale:', test.timescale, ' nra, dec:', test.ra, ',', test.dec, ' nPI:', test.energy);
 	
 	// サーバーとのajax通信(非同期通信)
 	$.ajax({
@@ -1516,11 +1519,11 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 
 			//////////////////////////////////////////////////////////////////
 			//値の確認
-			console.log('nCandidate2= ' + nCandidate2);
-			console.log('nCandidate2[0][1]= ' + nCandidate2[0][1]);
-			console.log('candidateData[0][0]=' + candidateData[0][0]);
-			console.log('candidateData[0][1]=' + candidateData[0][1]);
-			console.log('candidateData[0][2]=' + candidateData[0][2]);
+			// console.log('nCandidate2= ' + nCandidate2);
+			// console.log('nCandidate2[0][1]= ' + nCandidate2[0][1]);
+			// console.log('candidateData[0][0]=' + candidateData[0][0]);
+			// console.log('candidateData[0][1]=' + candidateData[0][1]);
+			// console.log('candidateData[0][2]=' + candidateData[0][2]);
 			//////////////////////////////////////////////////////////////////
 
 		   	console.log(LCdata);	//受信したLCdataはjson(文字列)
