@@ -11,10 +11,10 @@
 var slash = "/";
 //20191214追加
 var gw = 'gw';
-var eventTest = 'event';
+var eventTest = 'event/kafka';
 var dirDef = gw + slash + eventTest + slash; 
 //ここまで
-var t_dirUrl = "/gw/test/"
+var t_dirUrl = "/gw/test/kafka/"
 var teamDef = "team_only/";
 var dirUrl = slash+dirDef;
 var teamUrl =slash+dirDef+teamDef;
@@ -173,6 +173,7 @@ function dirListGet(){ //ajaxでディレクトリ名のテキストファイル
 
     dirAjax = new XMLHttpRequest();
     dirAjax.onreadystatechange = function(){ sortOut() }; 
+    console.log("*********** dirUrl = "+dirUrl)
     dirAjax.open("GET", dirUrl + "list.txt","false");
     dirAjax.send(null);
 
@@ -310,7 +311,7 @@ function splitList(init){ //画像名をエラー領域ごとに配列へと代�
     console.log(imagePlain);
     if(init =="i"){ //初期読み込み時、ディレクトリ変更時
         time_sort("i");
-    }else{　//secondLoad時
+    }else{  //secondLoad時
         time_sort();
     }
 
@@ -1710,7 +1711,7 @@ function eventTestJudge() {//testディレクトリとeventディレクトリの
     if(eTJudge.value == 'event'){//testディレクトリを使う
         eTJudge.value = 'test';
         sLength = 24;
-        eventTest = 'test';
+        eventTest = 'test/kafka';
         dirDef = gw + slash + eventTest + slash;
         dirUrl = slash+dirDef;
         teamUrl =slash+dirDef+teamDef;
@@ -1720,7 +1721,7 @@ function eventTestJudge() {//testディレクトリとeventディレクトリの
         dirNameJudge = 'S';
         eTJudge.value = 'event';
         sLength = 10;
-        eventTest = 'event';
+        eventTest = 'event/kafka';
         dirDef = gw + slash + eventTest + slash;
         dirUrl = slash+dirDef;
         teamUrl =slash+dirDef+teamDef;
@@ -1729,6 +1730,21 @@ function eventTestJudge() {//testディレクトリとeventディレクトリの
     document.getElementById("change_list").value = "more";
 }
 
+// 'popupを表示するまでのdelay time' を変更するHTMLタグ（popupDelay）の設定
+function popupDelayConfig() {
+    delayRange = document.getElementById("popupDelay-range");
+    delayDisplay = document.getElementById("popupDelay-display");
+
+    // 規定値を表示させる
+    delayDisplay.innerText = delayRange.value;
+    console.log(delayDisplay.innerText);
+    // 'delay time が変更された時, 表示されている値を書き換える' という設定を追加する
+    delayRange.addEventListener("input", (e) => {
+        delayDisplay.innerText = e.target.value;
+        console.log(delayDisplay.innerText);
+    })
+}
+window.addEventListener("load", popupDelayConfig); // 設定を即座に反映させる
+
 window.onload = firstLoad(); //サイトが開かれた際に関数firstLoadを呼び出す
 window.onresize = fit(); // ウィンドウの大きさが変更されるとfitを呼び出す,20191203追加
-
