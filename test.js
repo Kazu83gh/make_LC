@@ -148,7 +148,7 @@ function underframe_pro(data, dptc_zero){
       };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
-    
+
     //dict_LCdataをもとに光度曲線の描画
     function createLC() {
       dict_LCdata = Tolist(pre_LCdata);
@@ -1837,7 +1837,7 @@ function underframe_pro(data, dptc_zero){
 					($e.ReactCurrentDispatcher = {
 					  current: null,
 					});
-				  var qe = /^(.*)[\\\/]/,
+				  var qe = /^(.*)[   /]/,
 					Ye = "function" == typeof Symbol && Symbol.for,
 					Xe = Ye ? Symbol.for("react.element") : 60103,
 					Ge = Ye ? Symbol.for("react.portal") : 60106,
@@ -1925,14 +1925,14 @@ function underframe_pro(data, dptc_zero){
 								  l.lineNumber +
 								  ")")
 							  : n && (a = " (created by " + n + ")"),
-							(n = "\n    in " + (r || "Unknown") + a);
+							(n = " n    in " + (r || "Unknown") + a);
 					  }
 					  (t += n), (e = e.return);
 					} while (e);
 					return t;
 				  }
 				  var dt =
-					  /^[:A-Z_a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD][:A-Z_a-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02FF\u0370-\u037D\u037F-\u1FFF\u200C-\u200D\u2070-\u218F\u2C00-\u2FEF\u3001-\uD7FF\uF900-\uFDCF\uFDF0-\uFFFD\-.0-9\u00B7\u0300-\u036F\u203F-\u2040]*$/,
+					  /^[:A-Z_a-z u00C0- u00D6 u00D8- u00F6 u00F8- u02FF u0370- u037D u037F- u1FFF u200C- u200D u2070- u218F u2C00- u2FEF u3001- uD7FF uF900- uFDCF uFDF0- uFFFD][:A-Z_a-z u00C0- u00D6 u00D8- u00F6 u00F8- u02FF u0370- u037D u037F- u1FFF u200C- u200D u2070- u218F u2C00- u2FEF u3001- uD7FF uF900- uFDCF uFDF0- uFFFD -.0-9 u00B7 u0300- u036F u203F- u2040]*$/,
 					pt = Object.prototype.hasOwnProperty,
 					mt = {},
 					ht = {};
@@ -2030,7 +2030,7 @@ function underframe_pro(data, dptc_zero){
 					["rowSpan", "start"].forEach(function (e) {
 					  kt[e] = new bt(e, 5, !1, e.toLowerCase(), null);
 					});
-				  var xt = /[\-:]([a-z])/g;
+				  var xt = /[ -:]([a-z])/g;
 				  function Tt(e) {
 					return e[1].toUpperCase();
 				  }
@@ -6933,7 +6933,7 @@ function underframe_pro(data, dptc_zero){
 								} while (null !== f);
 								f = Error(
 								  (st(s.type) || "A React component") +
-									" suspended while rendering, but no fallback UI was specified.\n\nAdd a <Suspense fallback=...> component higher in the tree to provide a loading indicator or placeholder to display." +
+									" suspended while rendering, but no fallback UI was specified. n nAdd a <Suspense fallback=...> component higher in the tree to provide a loading indicator or placeholder to display." +
 									ft(s)
 								);
 							  }
@@ -8624,7 +8624,7 @@ function underframe_pro(data, dptc_zero){
 						r.endMJD, //初期表示の終了時刻
 					  ];
 					  if ("string" == typeof e) {
-						var a = e.match(/\d+(\.\d+)?/g);
+						var a = e.match(/ d+( . d+)?/g);
 						a &&
 						  2 === a.length &&
 						  ((i[0] = t.clamp(Number(a[0]), i[0], i[1] - 1)),
@@ -8684,13 +8684,13 @@ function underframe_pro(data, dptc_zero){
 				  //   value: !0,
 				  // }),
 				  //   (exports.stringifyTable = function (n) {
-				  //     return "[\n".concat(
+				  //     return "[ n".concat(
 				  //       n
 				  //         .map(function (n) {
 				  //           return "  ".concat(JSON.stringify(n));
 				  //         })
-				  //         .join(",\n"),
-				  //       "\n]"
+				  //         .join(", n"),
+				  //       " n]"
 				  //     );
 				  //   });
 				},
@@ -8703,10 +8703,10 @@ function underframe_pro(data, dptc_zero){
 					value: !0,
 				  }),
 					(exports.isNonEmptyString = function (t) {
-					  return Boolean(t.match(/\S/));
+					  return Boolean(t.match(/ S/));
 					}),
 					(exports.getNonEmptyTrimmedLinesFrom = function (t) {
-					  return t.split(/\s*[\r\n]\s*/).filter(exports.isNonEmptyString);
+					  return t.split(/ s*[ r n] s*/).filter(exports.isNonEmptyString);
 					}),
 					(exports.xsv2js = function (t, s, r) {
 					  return exports.getNonEmptyTrimmedLinesFrom(t).map(function (t) {
@@ -8714,13 +8714,13 @@ function underframe_pro(data, dptc_zero){
 					  });
 					}),
 					(exports.csv2js = function (t, s) {
-					  return exports.xsv2js(t, /\s*,\s*/, s);
+					  return exports.xsv2js(t, / s*, s*/, s);
 					}),
 					(exports.ssv2js = function (t, s) {
-					  return exports.xsv2js(t, /\s+/, s);
+					  return exports.xsv2js(t, / s+/, s);
 					}),
 					(exports.tsv2js = function (t, s) {
-					  return exports.xsv2js(t, "\t", s);
+					  return exports.xsv2js(t, " t", s);
 					});
 				},
 				{},
@@ -10289,7 +10289,7 @@ function underframe_pro(data, dptc_zero){
 				  "use strict";
 				  (exports.__esModule = !0),
 					(exports.normalizeSearchText = function (e) {
-					  return e.replace(/\s+/, "").toLowerCase();
+					  return e.replace(/ s+/, "").toLowerCase();
 					});
 				},
 				{},
@@ -10380,7 +10380,7 @@ function underframe_pro(data, dptc_zero){
 		  
 					return (
 					  e &&
-						(t = e[1].split(/\s*,\s*/).filter(function (e) {
+						(t = e[1].split(/ s*, s*/).filter(function (e) {
 						  return h.map.has(e);
 						})),
 					  0 === t.length && t.push(h.firstObjectId),
@@ -10694,3 +10694,4 @@ function underframe_pro(data, dptc_zero){
           }
           createLC();
         }
+
