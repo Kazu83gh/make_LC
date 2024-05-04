@@ -1,4 +1,4 @@
-function createLC() {
+function all_program() {
   //document.getElementById('e').innerHTML = '';
   var divs = document.getElementsByTagName('div');
   for(var i = 0; i < divs.length; i++){
@@ -8,17 +8,27 @@ function createLC() {
   console.log('-----program start-----');
 
   var send = {
+    // 低カウント
     // dptc_zero: 976454075, //a[0],
     // timescale: "1day", //a[1],
     // energy: "High", //a[2],
     // ra: 113.32613, //x,
     // dec: -26.190498, //y,
 
+    // 高カウント
+    // dptc_zero: 976516509,
+    // timescale: "1day", 
+    // energy: "High", 
+    // ra: 245.19737,
+    // dec: -16.29694,
+
+    // timescale = 10s
     dptc_zero: 976516509,
-    timescale: "1day", 
+    timescale: "10s", 
     energy: "High", 
     ra: 245.19737,
     dec: -16.29694,
+
   };
 // サーバーとのajax通信(非同期通信)
   $.ajax({
@@ -27,6 +37,8 @@ function createLC() {
       data: send, //何を渡すのか
     })
     .done((LCdata) => {
+      console.log('timescale = ' + send.timescale);
+
         //受信が成功した時の処理
         console.log('--- LCDATA ---')
 		    console.log(LCdata);	//受信したLCdataはjson(文字列)
@@ -53,8 +65,10 @@ function createLC() {
             timer = null,
             clickCount = 0, //クリックされた回数。
             delete_child = 0, //子要素を何個削除したかカウントする変数。
-            Re_Reload = 0; //再リロードするか
+            Re_Reload = 0, //再リロードするか
+            selectedEnergyBand = "All"; //デフォルトで表示されるエネルギーバンド
 
+        
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         //GPStimeからJStime(UTC)に変換とか色々
         //9時間分(ミリ秒)
@@ -96,17 +110,17 @@ function createLC() {
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         //[dptc, count, dptc, count, ...]の形から
         //[[dptc, count, √count], [dptc, count, √count], ...]の形に変換
-        let Tolist = function (pre_LCdata) {
+        let Tolist = function (data) {
           let array = [];
           let array1 = [];
 
-          for (let i = 1; i < pre_LCdata.length + 1; i++) {
+          for (let i = 1; i < data.length + 1; i++) {
             if (i % 2 != 0) {
-              // array1.push(pre_LCdata[i - 1]);
-              let convertedValue = GPStime_to_JStime(pre_LCdata[i - 1]) / 1000;
+              // array1.push(data[i - 1]);
+              let convertedValue = GPStime_to_JStime(data[i - 1]) / 1000;
               array1.push(convertedValue);
-              array1.push(pre_LCdata[i]);
-              array1.push(Math.sqrt(pre_LCdata[i]));
+              array1.push(data[i]);
+              array1.push(Math.sqrt(data[i]));
             } else {
               array.push(array1);
               array1 = [];
@@ -114,15 +128,12 @@ function createLC() {
           }
           return array;
         };
-        console.log(Tolist(pre_LCdata));
-
-        dict_LCdata = Tolist(pre_LCdata);
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         //基準となるdptc(赤線)を描画するのに使用
         let dptczero_to_GPStime = GPStime_to_JStime(send.dptc_zero) / 1000;
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         //各グラフを一つのまとまりとして再び配列に格納する。
         let graph_Summarize = function (data) {
           let i;
@@ -143,10 +154,7 @@ function createLC() {
           return graph_data;
         };
 
-        console.log(graph_Summarize(dict_LCdata));
-
-        //形を整えたデータを格納する変数。
-        let graph_data = graph_Summarize(dict_LCdata);
+        gragh_data = graph_Summarize(pre_LCdata);
 
         let Create_LightCurve = function () {
           setTimeout(function () {
@@ -155,7 +163,7 @@ function createLC() {
               if (Re_Reload == 0) {
                 Re_Reload += 1;
         
-                abcmart();
+                createLC(pre_LCdata);
               }
               //初期化部分
               Re_Reload = 0;
@@ -164,16 +172,21 @@ function createLC() {
             } else if (graph_scale_change[0] == 0 && shift_event) {
               console.log("シフト押されてる");
               shift_event = false;
-              abcmart();
+              createLC(pre_LCdata);
             }
           }, 540);
         };
 
-
-        function abcmart() {
-          dict_LCdata = Tolist(pre_LCdata);
-          graph_data = graph_Summarize(dict_LCdata);
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ここから光度曲線の描画
+        createLC(pre_LCdata);
+
+        function createLC(dptc_count_data) {
+          // console.log(dptc_count_data); 
+          dict_LCdata = Tolist(dptc_count_data); 
+          // console.log(Tolist(dptc_count_data));
+          graph_data = graph_Summarize(dict_LCdata);
+          // console.log(graph_Summarize(dict_LCdata));
         //dict_LCdataをもとに光度曲線の描画
         ParcelRequire = (function (e, r, t, n) {
           var i,
@@ -7834,7 +7847,7 @@ function createLC() {
             ZHoe: [
               function (require, module, exports) {
                 "use strict";
-                var e, o, t, n, r, s, p;
+                var e, o, t, n, r, s, p, w;
                 (exports.__esModule = !0),
                   (function (e) {
                     (e.Point = "point"), (e.Line = "line");
@@ -7842,6 +7855,12 @@ function createLC() {
                   // (function (e) {
                   //   (e.sans = "sans"), (e.serif = "serif");
                   // })((n = exports.Font || (exports.Font = {}))),
+                  ////////////////////////////////////////
+                  // エネルギーバンドごとの表示をするために追加
+                  (function (e) {
+                    (e.all = "All"), (e.high = "High"), (e.med = "Med"),(e.low = "Low");
+                  })((w = exports.EnergyBand || (exports.EnergyBand = {}))),
+                  ////////////////////////////////////////
                   (function (e) {
                     (e[(e.Default = 0)] = "Default"),
                       (e[(e.Append = 1)] = "Append"),
@@ -7966,13 +7985,24 @@ function createLC() {
                   //     ? location.protocol + "//" + location.hostname + ":80"
                   //     : location.protocol + "//" + location.host + ":80"
                   // )),
-                  //両plottypeを配列として格納
+                  // 両plottypeを配列として格納
                   (exports.AvailablePlotTypes = [r.PlotType.Point, r.PlotType.Line]),
                   (exports.AvailablePlotTypeTitles =
                     (((e = {})[r.PlotType.Point] = "Point"),
                     (e[r.PlotType.Line] = "Line"),
                     e)),
-                  //フォントの種類を格納している。
+                  // エネルギーバンドごとの表示をするための設定
+                  (exports.AvailableEnergyBands = [r.EnergyBand.all, r.EnergyBand.high, r.EnergyBand.med, r.EnergyBand.low]),
+                  //console.log(exports.AvailableEnergyBands),
+                  // エネルギーバンドタイトル
+                  (exports.AvailableEnergyBandTitles =
+                    (((e = {})[r.EnergyBand.all] = "2-20keV"),
+                    (e[r.EnergyBand.high] = "10-20keV"),
+                    (e[r.EnergyBand.med] = "4-10keV"),
+                    (e[r.EnergyBand.low] = "2-4keV"),
+                    e)),
+                  //console.log(exports.AvailableEnergyBandTitles),
+                  // フォントの種類を格納している。
                   // (exports.AvailableFonts = [r.Font.sans, r.Font.serif]),
                   // (exports.AvailableFontTitles =
                   //   (((o = {})[r.Font.sans] = "Sans"), (o[r.Font.serif] = "Serif"), o)),
@@ -9016,7 +9046,7 @@ function createLC() {
                                   console.log("表示エラーが発生しました");
                                 
                                   graph_scale_change = [0, 0];
-                                  abcmart(); //一旦初期表示画面にする。
+                                  createLC(); //一旦初期表示画面にする。
                                 } else if (exports.parent.childElementCount == 1) {
                                   console.log("正常に動作している。");
                                   console.log(graph_scale_change);
@@ -10609,40 +10639,114 @@ function createLC() {
                               ///////////////////////////
                               //all、medなどの選択
                               ,
-                              n.createElement("input", {
-                                type: "radio",
-                                name: "dataChoice",
-                                value: "ALL",
-                                defaultChecked: true,
-                                onChange: function (e) {
-                                  if (e.currentTarget.value === "ALL") {
-                                    pre_LCdata = all_LCdata;
-                                  } else if (e.currentTarget.value === "HIGH") {
-                                    pre_LCdata = high_LCdata;
-                                  } else if (e.currentTarget.value === "MED") {
-                                    pre_LCdata = med_LCdata;
-                                  } else if (e.currentTarget.value === "LOW") {
-                                    pre_LCdata = low_LCdata;
-                                  }
-                                }
-                              }),
-                              n.createElement("input", {
-                                type: "radio",
-                                name: "dataChoice",
-                                value: "HIGH",
-                                onChange: function (e) {
-                                  if (e.currentTarget.value === "ALL") {
-                                    pre_LCdata = all_LCdata;
-                                  } else if (e.currentTarget.value === "HIGH") {
-                                    pre_LCdata = high_LCdata;
-                                  } else if (e.currentTarget.value === "MED") {
-                                    pre_LCdata = med_LCdata;
-                                  } else if (e.currentTarget.value === "LOW") {
-                                    pre_LCdata = low_LCdata;
-                                  }
-                                }
-                              }),
+                              // n.createElement("input", {
+                              //   type: "radio",
+                              //   name: "dataChoice",
+                              //   value: "ALL",
+                              //   defaultChecked: true,
+                              //   onChange: function (e) {
+                              //     if (e.currentTarget.value === "ALL") {
+                              //       pre_LCdata = all_LCdata;
+                              //       console.log('格納データ = ' + pre_LCdata);
+                              //       createLC();
+                              //     } else if (e.currentTarget.value === "HIGH") {
+                              //       pre_LCdata = high_LCdata;
+                              //       console.log('格納データ = ' + pre_LCdata);
+                              //       createLC();
+                              //     } else if (e.currentTarget.value === "MED") {
+                              //       pre_LCdata = med_LCdata;
+                              //       console.log('格納データ = ' + pre_LCdata);
+                              //       createLC();
+                              //     } else if (e.currentTarget.value === "LOW") {
+                              //       pre_LCdata = low_LCdata;
+                              //       console.log('格納データ = ' + pre_LCdata);
+                              //       createLC();
+                              //     }
+                              //   }
+                              // }),
+                              // n.createElement("input", {
+                              //   type: "radio",
+                              //   name: "dataChoice",
+                              //   value: "HIGH",
+                              //   onChange: function (e) {
+                              //     if (e.currentTarget.value === "ALL") {
+                              //       pre_LCdata = all_LCdata;
+                              //     } else if (e.currentTarget.value === "HIGH") {
+                              //       pre_LCdata = high_LCdata;
+                              //     } else if (e.currentTarget.value === "MED") {
+                              //       pre_LCdata = med_LCdata;
+                              //     } else if (e.currentTarget.value === "LOW") {
+                              //       pre_LCdata = low_LCdata;
+                              //     }
+                              //   }
+                              // }),
                               ///////////////////////////
+                              n.createElement.apply(
+                                void 0,
+                                [
+                                  "li",
+                                  null,
+                                  n.createElement("label", 
+                                  {
+                                    style: {color: "white"}
+                                  }, 
+                                  "Energy band: "),
+                                ].concat(
+                                  o.AvailableEnergyBands.map(function (e) {
+                                    return n.createElement(
+                                      "label",
+                                      {
+                                        className: "EnergyBand_name",
+                                        style: {color: "white"},
+                                      },
+                                      n.createElement("input", {
+                                        type: "radio",
+                                        name: "EnergyBandChice", //設定必要？
+                                        value: e,
+                                        defaultChecked: selectedEnergyBand === e, //要改善
+                                        onChange: function (e) {
+                                          ////////////// 選択肢ごとの処理 //////////////
+                                          // console.log('選択前の格納データ = ' + pre_LCdata)
+                                          console.log('選択されたエネルギーバンド = ' + e.currentTarget.value);
+                                          selectedEnergyBand = e.currentTarget.value;
+                                          switch (selectedEnergyBand) {
+                                            case "All":
+                                              pre_LCdata = all_LCdata;
+                                            case "High":
+                                              pre_LCdata = high_LCdata;
+                                              break;
+                                            case "Med":
+                                              pre_LCdata = med_LCdata;
+                                              break;
+                                            case "Low":
+                                              pre_LCdata = low_LCdata;
+                                              break;
+                                            default:
+                                              // デフォルトの処理
+                                              break;
+                                          }
+                                          // console.log('格納データ = ' + pre_LCdata)
+
+                                          // 光度曲線を消去
+                                          var divs = document.getElementsByTagName('div');
+                                          for(var i = 0; i < divs.length; i++){
+                                            divs[i].innerHTML = '';
+                                          };
+                                          // console.log('光度曲線を消去しました。');
+
+                                          // 光度曲線を再描画
+                                          createLC(pre_LCdata);
+                                          /////////////////////////////////////////////
+                                        },
+                                      }),
+                                      o.AvailableEnergyBandTitles[e],
+                                      // console.log(o.AvailableEnergyBandTitles[e])
+                                    );
+                                  }),
+                                  ["."]
+                                )
+                              )
+                             /////////////////////////////////////////////
                             ),
                             //光度曲線全体をfigureタグの中に入れている
                             n.createElement("figure", null, K)
@@ -10716,7 +10820,7 @@ function createLC() {
           null
         );
         }
-        abcmart();
+        createLC();
       
       })
       .fail(() => {
