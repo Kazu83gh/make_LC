@@ -7854,12 +7854,13 @@ function underframe_pro(data, dptc_zero){
 					  (e.green = "#007f00"),
 					  (e.blue = "#0000ff");
 					})((p = exports.Color || (exports.Color = {}))),
+					// バンドごとに光度曲線の色を設定
 					(exports.BandColors =
-					  (((o = {})[s.$2_20] = p.white),
-					  (o[s.$2_4] = p.red),
-					  (o[s.$4_10] = p.green),
-					  (o[s.$10_20] = p.blue),
-					  o));
+						(((o = {})[w.all] = p.white),
+                    	(o[w.low] = p.red),
+                    	(o[w.med] = p.green),
+                    	(o[w.high] = p.blue),
+						o));
 				},
 				{},
 			  ],
@@ -9744,8 +9745,8 @@ function underframe_pro(data, dptc_zero){
 					  g = a.isFirst,
 					  b = a.isLast,
 					  v = t.BandTitles[o],
-					  //色を設定
-					  E = t.BandColors[o],
+					  //光度曲線の色を設定
+					  E = t.BandColors[selectedEnergyBand],
 					  //L = 0.5 * (c + m),
 					  //おそらくこれを呼べば作られるようになっている。
 					  M = [
