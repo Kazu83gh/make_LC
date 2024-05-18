@@ -22,7 +22,7 @@ function all_program() {
     // ra: 245.19737,
     // dec: -16.29694,
 
-    // timescale = 10s
+    // timescaleが10sのとき
     dptc_zero: 976516509,
     timescale: "10s", 
     energy: "High", 
@@ -52,6 +52,12 @@ function all_program() {
         var low_LCdata = recive_LCdata.Low;
 
         var pre_LCdata = all_LCdata;
+
+        console.log(all_LCdata);
+        console.log(high_LCdata);
+        console.log(med_LCdata);
+        console.log(low_LCdata);
+
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         //変数
         let num = [];
@@ -113,6 +119,8 @@ function all_program() {
         let Tolist = function (data) {
           let array = [];
           let array1 = [];
+
+          //console.log(data.length);
 
           for (let i = 1; i < data.length + 1; i++) {
             if (i % 2 != 0) {
@@ -178,15 +186,25 @@ function all_program() {
         };
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+        // グラフの上限を固定するためにカウント数の最大値を取得
+        // all_LCdataの奇数番目(カウント数のみ)を抽出
+        let all_LCdata_count = all_LCdata.filter((element, index) => index % 2 !== 0);
+        //console.log(all_LCdata_count);
+        let highest_count = Math.max(...all_LCdata_count);
+        let sqrt_highest_count = Math.sqrt(highest_count);
+        //console.log('highest_count = ' + highest_count);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
         // ここから光度曲線の描画
         createLC(pre_LCdata);
 
         function createLC(dptc_count_data) {
-          // console.log(dptc_count_data); 
-          dict_LCdata = Tolist(dptc_count_data); 
-          // console.log(Tolist(dptc_count_data));
+          //console.log('pre_LCdata = ' + dptc_count_data); 
+          dict_LCdata = Tolist(dptc_count_data);
+          //console.log(Tolist(dptc_count_data); 
+          //console.log(dptc_count_data.length);
           graph_data = graph_Summarize(dict_LCdata);
-          // console.log(graph_Summarize(dict_LCdata));
+          //console.log(graph_Summarize(dict_LCdata));
         //dict_LCdataをもとに光度曲線の描画
         ParcelRequire = (function (e, r, t, n) {
           var i,
@@ -7882,13 +7900,14 @@ function all_program() {
                     (e.white = "#ffffff"),
                       (e.red = "#ff0000"),
                       (e.green = "#007f00"),
-                      (e.blue = "#0000ff");
+                      (e.blue = "#0000ff"); //色候補1a1aff
                   })((p = exports.Color || (exports.Color = {}))),
+                  // バンドごとに光度曲線の色を設定
                   (exports.BandColors =
-                    (((o = {})[s.$2_20] = p.white),
-                    (o[s.$2_4] = p.red),
-                    (o[s.$4_10] = p.green),
-                    (o[s.$10_20] = p.blue),
+                    (((o = {})[w.all] = p.white),
+                    (o[w.low] = p.red),
+                    (o[w.med] = p.green),
+                    (o[w.high] = p.blue),
                     o));
               },
               {},
@@ -7992,14 +8011,14 @@ function all_program() {
                     (e[r.PlotType.Line] = "Line"),
                     e)),
                   // エネルギーバンドごとの表示をするための設定
-                  (exports.AvailableEnergyBands = [r.EnergyBand.all, r.EnergyBand.high, r.EnergyBand.med, r.EnergyBand.low]),
+                  (exports.AvailableEnergyBands = [r.EnergyBand.all, r.EnergyBand.low, r.EnergyBand.med, r.EnergyBand.high]),
                   //console.log(exports.AvailableEnergyBands),
                   // エネルギーバンドタイトル
                   (exports.AvailableEnergyBandTitles =
                     (((e = {})[r.EnergyBand.all] = "2-20keV"),
-                    (e[r.EnergyBand.high] = "10-20keV"),
-                    (e[r.EnergyBand.med] = "4-10keV"),
                     (e[r.EnergyBand.low] = "2-4keV"),
+                    (e[r.EnergyBand.med] = "4-10keV"),
+                    (e[r.EnergyBand.high] = "10-20keV"),
                     e)),
                   //console.log(exports.AvailableEnergyBandTitles),
                   // フォントの種類を格納している。
@@ -8011,7 +8030,6 @@ function all_program() {
                     // (e.font = "font");
                   })((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
                   /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
                   (exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)), //表示範囲のスタート地点、データから1時間前から表示開始
                   (exports.endMJD = data_day.judgeMJD(
                     dict_LCdata[dict_LCdata.length - 1][0] + 3600
@@ -8395,7 +8413,7 @@ function all_program() {
                     return [n, t * n];
                   }),
                   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        
+
                   //受け取ったデータをMJDにする場所。
                   (exports.judgeMJD = function (data) {
                     let judge =
@@ -8404,6 +8422,7 @@ function all_program() {
   
                     return judge;
                   })(
+
                   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         
                     //8301行目のbにデータを返す。
@@ -8532,7 +8551,12 @@ function all_program() {
                           (d = b[(m = 2 * y + 3)]),
                             (A = b[m + 1]),
                             (n[y] = Math.min(n[y], d - A)),
-                            (a[y] = Math.max(a[y], d + A)),
+                            //(a[y] = Math.max(a[y], d + A)),
+                            //Y軸を固定したい
+                            // 1番多いカウント数＋誤差を最大値としている
+                            (a[y] = highest_count + sqrt_highest_count), 
+                            //console.log("all_LCdata_count" + Math.max(...all_LCdata_count)),
+                            //console.log("最大値は" + a[y]);
                             t.push(b);
                       }
                       console.log(n[0]); //minとmax//工事中
@@ -8946,19 +8970,42 @@ function all_program() {
 
                   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                  //カーソルの位置がどのデータに近いかを判定;
+                  // カーソルの位置がどのデータに近いかを判定;
+                  // let cursor_position = function (data, cursor_time) {
+                  //   let i, array_num; //array_numは配列内で最小の値が入っている場所。
+                  //   let dptc = [];
+                  
+                  //   //カーソルの位置のdptcと各データの中央のdptcの差を代入。
+                  //   for (i = 0; i < data.length; i++) {
+                  //     dptc.push(
+                  //       Math.abs(
+                  //         t.mjdToDptc(data[i][Math.round(data[i].length / 2)][0]) -
+                  //           cursor_time
+                  //       )
+                  //     );
+                  //     console.log(data[i]);
+                  //   }
+                  //   console.log(dptc);
+
+                  //　まだたまにエラーが出る
                   let cursor_position = function (data, cursor_time) {
                     let i, array_num; //array_numは配列内で最小の値が入っている場所。
                     let dptc = [];
                   
-                    //カーソルの位置のdptcと各データの中央のdptcの差を代入。
                     for (i = 0; i < data.length; i++) {
-                      dptc.push(
-                        Math.abs(
-                          t.mjdToDptc(data[i][Math.round(data[i].length / 2)][0]) -
-                            cursor_time
-                        )
-                      );
+                      // data[i]が存在する時にのみ実行
+                      if (data[i]) {
+                        let middleIndex = Math.round(data[i].length / 2);
+                        // middleIndexが有効な値がどうか
+                        if (middleIndex < data[i].length) {
+                          dptc.push(
+                            Math.abs(
+                              t.mjdToDptc(data[i][middleIndex][0]) -
+                                cursor_time
+                            )
+                          );
+                        }
+                      }
                     }
                     console.log(dptc);
                   
@@ -9776,8 +9823,8 @@ function all_program() {
                     g = a.isFirst,
                     b = a.isLast,
                     v = t.BandTitles[o],
-                    //色を設定
-                    E = t.BandColors[o],
+                    //光度曲線の色を設定
+                    E = t.BandColors[selectedEnergyBand],
                     //L = 0.5 * (c + m),
                     //おそらくこれを呼べば作られるようになっている。
                     M = [
@@ -10636,50 +10683,8 @@ function all_program() {
                                   ["."]
                                 )
                               )
-                              ///////////////////////////
-                              //all、medなどの選択
                               ,
-                              // n.createElement("input", {
-                              //   type: "radio",
-                              //   name: "dataChoice",
-                              //   value: "ALL",
-                              //   defaultChecked: true,
-                              //   onChange: function (e) {
-                              //     if (e.currentTarget.value === "ALL") {
-                              //       pre_LCdata = all_LCdata;
-                              //       console.log('格納データ = ' + pre_LCdata);
-                              //       createLC();
-                              //     } else if (e.currentTarget.value === "HIGH") {
-                              //       pre_LCdata = high_LCdata;
-                              //       console.log('格納データ = ' + pre_LCdata);
-                              //       createLC();
-                              //     } else if (e.currentTarget.value === "MED") {
-                              //       pre_LCdata = med_LCdata;
-                              //       console.log('格納データ = ' + pre_LCdata);
-                              //       createLC();
-                              //     } else if (e.currentTarget.value === "LOW") {
-                              //       pre_LCdata = low_LCdata;
-                              //       console.log('格納データ = ' + pre_LCdata);
-                              //       createLC();
-                              //     }
-                              //   }
-                              // }),
-                              // n.createElement("input", {
-                              //   type: "radio",
-                              //   name: "dataChoice",
-                              //   value: "HIGH",
-                              //   onChange: function (e) {
-                              //     if (e.currentTarget.value === "ALL") {
-                              //       pre_LCdata = all_LCdata;
-                              //     } else if (e.currentTarget.value === "HIGH") {
-                              //       pre_LCdata = high_LCdata;
-                              //     } else if (e.currentTarget.value === "MED") {
-                              //       pre_LCdata = med_LCdata;
-                              //     } else if (e.currentTarget.value === "LOW") {
-                              //       pre_LCdata = low_LCdata;
-                              //     }
-                              //   }
-                              // }),
+                              // エネルギーバンドを選択するためのラジオボタン
                               ///////////////////////////
                               n.createElement.apply(
                                 void 0,
@@ -10703,7 +10708,7 @@ function all_program() {
                                         type: "radio",
                                         name: "EnergyBandChice", //設定必要？
                                         value: e,
-                                        defaultChecked: selectedEnergyBand === e, //要改善
+                                        defaultChecked: selectedEnergyBand === e, 
                                         onChange: function (e) {
                                           ////////////// 選択肢ごとの処理 //////////////
                                           // console.log('選択前の格納データ = ' + pre_LCdata)
@@ -10712,6 +10717,7 @@ function all_program() {
                                           switch (selectedEnergyBand) {
                                             case "All":
                                               pre_LCdata = all_LCdata;
+                                              break;
                                             case "High":
                                               pre_LCdata = high_LCdata;
                                               break;
@@ -10725,7 +10731,7 @@ function all_program() {
                                               // デフォルトの処理
                                               break;
                                           }
-                                          // console.log('格納データ = ' + pre_LCdata)
+                                          console.log('格納データ = ' + pre_LCdata)
 
                                           // 光度曲線を消去
                                           var divs = document.getElementsByTagName('div');
@@ -10819,13 +10825,9 @@ function all_program() {
           ["vqK8"],
           null
         );
-        }
-        createLC();
-      
+        }      
       })
       .fail(() => {
         console.log("failed");
       });
 }
-
-
