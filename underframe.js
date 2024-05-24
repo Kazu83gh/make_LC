@@ -1,5 +1,5 @@
-function underframe_pro(data, dptc_zero){ 
-    //まず、underframe.htmlのdivタグを全て削除
+function underframe_pro(data, gwTriUnix){ 
+    // まず、underframe.htmlのdivタグを全て削除
     var divs = document.getElementsByTagName('div');
     for(var i = 0; i < divs.length; i++){
     divs[i].innerHTML = '';
@@ -7,7 +7,7 @@ function underframe_pro(data, dptc_zero){
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //変数
+    // 変数
 	let num = []
         graph_scale_change = [0, 0],
         choice_binsize = 1, //設定されているbinsizeを格納
@@ -24,62 +24,63 @@ function underframe_pro(data, dptc_zero){
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //データの格納
+    // データの格納
 	var all_LCdata = data.All;
 	var high_LCdata = data.High;
 	var med_LCdata = data.Med;
 	var low_LCdata = data.Low;
 
-    //コンソールへの表示
+    // コンソールへの表示
 	console.log('----  LCdata ----')
 	console.log("All", all_LCdata);
 	console.log("High", high_LCdata);
     console.log("Med", med_LCdata);
 	console.log("Low", low_LCdata);
   
-    //jsonデータの受け取り、変数に格納
+    // jsonデータの受け取り、変数に格納
 	var pre_LCdata = all_LCdata;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	//GPStimeからUNIXtimeに変換
+	// GPStimeからUNIXtimeに変換
 	function getleaps() {
-		let leaps = [46828800, 78364801, 109900802, 173059203, 252028804, 315187205, 346723206, 393984007, 425520008, 457056009, 504489610, 551750411, 599184012, 820108813, 914803214, 1025136015, 1119744016, 1167264017];
-		  return leaps;
-	  }
+	  let leaps = [46828800, 78364801, 109900802, 173059203, 252028804, 315187205, 346723206, 393984007, 425520008, 457056009, 504489610, 551750411, 599184012, 820108813, 914803214, 1025136015, 1119744016, 1167264017];
+	  return leaps;
+	}
 
 	// GPStimeが閏秒であるかどうかを判定する関数
 	function isleap(gpsTime) {
-		let isLeap = false;
-		let leaps = getleaps();
-		for (let i = 0; i < leaps.length; i++) {
-			if (gpsTime === leaps[i]) {
-				isLeap = true;
-			}
-		}
-		return isLeap;
+	  let isLeap = false;
+	  let leaps = getleaps();
+	  for (let i = 0; i < leaps.length; i++) {
+	  	if (gpsTime === leaps[i]) {
+	  	  isLeap = true;
+	  	}
+	  }
+	  return isLeap;
 	}
 
 	// 指定されたGPStimeまでに経過した閏秒の数をカウントする関数
 	function countleaps(gpsTime){
-		let leaps = getleaps();
-		let nleaps = 0;
-		for (let i = 0; i < leaps.length; i++) {
-			if (gpsTime >= leaps[i]) {
-				nleaps++;
-			}
-		}
-		return nleaps;
+	  let leaps = getleaps();
+	  let nleaps = 0;
+	  for (let i = 0; i < leaps.length; i++) {
+	  	if (gpsTime >= leaps[i]) {
+	  	  nleaps++;
+	  	}
+	  }
+	  return nleaps;
 	}
 
 	// GPStimeをUNIXtimeに変換する関数
 	function gps2unix(gpsTime) {
-		const gpsEpoch = 315964800;  // GPS epoch in UNIX time (1980-01-06 00:00:00)
-		let unixTime = gpsEpoch + gpsTime - countleaps(gpsTime);
-		if (isleap(gpsTime)) {
-			unixTime--;
-		}
-		return unixTime;
+	  const gpsEpoch = 315964800;  // GPS epoch in UNIX time (1980-01-06 00:00:00)
+	  let unixTime = gpsEpoch + gpsTime - countleaps(gpsTime);
+	  if (isleap(gpsTime)) {
+	  	//unixTime--;
+	  	unixTime = unixTime - 0.5;
+	  }
+	  return unixTime;
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,56 +104,47 @@ function underframe_pro(data, dptc_zero){
 	  }
 	  return array;
 	};
-	
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//　基準となるdptc(赤線)を描画するのに使用
-	let dptc_zero_unix = gps2unix(Number(dptc_zero)); //　dptc_zeroがstr型なのでNumber()で数値型に変換
-	// console.log("dptc_zero = " + Number(dptc_zero)); 
-    // console.log("dptc_zero_unix = " + dptc_zero_unix);
   
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // 各グラフを一つのまとまりとして再び配列に格納する。（拡大機能に使用）
     let graph_Summarize = function (data) {
-        let i;
-        let array = [];
-        let graph_data = [];
+      let i;
+      let array = [];
+      let graph_data = [];
 
-        // 92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
-        for (i = 0; i < data.length - 1; i++) {
-          if (Math.abs(data[i][0] - data[i + 1][0]) < 2000) {
-            array.push(data[i]);
-          } else {
-            graph_data.push(array);
-            array = [];
-          }
+      // 92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
+      for (i = 0; i < data.length - 1; i++) {
+        if (Math.abs(data[i][0] - data[i + 1][0]) < 2000) {
+          array.push(data[i]);
+        } else {
+          graph_data.push(array);
+          array = [];
         }
-        graph_data.push(array); // 最後のarrayを格納。
+      }
+      graph_data.push(array); // 最後のarrayを格納。
+      return graph_data;
+    };
 
-        return graph_data;
-      };
-
-      let Create_LightCurve = function () {
-        setTimeout(function () {
-          if (graph_scale_change[0] != 0) {
-            //console.log("来た");
-            if (Re_Reload == 0) {
-              Re_Reload += 1;
-
-              createLC(pre_LCdata);
-            }
-            // 初期化部分
-            Re_Reload = 0;
-            graph_scale_change[0] = 0;
-            graph_scale_change[1] = 0;
-          } else if (graph_scale_change[0] == 0 && shift_event) {
-            //console.log("シフト押されてる");
-            shift_event = false;
+    let Create_LightCurve = function () {
+      setTimeout(function () {
+        if (graph_scale_change[0] != 0) {
+          //console.log("来た");
+          if (Re_Reload == 0) {
+            Re_Reload += 1;
             createLC(pre_LCdata);
           }
-        }, 540);
-      };
+          // 初期化部分
+          Re_Reload = 0;
+          graph_scale_change[0] = 0;
+          graph_scale_change[1] = 0;
+        } else if (graph_scale_change[0] == 0 && shift_event) {
+          //console.log("シフト押されてる");
+          shift_event = false;
+          createLC(pre_LCdata);
+        }
+      }, 540);
+    };
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -173,7 +165,7 @@ function underframe_pro(data, dptc_zero){
     function createLC(dptc_count_data) {
     // console.log(dptc_count_data); 
 	dict_LCdata = Tolist(dptc_count_data); 
-	// console.log(Tolist(dptc_count_data));
+	console.log(Tolist(dptc_count_data));
     graph_data = graph_Summarize(dict_LCdata);
 	// console.log(graph_Summarize(dict_LCdata));
 
@@ -8390,7 +8382,7 @@ function underframe_pro(data, dptc_zero){
 					//受け取ったデータをMJDにする場所。
 					(exports.judgeMJD = function (data) {
 					  let judge =
-						0.5 / 86400 +
+						//0.5 / 86400 +  // この足し算なんのため？
 						(data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS;
 	
 					  return judge;
@@ -9587,7 +9579,7 @@ function underframe_pro(data, dptc_zero){
 					  p = o.lineHeight,
 					  T = t.getTicks(c, s, k / 200), //横軸下部のMJDの設定
 					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
-					  redline_mjd = redline.judgeMJD(dptc_zero_unix),
+					  redline_mjd = redline.judgeMJD(gwTriUnix),
 					  result = "";
 					if (!T || !v) return null;
 					var j = k / (s - c),
