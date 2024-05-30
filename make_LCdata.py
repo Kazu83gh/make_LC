@@ -24,22 +24,21 @@ try:
     timescale = str(form.getvalue('timescale'))
     ra = float(form.getvalue('ra'))
     dec = float(form.getvalue('dec'))
-    r_out = 1.5 #DBからデータを取得する際の半径
     energy = str(form.getvalue('energy'))
+    r_out = 1.5 #DBからデータを取得する際の半径(度)
+    start_dptc = 11040 #基準からどのくらい前までのデータを取得するか(秒)
 
-    tmp = []    # 取得する四角領域の範囲を格納する
+    tmp = [] #取得する四角領域の範囲を格納する
     
     if timescale == '1day':
-        timescale = int(172800) #前後2日
+        end_dptc = int(86400) #後1日
     elif timescale == '4orb':
-        timescale = int(44160) #前後8orb
-    elif timescale == '1orb':
-        timescale = int(11040) #前後2orb
+        end_dptc = int(22080) #後4orb
     else :
-        timescale = int (11040) #前後2orb
-
+        end_dptc = int(11040) #後2orb
 
     #######################################################################################################
+    
     # radec_sqlの設定
     # 正方領域で値を取得後に円領域で範囲を得るためのSQL文の作成
     xy  = np.cos(np.deg2rad(dec))
@@ -99,36 +98,38 @@ try:
 
     #######################################################################################################
 
-    #dptc_psqlの設定  
-    start_dptc = dptc_zero - timescale
-    end_dptc = dptc_zero + timescale  
+    # dptc_psqlの設定  
+    start_dptc = dptc_zero - start_dptc 
+    end_dptc = dptc_zero + end_dptc
 
     dptc_sql = ' dptc >= ' + str(start_dptc) + ' AND dptc <= ' + str(end_dptc)
 
-    #実行するSQL文の設定
+    # 実行するSQL文
     psqlterms = 'SELECT * FROM (SELECT dptc, pi, ra, dec from gcaspev8' + radec_sql + 'AND' + dptc_sql + ' ORDER BY dptc)' + ' AS tmptable '+ cirsql 
 
-    #postgeSQLで実行
+    #######################################################################################################
+
+    # postgeSQLで実行
     cursor = DB.cursor()
     cursor.execute(psqlterms) #データの検索条件を与える
     result = cursor.fetchall() 
 
-    #resultは行をタプルで取得し,リスト化する関数　
-    #result = [(dptc, camearaid, ra, ..), (dptc, cameraid, ra, ..), .....]
-    #resultの各タプルから同じ要素ごとに取り出し、リストに入れなおす
+    # resultは行をタプルで取得し,リスト化する関数　
+    # result = [(dptc, camearaid, ra, ..), (dptc, cameraid, ra, ..), .....]
+    # resultの各タプルから同じ要素ごとに取り出し、リストに入れなおす
     def TUPtoLIS (a):     
         return [list(tup) for tup in zip(*result)] #zipは複数のリストに対応できる
         
     #newresult = [[dptc, dptc, ..], [cameraid, cameraid, ..], [ra, ra, ..], ...]
     newresult = TUPtoLIS(result)
 
-    #dptcだけのリスト
+    # dptcだけのリスト
     columm_dptc = newresult[0]
 
-    #piだけのリスト
+    # piだけのリスト
     columm_pi = newresult[1]
 
-    #piの値を参照してエネルギーバンドごとのdptcリストを作成
+    # piの値を参照してエネルギーバンドごとのdptcリストを作成
     def high_pifilter (array):
         highpi = []
         for k in range(0,len(array)):
@@ -150,7 +151,7 @@ try:
                 lowpi.append(columm_dptc[k])
         return(lowpi)
 
-    #dptcを[時間x, xの観測回数, x+1, x+1の回数, ....]とリスト化する
+    # dptcを[時間x, xでのカウント数, x+1, x+1でのカウント数, ....]とリスト化する
     def changeLIS (d):        
         list_dptc = [d[0]]    
         i = -1
@@ -172,10 +173,12 @@ try:
     med_LCdata = changeLIS(med_pifilter(columm_pi))
     low_LCdata = changeLIS(low_pifilter(columm_pi))
 
-    #全てのLCdataを辞書型(dict)に格納
+    # 全てのLCdataを辞書型(dict)に格納
     dict_LCdata = {"All":all_LCdata, "High":high_LCdata, "Med":med_LCdata, "Low":low_LCdata}
 
-    #javascriptに辞書の受け渡し(java側ではrecieved_data)
+    #######################################################################################################
+
+    # javascriptに辞書の受け渡し(java側ではrecieved_data)
     print('Content-type: text/htmml\n')
     print(json.dumps(dict_LCdata))
 
