@@ -1,3 +1,90 @@
+// GPStimeとUNIXtimeの変換(将来的にはheasoftのファイルを読み込めるようにする)
+function getleaps() {
+	let leaps = [46828800, 78364801, 109900802, 173059203, 252028804, 315187205, 346723206, 393984007, 425520008, 457056009, 504489610, 551750411, 599184012, 820108813, 914803214, 1025136015, 1119744016, 1167264017];
+	return leaps;
+  }
+
+// 閏秒であるかどうかを判定する関数
+function isleap(gpsTime) {
+	let isLeap = false;
+	let leaps = getleaps();
+	for (let i = 0; i < leaps.length; i++) {
+		if (gpsTime === leaps[i]) {
+			isLeap = true;
+		}
+	}
+	return isLeap;
+}
+
+// 閏秒の数をカウントする関数
+function countleaps(gpsTime, dirFlag){
+let leaps = getleaps();
+let nleaps = 0;  // number of leap seconds prior to gpsTime
+	for (let i = 0; i < leaps.length; i++) {
+		if (dirFlag === 'unix2gps') {
+			if (gpsTime >= leaps[i] - i) {
+				nleaps++;
+			}
+		} else if (dirFlag === 'gps2unix') {
+			if (gpsTime >= leaps[i]) {
+				nleaps++;
+			}
+		} else {
+			console.error("ERROR Invalid Flag!");
+		}
+	}
+	return nleaps;
+}
+
+// UNIXtimeをGPStimeに変換する関数
+function unix2gps(unixTime){
+	let isLeap = 0;
+	if (unixTime % 1 !== 0) {
+		unixTime = unixTime - 0.5;
+		isLeap = 1;
+	}
+	let gpsTime = unixTime - 315964800;
+	let nleaps = countleaps(gpsTime, 'unix2gps');
+	gpsTime = gpsTime + nleaps + isLeap;
+	return gpsTime;
+}
+
+// GPStimeをUNIXtimeに変換する関数
+function gps2unix(gpsTime){
+	let unixTime = gpsTime + 315964800;
+	let nleaps = countleaps(gpsTime, 'gps2unix');
+	unixTime = unixTime - nleaps;
+	if (isleap(gpsTime)) {
+		unixTime = unixTime + 0.5;
+	}
+	return unixTime;
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// urlの場所からGPStimeとDPTCの差を取得
+let valueGPS2DPTC = '';
+const url = 'http://maxim.phys.cst.nihon-u.ac.jp/mxdata/auxil/GPS2DPTC.txt';
+
+async function fetchData() {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.text();
+    valueGPS2DPTC = data;
+    console.log('Data fetched and stored globally:', valueGPS2DPTC);
+  } catch (error) {
+    console.error('There has been a problem with your fetch operation:', error);
+  }
+}
+
+fetchData();
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// クリックした時に呼び出される関数
 function underframe_pro(data, gwTriUnix){ 
     // まず、underframe.htmlのdivタグを全て削除
     var divs = document.getElementsByTagName('div');
@@ -39,49 +126,6 @@ function underframe_pro(data, gwTriUnix){
   
     // jsonデータの受け取り、変数に格納
 	var pre_LCdata = all_LCdata;
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// GPStimeからUNIXtimeに変換
-	function getleaps() {
-	  let leaps = [46828800, 78364801, 109900802, 173059203, 252028804, 315187205, 346723206, 393984007, 425520008, 457056009, 504489610, 551750411, 599184012, 820108813, 914803214, 1025136015, 1119744016, 1167264017];
-	  return leaps;
-	}
-
-	// GPStimeが閏秒であるかどうかを判定する関数
-	function isleap(gpsTime) {
-	  let isLeap = false;
-	  let leaps = getleaps();
-	  for (let i = 0; i < leaps.length; i++) {
-	  	if (gpsTime === leaps[i]) {
-	  	  isLeap = true;
-	  	}
-	  }
-	  return isLeap;
-	}
-
-	// 指定されたGPStimeまでに経過した閏秒の数をカウントする関数
-	function countleaps(gpsTime){
-	  let leaps = getleaps();
-	  let nleaps = 0;
-	  for (let i = 0; i < leaps.length; i++) {
-	  	if (gpsTime >= leaps[i]) {
-	  	  nleaps++;
-	  	}
-	  }
-	  return nleaps;
-	}
-
-	// GPStimeをUNIXtimeに変換する関数
-	function gps2unix(gpsTime) {
-	  const gpsEpoch = 315964800;  // GPS epoch in UNIX time (1980-01-06 00:00:00)
-	  let unixTime = gpsEpoch + gpsTime - countleaps(gpsTime);
-	  if (isleap(gpsTime)) {
-	  	//unixTime--;
-	  	unixTime = unixTime - 0.5;
-	  }
-	  return unixTime;
-	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -163,11 +207,14 @@ function underframe_pro(data, gwTriUnix){
 
     //dict_LCdataをもとに光度曲線の描画
     function createLC(dptc_count_data) {
-    // console.log(dptc_count_data); 
+    //console.log(dptc_count_data); 
 	dict_LCdata = Tolist(dptc_count_data); 
 	console.log(Tolist(dptc_count_data));
     graph_data = graph_Summarize(dict_LCdata);
-	// console.log(graph_Summarize(dict_LCdata));
+	//console.log(graph_Summarize(dict_LCdata));
+	console.log("GPSとdptcの差:" + valueGPS2DPTC);
+	console.log("GPSとdptcの差(整数):" + parseInt(valueGPS2DPTC));
+	
 
 	//dict_LCdataをもとに光度曲線の描画
     	ParcelRequire = (function (e, r, t, n) {
