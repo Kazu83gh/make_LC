@@ -1,4 +1,6 @@
-// GPStimeとUNIXtimeの変換(将来的にはheasoftのファイルを読み込めるようにする)
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// GPStime ↔︎ UNIXtimeの変換(将来的にはheasoftのファイルを読み込めるようにする)
 function getleaps() {
 	let leaps = [46828800, 78364801, 109900802, 173059203, 252028804, 315187205, 346723206, 393984007, 425520008, 457056009, 504489610, 551750411, 599184012, 820108813, 914803214, 1025136015, 1119744016, 1167264017];
 	return leaps;
@@ -62,6 +64,29 @@ function gps2unix(gpsTime){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//　[dptc, count, dptc, count, ...]の形から
+//　[[dptc, count, √count], [dptc, count, √count], ...]の形に変換
+let Tolist = function (data) {
+	let array = [];
+	let array1 = [];
+
+	for (let i = 1; i < data.length + 1; i++) {
+		if (i % 2 != 0) {
+			//let convertedValue = gps2unix(data[i - 1]); //これでいい？
+			let convertedValue = gps2unix(data[i - 1] - parseInt(valueGPS2DPTC));
+			array1.push(convertedValue);
+			array1.push(data[i]);
+			array1.push(Math.sqrt(data[i]));
+		} else {
+			array.push(array1);
+			array1 = [];
+		}
+	}
+	return array;
+};
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // urlの場所からGPStimeとDPTCの差を取得
 let valueGPS2DPTC = '';
 const url = 'http://maxim.phys.cst.nihon-u.ac.jp/mxdata/auxil/GPS2DPTC.txt';
@@ -85,7 +110,7 @@ fetchData();
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // クリックした時に呼び出される関数
-function underframe_pro(data, gwTriUnix){ 
+function underframe_pro(data, gwTriUnix, maxiTriDPTC){ 
     // まず、underframe.htmlのdivタグを全て削除
     var divs = document.getElementsByTagName('div');
     for(var i = 0; i < divs.length; i++){
@@ -112,10 +137,10 @@ function underframe_pro(data, gwTriUnix){
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // データの格納
-	var all_LCdata = data.All;
-	var high_LCdata = data.High;
-	var med_LCdata = data.Med;
-	var low_LCdata = data.Low;
+	const all_LCdata = data.All;
+	const high_LCdata = data.High;
+	const med_LCdata = data.Med;
+	const low_LCdata = data.Low;
 
     // コンソールへの表示
 	console.log('----  LCdata ----')
@@ -127,96 +152,75 @@ function underframe_pro(data, gwTriUnix){
     // jsonデータの受け取り、変数に格納
 	var pre_LCdata = all_LCdata;
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//　[dptc, count, dptc, count, ...]の形から
-	//　[[dptc, count, √count], [dptc, count, √count], ...]の形に変換
-	let Tolist = function (data) {
-	  let array = [];
-	  let array1 = [];
-
-	  for (let i = 1; i < data.length + 1; i++) {
-	    if (i % 2 != 0) {
-	  		let convertedValue = gps2unix(data[i - 1]);
-	  		array1.push(convertedValue);
-	  		array1.push(data[i]);
-	  		array1.push(Math.sqrt(data[i]));
-	    } else {
-	  		array.push(array1);
-	  		array1 = [];
-	    }
-	  }
-	  return array;
-	};
-  
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // 各グラフを一つのまとまりとして再び配列に格納する。（拡大機能に使用）
-    let graph_Summarize = function (data) {
-      let i;
-      let array = [];
-      let graph_data = [];
-
-      // 92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
-      for (i = 0; i < data.length - 1; i++) {
-        if (Math.abs(data[i][0] - data[i + 1][0]) < 2000) {
-          array.push(data[i]);
-        } else {
-          graph_data.push(array);
-          array = [];
-        }
-      }
-      graph_data.push(array); // 最後のarrayを格納。
-      return graph_data;
-    };
-
-    let Create_LightCurve = function () {
-      setTimeout(function () {
-        if (graph_scale_change[0] != 0) {
-          //console.log("来た");
-          if (Re_Reload == 0) {
-            Re_Reload += 1;
-            createLC(pre_LCdata);
-          }
-          // 初期化部分
-          Re_Reload = 0;
-          graph_scale_change[0] = 0;
-          graph_scale_change[1] = 0;
-        } else if (graph_scale_change[0] == 0 && shift_event) {
-          //console.log("シフト押されてる");
-          shift_event = false;
-          createLC(pre_LCdata);
-        }
-      }, 540);
-    };
-	
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-
     // グラフの上限を固定するためにカウント数の最大値を取得
     // all_LCdataの奇数番目(カウント数のみ)を抽出
     let all_LCdata_count = all_LCdata.filter((element, index) => index % 2 !== 0);
-    //console.log(all_LCdata_count);
     let highest_count = Math.max(...all_LCdata_count);
     let sqrt_highest_count = Math.sqrt(highest_count);
-    //console.log('highest_count = ' + highest_count);
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
+	// MAXIのtrigger timeを描画するための下準備
+	let maxiTriGPS = maxiTriDPTC - parseInt(valueGPS2DPTC);
+	let maxiTriUnix = gps2unix(maxiTriGPS);
+	console.log("maxiTriDPTC → maxiTriGPS → maxiTriUnix\n" + 
+		maxiTriDPTC + " → " + maxiTriGPS + " → " + maxiTriUnix);
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // 各グラフを一つのまとまりとして再び配列に格納する。（拡大機能に使用、underframe_proの外に出すと拡大機能が使えなくなる）
+    let graph_Summarize = function (data) {
+    	let i;
+    	let array = [];
+    	let graph_data = [];
+
+    	// 92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
+    	for (i = 0; i < data.length - 1; i++) {
+    		if (Math.abs(data[i][0] - data[i + 1][0]) < 2000) {
+    			array.push(data[i]);
+    		} else {
+    			graph_data.push(array);
+    			array = [];
+    		}
+    	}
+    	graph_data.push(array); // 最後のarrayを格納。
+    	return graph_data;
+    };
+
+    let Create_LightCurve = function () {
+    	setTimeout(function () {
+    	if (graph_scale_change[0] != 0) {
+        	//console.log("来た");
+        	if (Re_Reload == 0) {
+        		Re_Reload += 1;
+        		createLC(pre_LCdata);
+        	}
+        	// 初期化部分
+        	Re_Reload = 0;
+        	graph_scale_change[0] = 0;
+        	graph_scale_change[1] = 0;
+        } else if (graph_scale_change[0] == 0 && shift_event) {
+        	//console.log("シフト押されてる");
+        	shift_event = false;
+        	createLC(pre_LCdata);
+        }
+      }, 540);
+    };
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// ここから光度曲線の描画
 	createLC(pre_LCdata);
 
     //dict_LCdataをもとに光度曲線の描画
     function createLC(dptc_count_data) {
-    //console.log(dptc_count_data); 
-	dict_LCdata = Tolist(dptc_count_data); 
-	console.log(Tolist(dptc_count_data));
-    graph_data = graph_Summarize(dict_LCdata);
-	//console.log(graph_Summarize(dict_LCdata));
-	console.log("GPSとdptcの差:" + valueGPS2DPTC);
-	console.log("GPSとdptcの差(整数):" + parseInt(valueGPS2DPTC));
+    	//console.log(dptc_count_data); 
+		dict_LCdata = Tolist(dptc_count_data); 
+		console.log(Tolist(dptc_count_data));
+    	graph_data = graph_Summarize(dict_LCdata);
+		//console.log(graph_Summarize(dict_LCdata));
+		console.log("GPSとdptcの差:" + valueGPS2DPTC);
+		console.log("GPSとdptcの差(整数):" + parseInt(valueGPS2DPTC));
 	
-
-	//dict_LCdataをもとに光度曲線の描画
+		//dict_LCdataをもとに光度曲線の描画
     	ParcelRequire = (function (e, r, t, n) {
 			var i,
 			  o = "function" == typeof parcelRequire && parcelRequire,
@@ -7908,7 +7912,7 @@ function underframe_pro(data, gwTriUnix){
 					  (e[s.$10_20] = "10-20keV"),
 					  e)),
 					(function (e) {
-					  (e.white = "#ffffff"),//一時的に白にしている
+					  (e.white = "#ffffff"),
 					  (e.red = "#ff0000"),
 					  (e.green = "#007f00"),
 					  (e.blue = "#0000ff");
@@ -9595,7 +9599,7 @@ function underframe_pro(data, gwTriUnix){
 					r = require("../../util/getDateTicks"),
 					a = require("@maxi-js/date-tools"),
 					dptc = require("./Cursor"),
-					redline = require("../../util/getRollingAverage"),
+					reqWubQ = require("../../util/getRollingAverage"),
 					l = function (e, t, i, n, r) {
 					  return n || r
 						? function (a) {
@@ -9626,7 +9630,8 @@ function underframe_pro(data, gwTriUnix){
 					  p = o.lineHeight,
 					  T = t.getTicks(c, s, k / 200), //横軸下部のMJDの設定
 					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
-					  redline_mjd = redline.judgeMJD(gwTriUnix),
+					  redline_mjd = reqWubQ.judgeMJD(gwTriUnix),
+					  blueline_mjd = reqWubQ.judgeMJD(maxiTriUnix),
 					  result = "";
 					if (!T || !v) return null;
 					var j = k / (s - c),
@@ -9667,7 +9672,7 @@ function underframe_pro(data, gwTriUnix){
 						  ].join(""),
 						  stroke: i.Color.white,
 						}),
-						//基準となるdptc(赤線)を描画
+						//GWのtrggertimeを表示(赤線)を描画
 						e.createElement("path", {
 						  d: [ 
 							"M" +
@@ -9686,7 +9691,28 @@ function underframe_pro(data, gwTriUnix){
 							fill: i.Color.white,
 							opacity: 0.7,
 						  },
-						  "trigger"
+						  "GW trigger"
+						),
+						//MAXIのtrggertimeを表示(青線)を描画
+						e.createElement("path", {
+						  d: [ 
+						    "M" +
+						    y(blueline_mjd) +
+						    ", 1v225"
+						  ],
+						  stroke: i.Color.blue,
+						}),
+						//triggerという文字を表示
+						e.createElement(
+						  "text",
+						  {
+						    x: y(blueline_mjd) + 2,
+						    y: 10,
+						    fontSize: "80%",
+						    fill: i.Color.white,
+						    opacity: 0.7,
+						  },
+						  "MAXI trigger"
 						),
 					  ];
 					if (h) {
@@ -10754,7 +10780,6 @@ function underframe_pro(data, gwTriUnix){
                                   )
 							    )
 							  ),
-                              /////////////////////////////////////////////
 							  //光度曲線全体をfigureタグの中に入れている
 							  n.createElement("figure", null, K)
 							)
