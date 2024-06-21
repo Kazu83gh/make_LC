@@ -1486,10 +1486,10 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 	};
 	console.log(a);
 
-	// 複数イベントがあったときにtimescaleが最大のものを選ぶ処理
-	// 初期化
-	let maxTimeScale = ""; 
-	let maxPriority = 0;
+	// nCandidate2[n][0]とnCandidate2[n][1]をすべて表示
+	// for (let n = 0; n < nCandidate2.length; n++) {
+	// 	console.log(nCandidate2[n][0] + " & " + nCandidate2[n][1]);
+	// }
 
 	// データの優先順位を定義
 	const priorities = {
@@ -1503,24 +1503,33 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		"1s": 1
 	};
 
-	for (let n = 0; n < nCandidate2.length; n++) {
-	    let data = nCandidate2[n][1];
-	    // timescaleのデータ部分を抽出
-	    let match = data.match(/\((1day|4orb|1orb|1scan|30s|10s|3s|1s),/);
-	    if (match) {
-	        let currentData = match[1];
-	        let currentPriority = priorities[currentData];
-		
-	        // 現在のデータが最大優先度かどうかを確認
-	        if (currentPriority > maxPriority) {
-	            maxPriority = currentPriority;
-	            maxTimeScale = currentData;
-	        }
-	    }
-	}
-	//console.log("最大のデータ部分は: " + maxTimeScale);
+	// 複数イベントがあったときにsigmaが最大のものを選ぶ処理
+	let maxSigmaValue = -Infinity;
+	let maxSigmaIndex = -1;
+	let maxTimeScale = "";
+	let maxPriority = -1;
 
-	// DBでも検索の基準をTRIGGER TIMEにするために、gwTriUnixをGPStimeに変換
+	for (let n = 0; n < nCandidate2.length; n++) {
+	  const str = nCandidate2[n][1];
+	  const sigmaValue = parseFloat(str.split(",")[2]);
+	  const firstString = str.match(/\(([^,]+)/)[1];
+	  const priority = priorities[firstString];
+
+	  if (sigmaValue > maxSigmaValue || (sigmaValue === maxSigmaValue && priority > maxPriority)) {
+	    maxSigmaValue = sigmaValue;
+	    maxSigmaIndex = n;
+	    maxTimeScale = firstString;
+	    maxPriority = priority;
+	  }
+	}
+
+	console.log("Max Sigma dptc: ", nCandidate2[maxSigmaIndex][0]);
+	console.log("Max Sigma timescale: ", maxTimeScale);
+
+	let maxiTriDPTC = nCandidate2[maxSigmaIndex][0];
+	console.log("MAXI trigger: " + maxiTriDPTC + " (dptc)");
+
+	// DBでの検索の基準を「TRIGGER TIME」にするために、gwTriUnixをGPStimeに変換
 	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
 	//console.log(gwTriGPS);
 
@@ -1542,7 +1551,6 @@ async function polar2lightCurvePath(x, y, detail, diff) {
     // 			"dec"       :-4.444
 	// 		};
 
-
 	// mousePosition2polar(mousePositionObject);
 
 	console.log('Catadata ndptc:', send.dptc_zero,' timescale:', send.timescale,
@@ -1558,27 +1566,25 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		type: 'post',				   //どのように
 		data: send,					   //何を渡すのか
 		}).done((LCdata) => {   //受信が成功した時の処理
-		   	//console.log('--- LCDATA ---');
+			var recive_LCdata = JSON.parse(LCdata);
 
 			//////////////////////////////////////////////////////////////////
 			//値の確認
-			// console.log('nCandidate2= ' + nCandidate2);
-			// console.log('nCandidate2[0][1]= ' + nCandidate2[0][1]);
-			// console.log('nCandidate2[1][1]= ' + nCandidate2[1][1]);
-			// console.log('candidateData[0][0]=' + candidateData[0][0]);
+			//console.log('nCandidate2= ' + nCandidate2);
+			//console.log('nCandidate2[0][1]= ' + nCandidate2[0][1]);
+			//console.log('nCandidate2[1][1]= ' + nCandidate2[1][1]);
+			//console.log('candidateData[0][0]=' + candidateData[0][0]);
 			//console.log('candidateData[0][1]=' + candidateData[0][1]);
-			// console.log('candidateData[0][2]=' + candidateData[0][2]);
-			//////////////////////////////////////////////////////////////////
+			//console.log('candidateData[0][2]=' + candidateData[0][2]);
 		   	//console.log(LCdata);	//受信したLCdataはjson(文字列)
-		   	//console.log('----  rnd ----')
 			//console.log("send_zero = " + send.dptc_zero);
 			//console.log("gwTriUnix = " + gwTriUnix);
-
-			var recive_LCdata = JSON.parse(LCdata);
+			//////////////////////////////////////////////////////////////////
 
 			//LCdataを受け取って、underframeのグラフを作成する関数を呼び出す
 			//window.parent.underframe.underframe_pro(recive_LCdata, send.dptc_zero);
-			window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix);
+			//window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix);
+			window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix, maxiTriDPTC);
 
 		}).fail(() => {
 			console.log('failed');
