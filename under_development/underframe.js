@@ -110,7 +110,7 @@ fetchData();
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // クリックした時に呼び出される関数
-function underframe_pro(data, gwTriUnix, maxiTriDPTC){ 
+function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){ 
     // まず、underframe.htmlのdivタグを全て削除
     var divs = document.getElementsByTagName('div');
     for(var i = 0; i < divs.length; i++){
@@ -134,13 +134,11 @@ function underframe_pro(data, gwTriUnix, maxiTriDPTC){
         Re_Reload = 0, //再リロードするか
 		selectedEnergyBand = "All"; //デフォルトで選択されるエネルギーバンド
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////
-
     // データの格納
-	const all_LCdata = data.All;
-	const high_LCdata = data.High;
-	const med_LCdata = data.Med;
-	const low_LCdata = data.Low;
+	const all_LCdata = LCdata.All,
+		  high_LCdata = LCdata.High,
+	      med_LCdata = LCdata.Med,
+		  low_LCdata = LCdata.Low;
 
     // コンソールへの表示
 	console.log('----  LCdata ----')
@@ -150,15 +148,15 @@ function underframe_pro(data, gwTriUnix, maxiTriDPTC){
 	console.log("Low", low_LCdata);
   
     // jsonデータの受け取り、変数に格納
-	var pre_LCdata = all_LCdata;
+	let pre_LCdata = all_LCdata;
 
     // グラフの上限を固定するためにカウント数の最大値を取得
-    // all_LCdataの奇数番目(カウント数のみ)を抽出
+    // all_LCdataの奇数番目(カウント数)のみを抽出
     let all_LCdata_count = all_LCdata.filter((element, index) => index % 2 !== 0);
     let highest_count = Math.max(...all_LCdata_count);
     let sqrt_highest_count = Math.sqrt(highest_count);
 
-	// MAXIのtrigger timeを描画するための下準備
+	// MAXI trigger(青線)を描画するための下準備
 	let maxiTriGPS = maxiTriDPTC - parseInt(valueGPS2DPTC);
 	let maxiTriUnix = gps2unix(maxiTriGPS);
 	console.log("maxiTriDPTC → maxiTriGPS → maxiTriUnix\n" + 
@@ -9150,7 +9148,7 @@ function underframe_pro(data, gwTriUnix, maxiTriDPTC){
 						  fill: r.Color.white,
 						  opacity: 0.7,
 						},
-						t.mjdToDptc(m(i.x)) + " " + "dptc"
+						t.mjdToDptc(m(i.x)) + " " + "UnixTime" //ここは要改善
 					  ),
 					  e.createElement(
 						"text",
