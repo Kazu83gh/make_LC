@@ -1523,13 +1523,15 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 	  }
 	}
 
-	console.log("Max Sigma dptc: ", nCandidate2[maxSigmaIndex][0]);
-	console.log("Max Sigma timescale: ", maxTimeScale);
+	console.log("Max sigma dptc: ", nCandidate2[maxSigmaIndex][0]);
+	console.log("Max sigma timescale: ", maxTimeScale);
 
+	// maxiTriDPTCに最大のsigmaを持つイベントのdptcを代入
+	// maxiTriDPTCはMAXItrigger（青線）を描画する時刻
 	let maxiTriDPTC = nCandidate2[maxSigmaIndex][0];
 	console.log("MAXI trigger: " + maxiTriDPTC + " (dptc)");
 
-	// DBでの検索の基準を「TRIGGER TIME」にするために、gwTriUnixをGPStimeに変換
+	// DBでの検索の基準を「TRIGGER TIME」にするため、gwTriUnixをGPStimeに変換
 	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
 	//console.log(gwTriGPS);
 
@@ -1543,22 +1545,12 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 			   };
 	console.log(send);
 
-	//テスト用データ
-	// var test = {"dptc_zero" :1324935584,  //基準のdptc
-    // 			"timescale" :'4orb',
-	// 			"energy"    :'High',
-    // 			"ra" 		:172.25111,
-    // 			"dec"       :-4.444
-	// 		};
-
 	// mousePosition2polar(mousePositionObject);
 
 	console.log('Catadata ndptc:', send.dptc_zero,' timescale:', send.timescale,
 				//'\nsearch dptc', send.dptc_zero - send.timescale, '~', send.dptc_zero + send.timescale, //文字と数字を足し引きしちゃいかんですよ
 				'\nalpha2, delta2:', alpha2, ',', delta2,
 				'\nra, dec:', send.ra, ',', send.dec, 'PI:', send.energy);
-
-    // console.log('testdata\ndptc:', test.dptc_zero,'\ntimescale:', test.timescale, '\nra, dec:', test.ra, ',', test.dec, '\nPI:', test.energy);
 	
 	// サーバーとのajax通信(非同期通信)
 	$.ajax({
