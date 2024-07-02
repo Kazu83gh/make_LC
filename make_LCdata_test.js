@@ -9671,33 +9671,44 @@ function all_program() {
                     E = [
                       e.createElement("path", {
                         key: "ticks",
-                        d: [
+                        d: [ // 上の目盛りのパス
                           v.sub
                             .map(function (e, t) {
                               var i = (t - v.stepOffset) % v.step == 0;
+                              //console.log("上" + e);
                               return (
                                 "M" +
-                                y(a.dateToMJD(e)) +
+                                y(a.dateToMJD(e)) + //左右
                                 "," +
-                                d +
+                                d + //上下
                                 "v" +
-                                (i ? n.mainTickSize : n.subTickSize) //目盛りの長さ
-                              );
-                            })
-                            .join(""),
-                          T.sub
-                            .map(function (e, t) {
-                              var i = (t - T.stepOffset) % T.step == 0;
-                              return (
+                                (i ? n.mainTickSize : n.subTickSize) + //目盛りの長さ
+                                ////////////////追加//////////////////
+                                //上の目盛りと同期した下目盛りのパス
                                 "M" +
-                                y(e) +
+                                y(a.dateToMJD(e)) + //左右
                                 "," +
-                                f +
+                                f + //上下
                                 "v" +
                                 -(i ? n.mainTickSize : n.subTickSize)
+                                /////////////////////////////////////
                               );
                             })
                             .join(""),
+                          // T.sub // 下の目盛りのパス
+                          //   .map(function (e, t) {
+                          //     var i = (t - T.stepOffset) % T.step == 0;
+                          //     //console.log("下" + e);
+                          //     return (
+                          //       "M" +
+                          //       y(e) +
+                          //       "," +
+                          //       f +
+                          //       "v" +
+                          //       -(i ? n.mainTickSize : n.subTickSize)
+                          //     );
+                          //   })
+                          //   .join(""),
                         ].join(""),
                         stroke: i.Color.white,
                       }),
@@ -9741,7 +9752,7 @@ function all_program() {
                             ref: l(r, u, m, 0 === n, n === S),
                           },
                           (x || v.toString)(t)
-                          
+
                         )
                       );
                     }),
