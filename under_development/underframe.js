@@ -1,3 +1,25 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// urlの場所からGPStimeとDPTCの差を取得
+let valueGPS2DPTC = '';
+const url = 'http://maxim.phys.cst.nihon-u.ac.jp/mxdata/auxil/GPS2DPTC.txt';
+
+async function fetchData() {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    const data = await response.text();
+    valueGPS2DPTC = data;
+    console.log('Data fetched and stored globally:', valueGPS2DPTC);
+  } catch (error) {
+    console.error('There has been a problem with your fetch operation:', error);
+  }
+}
+
+fetchData();
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // GPStime ↔︎ UNIXtimeの変換(将来的にはheasoftのファイルを読み込めるようにする)
@@ -62,6 +84,14 @@ function gps2unix(gpsTime){
 	return unixTime;
 }
 
+// dptcからunixtimeに変換する関数
+function dptc2unix(dptc){
+	let gpsTime = dptc - parseInt(valueGPS2DPTC);
+	let unixTime = gps2unix(gpsTime);
+
+	return unixTime;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //　[dptc, count, dptc, count, ...]の形から
@@ -85,32 +115,10 @@ let Tolist = function (data) {
 	return array;
 };
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// urlの場所からGPStimeとDPTCの差を取得
-let valueGPS2DPTC = '';
-const url = 'http://maxim.phys.cst.nihon-u.ac.jp/mxdata/auxil/GPS2DPTC.txt';
-
-async function fetchData() {
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    const data = await response.text();
-    valueGPS2DPTC = data;
-    console.log('Data fetched and stored globally:', valueGPS2DPTC);
-  } catch (error) {
-    console.error('There has been a problem with your fetch operation:', error);
-  }
-}
-
-fetchData();
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // クリックした時に呼び出される関数
-function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){ 
+function underframe_pro(LCdata, gwTriUnix, maxiTriArray){ 
     // まず、underframe.htmlのdivタグを全て削除
     var divs = document.getElementsByTagName('div');
     for(var i = 0; i < divs.length; i++){
@@ -157,10 +165,11 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
     let sqrt_highest_count = Math.sqrt(highest_count);
 
 	// MAXI trigger(青線)を描画するための下準備
-	let maxiTriGPS = maxiTriDPTC - parseInt(valueGPS2DPTC);
-	let maxiTriUnix = gps2unix(maxiTriGPS);
-	console.log("maxiTriDPTC → maxiTriGPS → maxiTriUnix\n" + 
-		maxiTriDPTC + " → " + maxiTriGPS + " → " + maxiTriUnix);
+	maxiTriUnix = dptc2unix(maxiTriArray[0]);
+	console.log("dptc → UNIX \n" + maxiTriArray[0] + " → " + maxiTriUnix);
+
+	let maxiTriUnixOther = [...maxiTriArray.slice(1).map(dptc2unix)];
+	//console.log("maxiTriUnixOther : ", maxiTriUnixOther);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -7954,7 +7963,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 				  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		  
 				  //MJDをdptcに変える
-				  exports.mjdToDptc = function (mjd) {
+				  exports.mjd2Unix = function (mjd) {
 					return ((e.MJDEpochDate + mjd * e.DAY_MS) / 1000).toFixed();
 				  };
 		  
@@ -8990,7 +8999,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
                 //  for (i = 0; i < data.length; i++) {
                 //    dptc.push(
                 //      Math.abs(
-                //        t.mjdToDptc(data[i][Math.round(data[i].length / 2)][0]) -
+                //        t.mjd2Unix(data[i][Math.round(data[i].length / 2)][0]) -
                 //          cursor_time
                 //      )
                 //    );
@@ -9009,7 +9018,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 						if (middleIndex < data[i].length) {
 						  dptc.push(
 							Math.abs(
-							  t.mjdToDptc(data[i][middleIndex][0]) -
+							  t.mjd2Unix(data[i][middleIndex][0]) -
 								cursor_time
 							)
 						  );
@@ -9042,7 +9051,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
                         if (clickCount === 2) {
                           let graph_num = cursor_position(
                             graph_data,
-                            t.mjdToDptc(m(i.x))
+                            t.mjd2Unix(m(i.x))
                           );
 
                           if (
@@ -9122,7 +9131,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 		  
 				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		  
-					let date = new Date(t.mjdToDptc(m(i.x)) * 1000 - 32400000); //new Dateの()内について、表示はUTCなので9時間引かなければいけない。
+					let date = new Date(t.mjd2Unix(m(i.x)) * 1000 - 32400000); //new Dateの()内について、表示はUTCなので9時間引かなければいけない。
 					let Hour = ("00" + date.getHours()).slice(-2); //時間
 					let Minute = ("00" + date.getMinutes()).slice(-2); //分
 					let Second = ("00" + date.getSeconds()).slice(-2); //秒
@@ -9139,6 +9148,19 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 						stroke: r.Color.white,
 						opacity: 0.3,
 					  }),
+					  // UnixTimeの表示(削除予定)
+					  e.createElement(
+						"text",
+						{
+						  x: a + i.x + 2,
+						  y: i.y - 2 - 2 * 0.9 * x,
+						  fontSize: "80%",
+						  fill: r.Color.white,
+						  opacity: 0.7,
+						},
+						t.mjd2Unix(m(i.x)) + " " + "UNIXtime"
+					  ),
+					  // 日時の表示
 					  e.createElement(
 						"text",
 						{
@@ -9148,8 +9170,11 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 						  fill: r.Color.white,
 						  opacity: 0.7,
 						},
-						t.mjdToDptc(m(i.x)) + " " + "UnixTime" //ここは要改善
+						// ↓ここを変更したい
+						Hour + ":" + Minute + ":" + Second + " " + "UTtime" //カーソルの場所の時間を表示
+						//m(i.x)はカーソル位置のMJD
 					  ),
+					  //dptcの表示
 					  e.createElement(
 						"text",
 						{
@@ -9159,9 +9184,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 						  fill: r.Color.white,
 						  opacity: 0.7,
 						},
-						Hour + ":" + Minute + ":" + Second + " " + "Time" //カーソルの場所の時間を表示
-						//m(i.x)はカーソル位置のMJD
-					  )
+						// UNIXtimeをGPStimeにしたものをdptcに変換して表示
+						unix2gps(t.mjd2Unix(m(i.x))) + parseInt(valueGPS2DPTC) + " " + "dptc"
+					  ),
 					);
 				  });
 				},
@@ -9262,7 +9287,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 				  exports.getTicks = function (t, r, s, i) {
 					void 0 === i &&
 					  (i = function (e) {
-						return MJDChange.mjdToDptc(e); //MJDをdptcに変更して返す
+						return MJDChange.mjd2Unix(e); //MJDをdptcに変更して返す
 					  });
 					var u = e.getTickScale(t, r, s, [1, 2, 5]);
 					if (u) {
@@ -9630,6 +9655,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
 					  redline_mjd = reqWubQ.judgeMJD(gwTriUnix),
 					  blueline_mjd = reqWubQ.judgeMJD(maxiTriUnix),
+					  bluelineArray_mjd = maxiTriUnixOther.map(reqWubQ.judgeMJD),
 					  result = "";
 					if (!T || !v) return null;
 					var j = k / (s - c),
@@ -9642,32 +9668,43 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 						  key: "ticks",
 						  d: [
 							v.sub
-							  .map(function (e, t) {
-								var i = (t - v.stepOffset) % v.step == 0;
-								return (
-								  "M" +
-								  y(a.dateToMJD(e)) +
-								  "," +
-								  d +
-								  "v" +
-								  (i ? n.mainTickSize : n.subTickSize) //目盛りの長さ
-								);
-							  })
-							  .join(""),
-							T.sub
-							  .map(function (e, t) {
-								var i = (t - T.stepOffset) % T.step == 0;
-								return (
-								  "M" +
-								  y(e) +
-								  "," +
-								  f +
-								  "v" +
-								  -(i ? n.mainTickSize : n.subTickSize)
-								);
-							  })
-							  .join(""),
-						  ].join(""),
+                            .map(function (e, t) {
+                              var i = (t - v.stepOffset) % v.step == 0;
+                              //console.log("上" + e);
+                              return (
+                                "M" +
+                                y(a.dateToMJD(e)) + //左右
+                                "," +
+                                d + //上下
+                                "v" +
+                                (i ? n.mainTickSize : n.subTickSize) + //目盛りの長さ
+                                ////////////////追加//////////////////
+                                //上の目盛りと同期した下目盛りのパス
+                                "M" +
+                                y(a.dateToMJD(e)) + //左右
+                                "," +
+                                f + //上下
+                                "v" +
+                                -(i ? n.mainTickSize : n.subTickSize)
+                                /////////////////////////////////////
+                              );
+                            })
+                            .join(""),
+                          // T.sub // 下の目盛りのパス
+                          //   .map(function (e, t) {
+                          //     var i = (t - T.stepOffset) % T.step == 0;
+                          //     //console.log("下" + e);
+                          //     return (
+                          //       "M" +
+                          //       y(e) +
+                          //       "," +
+                          //       f +
+                          //       "v" +
+                          //       -(i ? n.mainTickSize : n.subTickSize)
+                          //     );
+                          //   })
+                          //   .join(""),
+                        ].join(""),
 						  stroke: i.Color.white,
 						}),
 						//GWのtrggertimeを表示(赤線)を描画
@@ -9700,7 +9737,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 						  ],
 						  stroke: i.Color.blue,
 						}),
-						//triggerという文字を表示
+						//MAXI triggerという文字を表示
 						e.createElement(
 						  "text",
 						  {
@@ -9710,7 +9747,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriDPTC){
 						    fill: i.Color.white,
 						    opacity: 0.7,
 						  },
-						  "MAXI trigger"
+						  //"MAXI trigger"
+						  "sigma max dptc" 
+						),
+						// blueline_mjd配列の各要素に対して青線を引く
+						bluelineArray_mjd.map((value) => 
+						    e.createElement("path", {
+						        d: [
+						            "M" +
+						            y(value) +
+						            ", 1v225"
+						        ],
+						        stroke: i.Color.blue,
+								strokeOpacity: 0.5, //透明度の設定
+						    })
 						),
 					  ];
 					if (h) {
