@@ -15,12 +15,12 @@ function all_program() {
     // ra: 113.32613, //x,
     // dec: -26.190498, //y,
 
-    //高カウント
-    dptc_zero: 976516509,
-    timescale: "1day", 
-    energy: "High", 
-    ra: 245.19737,
-    dec: -16.29694,
+    // 高カウント
+    // dptc_zero: 976516509,
+    // timescale: "1day", 
+    // energy: "High", 
+    // ra: 245.19737,
+    // dec: -16.29694,
 
     // timescaleが10sのとき
     // dptc_zero: 976516509,
@@ -28,6 +28,13 @@ function all_program() {
     // energy: "High", 
     // ra: 245.19737,
     // dec: -16.29694,
+
+    // 適当なsendデータ
+    dptc_zero: 976496805,
+    timescale: "1day", 
+    energy: "High", 
+    ra: 245.19737,
+    dec: -16.29694,
 
   };
 // サーバーとのajax通信(非同期通信)
@@ -39,7 +46,7 @@ function all_program() {
     .done((LCdata) => {
       console.log('timescale = ' + send.timescale);
 
-        //受信が成功した時の処理
+        // 受信が成功した時の処理
         console.log('--- LCDATA ---')
 		    console.log(LCdata);	//受信したLCdataはjson(文字列)
 		    console.log('----  rnd ----')
@@ -53,14 +60,15 @@ function all_program() {
 
         var pre_LCdata = all_LCdata;
 
-        //コンソールへの表示
+        // コンソールへの表示
 	      console.log("All", all_LCdata);
 	      console.log("High", high_LCdata);
         console.log("Med", med_LCdata);
 	      console.log("Low", low_LCdata);
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////
-        //変数
+        
+        // 変数
         let num = [];
             graph_scale_change = [0, 0],
             choice_binsize = 1, //設定されているbinsizeを格納
@@ -76,47 +84,70 @@ function all_program() {
             selectedEnergyBand = "All"; //デフォルトで選択されるエネルギーバンド
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        //GPStimeからUNIXtimeに変換
+        // GPStimeとUNIXtimeの変換
         function getleaps() {
           let leaps = [46828800, 78364801, 109900802, 173059203, 252028804, 315187205, 346723206, 393984007, 425520008, 457056009, 504489610, 551750411, 599184012, 820108813, 914803214, 1025136015, 1119744016, 1167264017];
-            return leaps;
+          return leaps;
         }
-        
-        // GPStimeが閏秒であるかどうかを判定する関数
+
+        // 閏秒であるかどうかを判定する関数
         function isleap(gpsTime) {
-            let isLeap = false;
-            let leaps = getleaps();
-            for (let i = 0; i < leaps.length; i++) {
-                if (gpsTime === leaps[i]) {
-                    isLeap = true;
-                }
-            }
-            return isLeap;
+          let isLeap = false;
+          let leaps = getleaps();
+          for (let i = 0; i < leaps.length; i++) {
+              if (gpsTime === leaps[i]) {
+                  isLeap = true;
+              }
+          }
+          return isLeap;
         }
-        
-        // 指定されたGPStimeまでに経過した閏秒の数をカウントする関数
-        function countleaps(gpsTime){
-            let leaps = getleaps();
-            let nleaps = 0;
-            for (let i = 0; i < leaps.length; i++) {
-                if (gpsTime >= leaps[i]) {
-                    nleaps++;
-                }
-            }
-            return nleaps;
+
+        // 閏秒の数をカウントする関数
+        function countleaps(gpsTime, dirFlag){
+          let leaps = getleaps();
+          let nleaps = 0;  // number of leap seconds prior to gpsTime
+          for (let i = 0; i < leaps.length; i++) {
+              if (dirFlag === 'unix2gps') {
+                  if (gpsTime >= leaps[i] - i) {
+                      nleaps++;
+                  }
+              } else if (dirFlag === 'gps2unix') {
+                  if (gpsTime >= leaps[i]) {
+                      nleaps++;
+                  }
+              } else {
+                  console.error("ERROR Invalid Flag!");
+              }
+          }
+          return nleaps;
         }
-        
+
+        // UNIXtimeをGPStimeに変換する関数
+        function unix2gps(unixTime){
+          let isLeap = 0;
+          if (unixTime % 1 !== 0) {
+              unixTime = unixTime - 0.5;
+              isLeap = 1;
+          }
+          let gpsTime = unixTime - 315964800;
+          let nleaps = countleaps(gpsTime, 'unix2gps');
+          gpsTime = gpsTime + nleaps + isLeap;
+          return gpsTime;
+        }
+
         // GPStimeをUNIXtimeに変換する関数
-        function gps2unix(gpsTime) {
-            const gpsEpoch = 315964800;  // GPS epoch in UNIX time (1980-01-06 00:00:00)
-            let unixTime = gpsEpoch + gpsTime - countleaps(gpsTime);
-            if (isleap(gpsTime)) {
-                unixTime--;
-            }
-            return unixTime;
+        function gps2unix(gpsTime){
+          let unixTime = gpsTime + 315964800;
+          let nleaps = countleaps(gpsTime, 'gps2unix');
+          unixTime = unixTime - nleaps;
+          if (isleap(gpsTime)) {
+              unixTime = unixTime + 0.5;
+          }
+          return unixTime;
         }
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+
         //[dptc, count, dptc, count, ...]の形から
         //[[dptc, count, √count], [dptc, count, √count], ...]の形に変換
         let Tolist = function (data) {
@@ -138,19 +169,21 @@ function all_program() {
         };
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+
         //基準となるdptc(赤線)を描画するのに使用
-        let dptc_unix = gps2unix(send.dptc_zero);
+        let dptc_zero_unix = gps2unix(send.dptc_zero);
         //console.log("dptc_zero = " + send.dptc_zero); 
-        //console.log("dptc_tri_unix = " + dptc_unix);
+        //console.log("dptc_tri_unix = " + dptc_zero_unix);
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
-        //各グラフを一つのまとまりとして再び配列に格納する。
+
+        // 各グラフを一つのまとまりとして再び配列に格納する。
         let graph_Summarize = function (data) {
           let i;
           let array = [];
           let graph_data = [];
         
-          //92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
+          // 92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
           for (i = 0; i < data.length - 1; i++) {
             if (Math.abs(data[i][0] - data[i + 1][0]) < 2000) {
               array.push(data[i]);
@@ -159,7 +192,7 @@ function all_program() {
               array = [];
             }
           }
-          graph_data.push(array); //最後のarrayを格納。
+          graph_data.push(array); // 最後のarrayを格納。
         
           return graph_data;
         };
@@ -175,7 +208,7 @@ function all_program() {
         
                 createLC(pre_LCdata);
               }
-              //初期化部分
+              // 初期化部分
               Re_Reload = 0;
               graph_scale_change[0] = 0;
               graph_scale_change[1] = 0;
@@ -188,6 +221,7 @@ function all_program() {
         };
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+
         // グラフの上限を固定するためにカウント数の最大値を取得
         // all_LCdataの奇数番目(カウント数のみ)を抽出
         let all_LCdata_count = all_LCdata.filter((element, index) => index % 2 !== 0);
@@ -197,6 +231,7 @@ function all_program() {
         //console.log('highest_count = ' + highest_count);
 
         ////////////////////////////////////////////////////////////////////////////////////////////////////
+
         // ここから光度曲線の描画
         createLC(pre_LCdata);
 
@@ -8419,9 +8454,8 @@ function all_program() {
                   //受け取ったデータをMJDにする場所。
                   (exports.judgeMJD = function (data) {
                     let judge =
-                      0.5 / 86400 +
+                      //0.5 / 86400 +  // この足し算なんのため？
                       (data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS;
-  
                     return judge;
                   })(
 
@@ -9409,7 +9443,7 @@ function all_program() {
                       var f = [];
                       for (g = a.firstSub; g < s; g += a.subScale)
                         f.push(new Date(1e3 * g).getTime());
-                      console.log("SecoundsTicks");
+                      //console.log("SecoundsTicks");
         
                       return {
                         step: a.step,
@@ -9623,9 +9657,11 @@ function all_program() {
                     x = o.dateToString,
                     p = o.lineHeight,
                     T = t.getTicks(c, s, k / 200), //横軸下部のMJDの設定
+                    //T = r.getTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),
                     v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
-                    redline_mjd = redline.judgeMJD(dptc_unix),
+                    redline_mjd = redline.judgeMJD(dptc_zero_unix),
                     result = "";
+                    // console.log("c\n" + c + "s\n" + s + "k\n" + k + "T\n" + T);
                   if (!T || !v) return null;
                   var j = k / (s - c),
                     y = function (e) {
@@ -9705,6 +9741,7 @@ function all_program() {
                             ref: l(r, u, m, 0 === n, n === S),
                           },
                           (x || v.toString)(t)
+                          
                         )
                       );
                     }),
@@ -9765,7 +9802,7 @@ function all_program() {
                         )
                       );
                     });
-                    //光度曲線右下にMJDを表示
+                    //光度曲線右下にdptcを表示
                     E.push(
                       e.createElement(
                         "text",
