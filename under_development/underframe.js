@@ -181,7 +181,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
     	// 92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
     	for (i = 0; i < data.length - 1; i++) {
-    		if (Math.abs(data[i][0] - data[i + 1][0]) < 2000) {
+			if (Math.abs(data[i][0] - data[i + 1][0]) < 1000) { 
     			array.push(data[i]);
     		} else {
     			graph_data.push(array);
@@ -7922,7 +7922,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  (e.white = "#ffffff"),
 					  (e.red = "#ff0000"),
 					  (e.green = "#007f00"),
-					  (e.blue = "#0000ff");
+					  (e.blue = "#0000ff"),
+					  (e.lightblue = "#71c5e8");
 					})((p = exports.Color || (exports.Color = {}))),
 					// バンドごとに光度曲線の色を設定
 					(exports.BandColors =
@@ -9728,7 +9729,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						  },
 						  "GW trigger"
 						),
-						//MAXIのtrggertimeを表示(青線)を描画
+						// MAXIのトリガー時刻を表示(青線)を描画
 						e.createElement("path", {
 						  d: [ 
 						    "M" +
@@ -9737,19 +9738,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						  ],
 						  stroke: i.Color.blue,
 						}),
-						//MAXI triggerという文字を表示
-						e.createElement(
-						  "text",
-						  {
-						    x: y(blueline_mjd) + 2,
-						    y: 10,
-						    fontSize: "80%",
-						    fill: i.Color.white,
-						    opacity: 0.7,
-						  },
-						  //"MAXI trigger"
-						  "sigma max dptc" 
-						),
 						// blueline_mjd配列の各要素に対して青線を引く
 						bluelineArray_mjd.map((value) => 
 						    e.createElement("path", {
@@ -9758,10 +9746,22 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						            y(value) +
 						            ", 1v225"
 						        ],
-						        stroke: i.Color.blue,
-								strokeOpacity: 0.5, //透明度の設定
+						        stroke: i.Color.lightblue,
+								//strokeOpacity: 0.5, //透明度の設定
 						    })
 						),
+						// sigma max dptcという文字を表示
+						e.createElement(
+							"text",
+							{
+							  x: y(blueline_mjd) + 2,
+							  y: 10,
+							  fontSize: "80%",
+							  fill: i.Color.white,
+							  opacity: 0.7,
+							},
+							"sigma max dptc" 
+						  ),
 					  ];
 					if (h) {
 					  var S = v.main.length - 1;
