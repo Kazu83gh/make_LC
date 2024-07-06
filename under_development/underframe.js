@@ -92,6 +92,14 @@ function dptc2unix(dptc){
 	return unixTime;
 }
 
+// unixtimeからdptcに変換する関数
+function unix2dptc(unixTime){
+	let gpsTime = unix2gps(unixTime);
+	let dptc = gpsTime + parseInt(valueGPS2DPTC);
+	
+	return dptc;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //　[dptc, count, dptc, count, ...]の形から
@@ -7967,6 +7975,11 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  exports.mjd2Unix = function (mjd) {
 					return ((e.MJDEpochDate + mjd * e.DAY_MS) / 1000).toFixed();
 				  };
+
+				  //MJDをdptc(小数型)に変える（dptc目盛りを表示する際に使用）
+				  exports.mjd2UnixFloat = function (mjd) {
+					return ((e.MJDEpochDate + mjd * e.DAY_MS) / 1000);
+				  };
 		  
 				  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 				},
@@ -9279,6 +9292,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  "@maxi-js/number-tools": "1evX",
 				},
 			  ],
+			  // 下横軸の目盛りの設定
 			  "+xmN": [
 				function (require, module, exports) {
 				  "use strict";
@@ -9286,9 +9300,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  var e = require("./getTickScale");
 				  let MJDChange = require("@maxi-js/date-tools");
 				  exports.getTicks = function (t, r, s, i) {
-					void 0 === i &&
+					void 0 === i && 
 					  (i = function (e) {
-						return MJDChange.mjd2Unix(e); //MJDをdptcに変更して返す
+						//console.log(e);
+						return e;
 					  });
 					var u = e.getTickScale(t, r, s, [1, 2, 5]);
 					if (u) {
@@ -9652,7 +9667,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  g = o.mjdToString,
 					  x = o.dateToString,
 					  p = o.lineHeight,
-					  T = t.getTicks(c, s, k / 200), //横軸下部のMJDの設定
+					  dptcXmin = unix2dptc(a.mjd2UnixFloat(c)), //グラフの左端のdptc(小数型)
+					  dptcXmax = unix2dptc(a.mjd2UnixFloat(s)), //グラフの右端のdptc(小数型)
+					  T = t.getTicks(dptcXmin, dptcXmax, k / 200),
 					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
 					  redline_mjd = reqWubQ.judgeMJD(gwTriUnix),
 					  blueline_mjd = reqWubQ.judgeMJD(maxiTriUnix),
@@ -9660,9 +9677,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  result = "";
 					if (!T || !v) return null;
 					var j = k / (s - c),
-					  y = function (e) {
-						return u + j * (e - c);
-					  },
+						y = function (e) { //mjdをx座標に変換
+					  		return u + j * (e - c);
+						},
+						dptcrat = k / (dptcXmax - dptcXmin),
+						dptc2path = function (e) { //dptcをx座標に変換
+							return u + dptcrat * (e - dptcXmin);
+						},
 					  //光度曲線内の目盛り？
 					  E = [
 						e.createElement("path", {
@@ -9672,39 +9693,33 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                             .map(function (e, t) {
                               var i = (t - v.stepOffset) % v.step == 0;
                               //console.log("上" + e);
+							  //console.log("上" + y(e));
                               return (
                                 "M" +
                                 y(a.dateToMJD(e)) + //左右
                                 "," +
                                 d + //上下
                                 "v" +
-                                (i ? n.mainTickSize : n.subTickSize) + //目盛りの長さ
-                                ////////////////追加//////////////////
-                                //上の目盛りと同期した下目盛りのパス
-                                "M" +
-                                y(a.dateToMJD(e)) + //左右
-                                "," +
-                                f + //上下
-                                "v" +
-                                -(i ? n.mainTickSize : n.subTickSize)
-                                /////////////////////////////////////
+                                (i ? n.mainTickSize : n.subTickSize)  //目盛りの長さ
                               );
                             })
                             .join(""),
-                          // T.sub // 下の目盛りのパス
-                          //   .map(function (e, t) {
-                          //     var i = (t - T.stepOffset) % T.step == 0;
-                          //     //console.log("下" + e);
-                          //     return (
-                          //       "M" +
-                          //       y(e) +
-                          //       "," +
-                          //       f +
-                          //       "v" +
-                          //       -(i ? n.mainTickSize : n.subTickSize)
-                          //     );
-                          //   })
-                          //   .join(""),
+                          T.sub // 下の目盛りのパス
+                            .map(function (e, t) {
+							  //console.log("下" + e);
+							  //console.log("下" + dptc2path(e - 0.5));
+                              var i = (t - T.stepOffset) % T.step == 0;
+                              return (
+                                "M" +
+								dptc2path(e - 0.5) + //eのままだと0.5ずれるので0.5引く
+                                //y(e) +
+                                "," +
+                                f +
+                                "v" +
+                                -(i ? n.mainTickSize : n.subTickSize)
+                              );
+                            })
+                            .join(""),
                         ].join(""),
 						  stroke: i.Color.white,
 						}),
@@ -9823,39 +9838,39 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					if (b) {
 					  var C = T.main.length - 1;
 					  T.main.forEach(function (t, n) {
-						var r = y(t);
+						var r = dptc2path(t + 0.5); //eのままだと0.5ずれるので0.5足す
 						//光度曲線下部(dptc)の数字を表示。
-						// E.push(
-						//   e.createElement(
-						// 	"text",
-						// 	{
-						// 	  key: "mjdLabel-" + n,
-						// 	  x: r,
-						// 	  y: f + 4,
-						// 	  fill: i.Color.white,
-						// 	  dominantBaseline: "hanging",
-						// 	  textAnchor: "middle",
-						// 	  ref: l(r, u, m, 0 === n, n === C),
-						// 	},
-						// 	(g || T.toString)(t)
-						//   )
-						// );
+						E.push(
+						  e.createElement(
+							"text",
+							{
+							  key: "mjdLabel-" + n,
+							  x: r,
+							  y: f + 4,
+							  fill: i.Color.white,
+							  dominantBaseline: "hanging",
+							  textAnchor: "middle",
+							  ref: l(r, u, m, 0 === n, n === C),
+							},
+							(g || T.toString)(t)
+						  )
+						);
 					  });
 					  //光度曲線右下にdptcを表示
-					//   E.push(
-					// 	e.createElement(
-					// 	  "text",
-					// 	  {
-					// 		key: "mjdLabel",
-					// 		x: y(s),
-					// 		y: f + 4 + p,
-					// 		fill: i.Color.white,
-					// 		dominantBaseline: "hanging",
-					// 		textAnchor: "end",
-					// 	  },
-					// 	  "dptc"
-					// 	)
-					//   );
+					  E.push(
+						e.createElement(
+						  "text",
+						  {
+							key: "mjdLabel",
+							x: y(s),
+							y: f + 4 + p,
+							fill: i.Color.white,
+							dominantBaseline: "hanging",
+							textAnchor: "end",
+						  },
+						  "dptc"
+						)
+					  );
 					}
 					return e.createElement("g", {
 					  children: E,
@@ -10722,44 +10737,45 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                     },
                                     "s"),
 								),
-								n.createElement.apply(
-								  void 0,
-								  [
-									"li",
-									null,
-									n.createElement(
-                                        "label", 
-                                        {
-                                          style: {color: "white"}
-                                        }, 
-                                    "Plot type: "),
-								  ].concat(
-									o.AvailablePlotTypes.map(function (e) {
-									  return n.createElement(
-										"label",
-										{
-										  className: p.default.radioLabel,
-                                          style: {color: "white"},
-										},
-										n.createElement("input", {
-										  type: "radio",
-										  name: o.URLParameterKey.plotType,
-										  value: e,
-										  defaultChecked: y.plotType === e,
-										  onChange: function (e) {
-											T({
-											  plotType: c.filterPlotType(
-												e.currentTarget.value
-											  ),
-											});
-										  },
-										}),
-										o.AvailablePlotTypeTitles[e]
-									  );
-									}),
-									["."]
-								  )
-								),
+								// plottypeの選択するラジオボタンの表示
+								// n.createElement.apply(
+								//   void 0,
+								//   [
+								// 	"li",
+								// 	null,
+								// 	n.createElement(
+                                //         "label", 
+                                //         {
+                                //           style: {color: "white"}
+                                //         }, 
+                                //     "Plot type: "),
+								//   ].concat(
+								// 	o.AvailablePlotTypes.map(function (e) {
+								// 	  return n.createElement(
+								// 		"label",
+								// 		{
+								// 		  className: p.default.radioLabel,
+                                //           style: {color: "white"},
+								// 		},
+								// 		n.createElement("input", {
+								// 		  type: "radio",
+								// 		  name: o.URLParameterKey.plotType,
+								// 		  value: e,
+								// 		  defaultChecked: y.plotType === e,
+								// 		  onChange: function (e) {
+								// 			T({
+								// 			  plotType: c.filterPlotType(
+								// 				e.currentTarget.value
+								// 			  ),
+								// 			});
+								// 		  },
+								// 		}),
+								// 		o.AvailablePlotTypeTitles[e]
+								// 	  );
+								// 	}),
+								// 	["."]
+								//   )
+								// ),
 							  // エネルギーバンドの選択するラジオボタンの表示
 							    n.createElement.apply(
                                   void 0,
