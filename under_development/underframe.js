@@ -9300,7 +9300,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  var e = require("./getTickScale");
 				  let MJDChange = require("@maxi-js/date-tools");
 				  exports.getTicks = function (t, r, s, i) {
-					void 0 === i && 
+					void 0 === i &&
 					  (i = function (e) {
 						//console.log(e);
 						return e;
@@ -9378,20 +9378,23 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					return (
 					  //縦の目盛りの値を入力
 					  u.main.forEach(function (t, r) {
-						d.push(
-						  e.createElement(
-							"text",
-							{
-							  key: "yLabel-" + r,
-							  x: o - 4,
-							  y: k(t),
-							  fill: i.Color.white,
-							  dominantBaseline: "middle",
-							  textAnchor: "end",
-							},
-							t.toFixed(f)
-						  )
-						);
+						if (Number.isInteger(t)) { // tが整数の場合のみ処理を行う
+							//console.log(t); //目盛りの値
+							d.push(
+								e.createElement(
+									"text",
+									{
+										key: "yLabel-" + r,
+										x: o - 4,
+										y: k(t),
+										fill: i.Color.white,
+										dominantBaseline: "middle",
+										textAnchor: "end",
+									},
+									t.toFixed(f)
+								)
+							);
+						}
 					  }),
 					  e.createElement("g", {
 						children: d,
