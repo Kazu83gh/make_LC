@@ -189,7 +189,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
     	// 92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
     	for (i = 0; i < data.length - 1; i++) {
-			if (Math.abs(data[i][0] - data[i + 1][0]) < 1000) { 
+			// 800秒未満の場合は同じ配列にまとめる
+			if (Math.abs(data[i][0] - data[i + 1][0]) < 800) {
     			array.push(data[i]);
     		} else {
     			graph_data.push(array);
@@ -9305,7 +9306,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						//console.log(e);
 						return e;
 					  });
-					var u = e.getTickScale(t, r, s, [1, 2, 5]);
+					var u = e.getTickScale(t, r, s, [1, 2, 5, 10, 20, 50, 100]);
+					// 第３引数は目盛りの候補の配列
 					if (u) {
 					  for (var n = [], a = u.firstMain; a < r; a += u.mainScale)
 						n.push(a);
@@ -9354,7 +9356,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						return l - h * (e - a);
 					  },
 					  //縦目盛りの値の計算式
-					  f = Math.max(Math.ceil(1 - Math.log10(m)), 0),
+					  //f = Math.max(Math.ceil(1 - Math.log10(m)), 0),
 					  d = [
 						e.createElement("path", {
 						  key: "ticks",
@@ -9391,7 +9393,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 										dominantBaseline: "middle",
 										textAnchor: "end",
 									},
-									t.toFixed(f)
+									//t.toFixed(f)
+									t.toFixed(0) //整数表示
 								)
 							);
 						}
@@ -9670,14 +9673,16 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  g = o.mjdToString,
 					  x = o.dateToString,
 					  p = o.lineHeight,
-					  dptcXmin = unix2dptc(a.mjd2UnixFloat(c)), //グラフの左端のdptc(小数型)
-					  dptcXmax = unix2dptc(a.mjd2UnixFloat(s)), //グラフの右端のdptc(小数型)
+					  dptcXmin = unix2dptc(a.mjd2UnixFloat(c)) - 0.5, //グラフの左端のdptc(小数型)
+					  dptcXmax = unix2dptc(a.mjd2UnixFloat(s)) - 0.5, //グラフの右端のdptc(小数型)
 					  T = t.getTicks(dptcXmin, dptcXmax, k / 200),
 					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
 					  redline_mjd = reqWubQ.judgeMJD(gwTriUnix),
 					  blueline_mjd = reqWubQ.judgeMJD(maxiTriUnix),
 					  bluelineArray_mjd = maxiTriUnixOther.map(reqWubQ.judgeMJD),
 					  result = "";
+					  //console.log("dptcXmin :" + dptcXmin);
+					  //console.log("dptcXmax :" + dptcXmax);
 					if (!T || !v) return null;
 					var j = k / (s - c),
 						y = function (e) { //mjdをx座標に変換
@@ -9711,15 +9716,19 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                             .map(function (e, t) {
 							  //console.log("下" + e);
 							  //console.log("下" + dptc2path(e - 0.5));
+							  //console.log("t :" + t);
+							  //console.log("T.stepOffset :" + T.stepOffset);
+							  //console.log("T.step :" + T.step);
                               var i = (t - T.stepOffset) % T.step == 0;
+							  //console.log(i);
                               return (
                                 "M" +
-								dptc2path(e - 0.5) + //eのままだと0.5ずれるので0.5引く
+								dptc2path(e) + //eのままだと0.5ずれるので0.5引く
                                 //y(e) +
                                 "," +
                                 f +
                                 "v" +
-                                -(i ? n.mainTickSize : n.subTickSize)
+                                -(i ? n.mainTickSize : n.subTickSize) //目盛りの長さ
                               );
                             })
                             .join(""),
@@ -9841,8 +9850,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					if (b) {
 					  var C = T.main.length - 1;
 					  T.main.forEach(function (t, n) {
-						var r = dptc2path(t + 0.5); //eのままだと0.5ずれるので0.5足す
 						//光度曲線下部(dptc)の数字を表示。
+						var r = dptc2path(t); //eのままだと0.5ずれるので0.5足す
+						//console.log((g || T.toString)(t));
 						E.push(
 						  e.createElement(
 							"text",
