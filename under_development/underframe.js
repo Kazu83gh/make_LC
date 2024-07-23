@@ -9677,12 +9677,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  dptcXmax = unix2dptc(a.mjd2UnixFloat(s)) - 0.5, //グラフの右端のdptc(小数型)
 					  T = t.getTicks(dptcXmin, dptcXmax, k / 200),
 					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
-					  redline_mjd = reqWubQ.judgeMJD(gwTriUnix),
-					  blueline_mjd = reqWubQ.judgeMJD(maxiTriUnix),
-					  bluelineArray_mjd = maxiTriUnixOther.map(reqWubQ.judgeMJD),
+					  redline_mjd = reqWubQ.judgeMJD(gwTriUnix) > c ? reqWubQ.judgeMJD(gwTriUnix) : null,
+					  blueline_mjd = reqWubQ.judgeMJD(maxiTriUnix) > c ? reqWubQ.judgeMJD(maxiTriUnix) : null,
+					  bluelineArray_mjd = maxiTriUnixOther.map(unixTime => reqWubQ.judgeMJD(unixTime) > c ? reqWubQ.judgeMJD(unixTime) : null),
 					  result = "";
-					  //console.log("dptcXmin :" + dptcXmin);
-					  //console.log("dptcXmax :" + dptcXmax);
+
+					//console.log("dptcXmin :" + dptcXmin);
+					//console.log("dptcXmax :" + dptcXmax);
+
 					if (!T || !v) return null;
 					var j = k / (s - c),
 						y = function (e) { //mjdをx座標に変換
