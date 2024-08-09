@@ -32,10 +32,10 @@ var sStar = Array(); //名前検索した天体を格納する配列
 var nStar = Array(); //直近天体を近い順で格納する配列
 var nStar2 = Array(); //直近天体を近い順で格納する配列(カーソル用)
 
-var topMargin = 62; //画像の中に描かれている余白（上にある余白、単位はpx）
+var topMargin = 53; //画像の中に描かれている余白（上にある余白、単位はpx）、MAGECS用に62から53に変更
 var leftMargin = 96; //画像の中に描かれている余白（左にある余白、単位はpx）
 var rightMargin = 96; //画像の中に描かれている余白（右にある余白、単位はpx）
-var bottomMargin = 107; //画像の中に描かれている余白（下にある余白、単位はpx）
+var bottomMargin = 98; //画像の中に描かれている余白（下にある余白、単位はpx）、MAGECS用に107から98に変更
 var figureWidth = 1728; //図の横幅
 var figureHeight = 864; //図の縦幅
 var mollwidePhi; //モルワイデ図の緯度、ラジアン
@@ -1487,20 +1487,20 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 	console.log(a);
 
 	// nCandidate2[n][0]とnCandidate2[n][1]をすべて表示
-	// for (let n = 0; n < nCandidate2.length; n++) {
-	// 	console.log(nCandidate2[n][0] + " & " + nCandidate2[n][1]);
-	// }
+	for (let n = 0; n < nCandidate2.length; n++) {
+		console.log(nCandidate2[n][0] + " & " + nCandidate2[n][1]);
+	}
 
-	// データの優先順位を定義
+	/// timescaleの優先順位を定義
 	const priorities = {
 	    "1day": 8,
 	    "4orb": 7,
 	    "1orb": 6,
 	    "1scan": 5,
-		"30s": 4,
+	    "30s": 4,
 	    "10s": 3,
-		"3s": 2,
-		"1s": 1
+	    "3s": 2,
+	    "1s": 1
 	};
 
 	// 複数イベントがあったときにsigmaが最大のものを選ぶ処理
@@ -1508,28 +1508,31 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 	let maxSigmaIndex = -1;
 	let maxTimeScale = "";
 	let maxPriority = -1;
+	let maxiTriArray = new Set(); // Setを使用して重複を防ぐ
 
 	for (let n = 0; n < nCandidate2.length; n++) {
-	  const str = nCandidate2[n][1];
-	  const sigmaValue = parseFloat(str.split(",")[2]);
-	  const firstString = str.match(/\(([^,]+)/)[1];
-	  const priority = priorities[firstString];
+	    const str = nCandidate2[n][1];
+	    const sigmaValue = parseFloat(str.split(",")[2]);
+	    const firstString = str.match(/\(([^,]+)/)[1];
+	    const priority = priorities[firstString];
 
-	  if (sigmaValue > maxSigmaValue || (sigmaValue === maxSigmaValue && priority > maxPriority)) {
-	    maxSigmaValue = sigmaValue;
-	    maxSigmaIndex = n;
-	    maxTimeScale = firstString;
-	    maxPriority = priority;
-	  }
+	    if (sigmaValue > maxSigmaValue || (sigmaValue === maxSigmaValue && priority > maxPriority)) {
+	        maxSigmaValue = sigmaValue;
+	        maxSigmaIndex = n;
+	        maxTimeScale = firstString;
+	        maxPriority = priority;
+	    }
+	
+	    maxiTriArray.add(nCandidate2[n][0]);
 	}
+
+	// maxiTriArrayを配列に変換し、sigmaが最大のdptcを先頭に移動
+	maxiTriArray = Array.from(maxiTriArray);
+	maxiTriArray = [nCandidate2[maxSigmaIndex][0], ...maxiTriArray.filter(dptc => dptc !== nCandidate2[maxSigmaIndex][0])];
 
 	console.log("Max sigma dptc: ", nCandidate2[maxSigmaIndex][0]);
 	console.log("Max sigma timescale: ", maxTimeScale);
-
-	// maxiTriDPTCに最大のsigmaを持つイベントのdptcを代入
-	// maxiTriDPTCはMAXItrigger（青線）を描画する時刻
-	let maxiTriDPTC = nCandidate2[maxSigmaIndex][0];
-	console.log("MAXI trigger: " + maxiTriDPTC + " (dptc)");
+	console.log("MaxiTriArray: ", maxiTriArray);
 
 	// DBでの検索の基準を「TRIGGER TIME」にするため、gwTriUnixをGPStimeに変換
 	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
@@ -1576,7 +1579,8 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 			//LCdataを受け取って、underframeのグラフを作成する関数を呼び出す
 			//window.parent.underframe.underframe_pro(recive_LCdata, send.dptc_zero);
 			//window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix);
-			window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix, maxiTriDPTC);
+			//window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix, maxiTriDPTC);
+			window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix, maxiTriArray);
 
 		}).fail(() => {
 			console.log('failed');
