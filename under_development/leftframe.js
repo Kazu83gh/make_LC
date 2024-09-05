@@ -97,10 +97,11 @@ var numReduction2 = new Array();
 
 var scale = 1;
 var orgWidth = 1920; //全天画像の横幅(ここで設定するのではなく、自動で取得できるようになるとベスト)
-//var orgHeight = 1033;
-var orgHeight = 1015; 
+var orgHeight = 1015;
+var image1orgHeight = 1015; 
 var imagesize = "fit";
-var gapImgHeight = 9; //image1とerrorImageの高さの差
+var gapImgHeight = 9; //image1とerrorImageの高さの差(9は初期値)
+const gapOrgHeight = 9; //image1とerrorImageの高さの差
 
 
 //20191214追加
@@ -1450,25 +1451,27 @@ function Range(value){ //ラジオボタンのON/OFFが押された際の処理
 
 //ここから画像サイズを合わせる全ての関数
 function full(){
+    console.log("---full():start---");
     parent.mainframe.beforeChange(); //変更前の画像の大きさを記録する
     parent.mainframe.document.getElementById("image1").style.width = orgWidth;
     parent.mainframe.document.getElementById("image1").style.height = orgHeight;
     parent.mainframe.afterChange(); //画像の大きさが変わった分だけマーカーの位置を適切にずらす
 
     parent.mainframe.document.getElementById("skymap").style.width = orgWidth;
-    parent.mainframe.document.getElementById("skymap").style.height = orgHeight;
+    parent.mainframe.document.getElementById("skymap").style.height = orgHeight + 18; //変更点
     parent.mainframe.document.getElementById("errorImage").style.width = orgWidth;
-    parent.mainframe.document.getElementById("errorImage").style.height = orgHeight;
+    parent.mainframe.document.getElementById("errorImage").style.height = orgHeight + 18;
     parent.mainframe.document.getElementById("asNS1").style.width = orgWidth;
-    parent.mainframe.document.getElementById("asNS1").style.height = orgHeight;
+    parent.mainframe.document.getElementById("asNS1").style.height = orgHeight + 18;
     parent.mainframe.document.getElementById("asNS2").style.width = orgWidth;
-    parent.mainframe.document.getElementById("asNS2").style.height = orgHeight;
+    parent.mainframe.document.getElementById("asNS2").style.height = orgHeight + 18;
     parent.mainframe.document.getElementById("mailNS1").style.width = orgWidth;
-    parent.mainframe.document.getElementById("mailNS1").style.height = orgHeight;
+    parent.mainframe.document.getElementById("mailNS1").style.height = orgHeight + 18;
     parent.mainframe.document.getElementById("mailNS2").style.width = orgWidth;
-    parent.mainframe.document.getElementById("mailNS2").style.height = orgHeight;
+    parent.mainframe.document.getElementById("mailNS2").style.height = orgHeight + 18;
     //parent.mainframe.reDispMarker();
 
+    gapImgHeight = gapOrgHeight; //初期化
     imagesize = "full";
 }
 
@@ -1479,19 +1482,20 @@ function full2(){
     parent.mainframe.afterChange(); //画像の大きさが変わった分だけマーカーの位置を適切にずらす
 
     parent.mainframe.document.getElementById("skymap").style.width = 2 * orgWidth;
-    parent.mainframe.document.getElementById("skymap").style.height = 2 * orgHeight;
+    parent.mainframe.document.getElementById("skymap").style.height = 2 * orgHeight + 4 * gapOrgHeight;
     parent.mainframe.document.getElementById("errorImage").style.width = 2 * orgWidth;
-    parent.mainframe.document.getElementById("errorImage").style.height = 2 * orgHeight;
+    parent.mainframe.document.getElementById("errorImage").style.height = 2 * orgHeight + 4 * gapOrgHeight;
     parent.mainframe.document.getElementById("asNS1").style.width = 2 * orgWidth;
-    parent.mainframe.document.getElementById("asNS1").style.height = 2 * orgHeight;
+    parent.mainframe.document.getElementById("asNS1").style.height = 2 * orgHeight + 4 * gapOrgHeight;
     parent.mainframe.document.getElementById("asNS2").style.width = 2 * orgWidth;
-    parent.mainframe.document.getElementById("asNS2").style.height = 2 * orgHeight;
+    parent.mainframe.document.getElementById("asNS2").style.height = 2 * orgHeight + 4 * gapOrgHeight;
     parent.mainframe.document.getElementById("mailNS1").style.width = 2 * orgWidth;
-    parent.mainframe.document.getElementById("mailNS1").style.height = 2 * orgHeight;
+    parent.mainframe.document.getElementById("mailNS1").style.height = 2 * orgHeight + 4 * gapOrgHeight;
     parent.mainframe.document.getElementById("mailNS2").style.width = 2 * orgWidth;
-    parent.mainframe.document.getElementById("mailNS2").style.height = 2 * orgHeight;
+    parent.mainframe.document.getElementById("mailNS2").style.height = 2 * orgHeight + 4 * gapOrgHeight;
     //parent.mainframe.reDispMarker();
-    
+
+    gapImgHeight = 2 * gapOrgHeight;
     imagesize = "full2";
 }
 
@@ -1542,8 +1546,6 @@ function heightSet(){
   
 }
 
-//gapImgHeight = 9;
-
 function sizeChange(){
     console.log("sizeChange:start");
     resizeRate = 1.0; //画面サイズに対する画像サイズの比率
@@ -1552,13 +1554,18 @@ function sizeChange(){
     //変数の定義
     imgWidth = parent.mainframe.document.getElementById("image1").width; //現在の画像の幅
     imgHeight = parent.mainframe.document.getElementById("image1").height; //現在の画像の高さ
+
+    console.log("before ");
+    console.log("imgWidth: " + imgWidth);
+    console.log("imgHeight: " + imgHeight);
            
     winWidth = Math.floor(parent.mainframe.window.innerWidth * resizeRate - margin * 2); //画像表示領域の幅
     winHeight = Math.floor(parent.mainframe.window.innerHeight * resizeRate - margin * 2); //画像表示領域の高さ
     widthRate = imgWidth / winWidth; //現在の画像サイズと画像表示領域サイズの比率（幅）
     heightRate = imgHeight / winHeight; //現在の画像サイズと画像表示領域サイズの比率（高さ）
 
-    gapImgHeight = Math.round(gapImgHeight /widthRate); //MAGECS用に追加 //変更点
+    gapImgHeight = Math.round(gapImgHeight / heightRate); //MAGECS用に追加 //変更点
+    console.log("gapImgHeight: " + gapImgHeight);
 
     if (widthRate >= 1 && heightRate >= 1 ){
 	// 画像の幅、高さが共に画面に収まらない場合
@@ -1595,22 +1602,25 @@ function sizeChange(){
     // for image 2
     // sizeChange_2(); 
     imgWidth = parent.mainframe.document.getElementById("image1").width; //現在の画像の幅
-    imgHeight = parent.mainframe.document.getElementById("image1").height + 2 * gapImgHeight; //現在の画像の高さ //変更点
+    imgHeight = parent.mainframe.document.getElementById("image1").height; //現在の画像の高さ //変更点
+
+    console.log("after ");
+    console.log("imgWidth: " + imgWidth);
+    console.log("imgHeight: " + imgHeight);
 
     parent.mainframe.document.getElementById("skymap").style.width = imgWidth;
-    parent.mainframe.document.getElementById("skymap").style.height = imgHeight;
+    parent.mainframe.document.getElementById("skymap").style.height = imgHeight + 2 * gapImgHeight;
     parent.mainframe.document.getElementById("errorImage").style.width = imgWidth;
-    parent.mainframe.document.getElementById("errorImage").style.height = imgHeight;
+    parent.mainframe.document.getElementById("errorImage").style.height = imgHeight + 2 * gapImgHeight;
     parent.mainframe.document.getElementById("asNS1").style.width = imgWidth;
-    parent.mainframe.document.getElementById("asNS1").style.height = imgHeight;
+    parent.mainframe.document.getElementById("asNS1").style.height = imgHeight + 2 * gapImgHeight;
     parent.mainframe.document.getElementById("asNS2").style.width = imgWidth;
-    parent.mainframe.document.getElementById("asNS2").style.height = imgHeight;
+    parent.mainframe.document.getElementById("asNS2").style.height = imgHeight + 2 * gapImgHeight;
     parent.mainframe.document.getElementById("mailNS1").style.width = imgWidth;
-    parent.mainframe.document.getElementById("mailNS1").style.height = imgHeight;
+    parent.mainframe.document.getElementById("mailNS1").style.height = imgHeight + 2 * gapImgHeight;
     parent.mainframe.document.getElementById("mailNS2").style.width = imgWidth;
-    parent.mainframe.document.getElementById("mailNS2").style.height = imgHeight;
+    parent.mainframe.document.getElementById("mailNS2").style.height = imgHeight + 2 * gapImgHeight;
 
-    imgHeight = parent.mainframe.document.getElementById("image1").height; //次にこの関数が呼び出されたときのために元に戻す //変更点
 }
 //ここまで画像サイズ合わせ
 
