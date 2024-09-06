@@ -1523,6 +1523,7 @@ function widthSet(){
     if(scale == 1){
 	parent.mainframe.document.getElementById("image1").style.width = winWidth;
 	parent.mainframe.document.getElementById("image1").style.height = Math.floor(imgHeight / widthRate);
+    gapImgHeight = Math.round(gapImgHeight / widthRate);
     } else if(scale == 2){
 	heightSet();
 	/*
@@ -1537,7 +1538,7 @@ function heightSet(){
     if(scale == 1){
 	parent.mainframe.document.getElementById("image1").style.width = Math.floor(imgWidth / heightRate);
 	parent.mainframe.document.getElementById("image1").style.height = winHeight;
-  
+    gapImgHeight = Math.round(gapImgHeight / heightRate);
     } else if(scale == 2){
 	parent.mainframe.document.getElementById("image1").style.width = 2 * Math.floor(imgWidth / heightRate);
 	parent.mainframe.document.getElementById("image1").style.height = 2 * winHeight;
@@ -1558,9 +1559,8 @@ function sizeChange(){
     winHeight = Math.floor(parent.mainframe.window.innerHeight * resizeRate - margin * 2); //画像表示領域の高さ
     widthRate = imgWidth / winWidth; //現在の画像サイズと画像表示領域サイズの比率（幅）
     heightRate = imgHeight / winHeight; //現在の画像サイズと画像表示領域サイズの比率（高さ）
-
-    gapImgHeight = Math.round(gapImgHeight / heightRate); //MAGECS用に追加 //変更点
-    console.log("gapImgHeight: " + gapImgHeight);
+    
+    //console.log("before::gapImgHeight: " + gapImgHeight);
 
     if (widthRate >= 1 && heightRate >= 1 ){
 	// 画像の幅、高さが共に画面に収まらない場合
@@ -1598,6 +1598,8 @@ function sizeChange(){
     // sizeChange_2(); 
     imgWidth = parent.mainframe.document.getElementById("image1").width; //現在の画像の幅
     imgHeight = parent.mainframe.document.getElementById("image1").height; //現在の画像の高さ //変更点
+
+    //console.log("after::gapImgHeight: " + gapImgHeight);
 
     parent.mainframe.document.getElementById("skymap").style.width = imgWidth;
     parent.mainframe.document.getElementById("skymap").style.height = imgHeight + gapImgHeight;
