@@ -12,10 +12,10 @@
 //そのため、つづりを間違えたまま使っている変数、関数もある。直す時は一箇所だけでなく全て直すこと。
 var EG = 1; //masivでは0だと変換前が赤道座標であることを記録、1だと銀河座標、いらない変数なので余裕があれば消しておきたい
 var margin = 0; //画像の周りの余白
-var orgWidth; //全天画像の横幅（原寸大）
-var orgHeight; //全天画像の縦幅（原寸大）
-var imgWidth;//全天画像の横幅
-var imgHeight; //全天画像の縦幅
+var orgWidth; //画像の横幅（原寸大）
+var orgHeight; //画像の縦幅（原寸大）
+var imgWidth;//画像の横幅
+var imgHeight; //画像の縦幅
 var preImgWidth;
 var preImgHeight;
 var recordX;
@@ -116,8 +116,9 @@ async function printLightCurve(x, y)
 
 function getImgStatus()
 {
+	//変更点
     orgWidth = document.getElementById("image1").naturalWidth; // オリジナルの幅
-    orgHeight = document.getElementById("image1").naturalHeight; // オリジナルの高さ
+	orgHeight = document.getElementById("image1").naturalHeight; // オリジナルの高さ
 	imgWidth = document.getElementById("image1").width; // 幅
 	imgHeight = document.getElementById("image1").height; // 高さ
 	
@@ -1467,6 +1468,12 @@ function nearCandidate(mousePositionObject) {
 	}
 }
 
+//underframeを表示する関数
+function changeFrames() {
+	// 親フレームの frameset の rows 属性を変更
+	parent.document.getElementById("mainFrames").setAttribute("rows", "*,300");
+  }
+
 // 画像上の[x, y](クリックした時に出てくる数字)を入力すると, svgタグで使うlight curveのpathが出力される
 async function polar2lightCurvePath(x, y, detail, diff) {
 	var a = []; // aを初期化
@@ -1585,6 +1592,8 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		}).fail(() => {
 			console.log('failed');
 		});
+
+		changeFrames();
 }
 
 //↑polar2~~を更に関数化させたい
@@ -1593,7 +1602,6 @@ async function makeLCpath()
 {
 	console.log(LC_array);
 }
-
 
 // var send_data 	={aaaa : a};
 
