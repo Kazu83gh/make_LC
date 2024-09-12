@@ -1542,6 +1542,7 @@ function heightSet(){
     } else if(scale == 2){
 	parent.mainframe.document.getElementById("image1").style.width = 2 * Math.floor(imgWidth / heightRate);
 	parent.mainframe.document.getElementById("image1").style.height = 2 * winHeight;
+    gapImgHeight = 2 * Math.round(gapImgHeight / heightRate);
     }
   
 }
