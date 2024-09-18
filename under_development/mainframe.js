@@ -1469,9 +1469,13 @@ function nearCandidate(mousePositionObject) {
 }
 
 //underframeを表示する関数
-function changeFrames() {
-	// 親フレームの frameset の rows 属性を変更
+function showUnderFrame() {
 	parent.document.getElementById("mainFrames").setAttribute("rows", "*,300");
+  }
+
+//underframeを非表示にする関数
+function hideUnderFrame() {
+	parent.document.getElementById("mainFrames").setAttribute("rows", "*, 0");
   }
 
 // 画像上の[x, y](クリックした時に出てくる数字)を入力すると, svgタグで使うlight curveのpathが出力される
@@ -1593,7 +1597,7 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 			console.log('failed');
 		});
 
-		changeFrames();
+		showUnderFrame();
 }
 
 //↑polar2~~を更に関数化させたい
