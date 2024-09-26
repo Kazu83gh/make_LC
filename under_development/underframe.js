@@ -9677,14 +9677,11 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  dptcXmax = unix2dptc(a.mjd2UnixFloat(s)) - 0.5, //グラフの右端のdptc(小数型)
 					  T = t.getTicks(dptcXmin, dptcXmax, k / 200),
 					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
-					  redline_mjd = reqWubQ.judgeMJD(gwTriUnix) > c ? reqWubQ.judgeMJD(gwTriUnix) : null,
-					  blueline_mjd = reqWubQ.judgeMJD(maxiTriUnix) > c ? reqWubQ.judgeMJD(maxiTriUnix) : null,
-					  bluelineArray_mjd = maxiTriUnixOther.map(unixTime => reqWubQ.judgeMJD(unixTime) > c ? reqWubQ.judgeMJD(unixTime) : null),
+					  redline_mjd = reqWubQ.judgeMJD(gwTriUnix),
+					  blueline_mjd = reqWubQ.judgeMJD(maxiTriUnix),
+					  blineArrayMJD = maxiTriUnixOther.map(unixTime => reqWubQ.judgeMJD(unixTime)),
+					  filBlineArrayMJD = blineArrayMJD.filter(value => value > c), //グラフの外で描画されないようにフィルター
 					  result = "";
-
-					//console.log("dptcXmin :" + dptcXmin);
-					//console.log("dptcXmax :" + dptcXmax);
-
 					if (!T || !v) return null;
 					var j = k / (s - c),
 						y = function (e) { //mjdをx座標に変換
@@ -9694,7 +9691,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						dptc2path = function (e) { //dptcをx座標に変換
 							return u + dptcrat * (e - dptcXmin);
 						},
-					  //光度曲線内の目盛り？
+					  //光度曲線内の目盛り
 					  E = [
 						e.createElement("path", {
 						  key: "ticks",
@@ -9716,13 +9713,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                             .join(""),
                           T.sub // 下の目盛りのパス
                             .map(function (e, t) {
-							  //console.log("下" + e);
-							  //console.log("下" + dptc2path(e - 0.5));
-							  //console.log("t :" + t);
-							  //console.log("T.stepOffset :" + T.stepOffset);
-							  //console.log("T.step :" + T.step);
                               var i = (t - T.stepOffset) % T.step == 0;
-							  //console.log(i);
                               return (
                                 "M" +
 								dptc2path(e) + //eのままだと0.5ずれるので0.5引く
@@ -9737,61 +9728,67 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                         ].join(""),
 						  stroke: i.Color.white,
 						}),
-						//GWのtrggertimeを表示(赤線)を描画
-						e.createElement("path", {
-						  d: [ 
-							"M" +
-							y(redline_mjd) + 
-							", 1v225"
-						  ],
-						  stroke: i.Color.red,
-						}),
-						//triggerという文字を表示
-						e.createElement(
-						  "text",
-						  {
-							x: y(redline_mjd) + 2,
-							y: 10,
-							fontSize: "80%",
-							fill: i.Color.white,
-							opacity: 0.7,
-						  },
-						  "GW trigger"
-						),
-						// MAXIのトリガー時刻を表示(青線)を描画
-						e.createElement("path", {
-						  d: [ 
-						    "M" +
-						    y(blueline_mjd) +
-						    ", 1v225"
-						  ],
-						  stroke: i.Color.blue,
-						}),
-						// blueline_mjd配列の各要素に対して青線を引く
-						bluelineArray_mjd.map((value) => 
-						    e.createElement("path", {
-						        d: [
-						            "M" +
-						            y(value) +
-						            ", 1v225"
-						        ],
-						        stroke: i.Color.lightblue,
-								//strokeOpacity: 0.5, //透明度の設定
-						    })
-						),
-						// sigma max dptcという文字を表示
-						e.createElement(
-							"text",
-							{
-							  x: y(blueline_mjd) + 2,
-							  y: 10,
-							  fontSize: "80%",
-							  fill: i.Color.white,
-							  opacity: 0.7,
-							},
-							"sigma max dptc" 
-						  ),
-					  ];
+						];
+					//GWのtrggertimeを表示(赤線)を描画
+					if (redline_mjd > c) {
+						E.push(
+							e.createElement("path", {
+								d: ["M" + y(redline_mjd) + ", 1v225"],
+								stroke: i.Color.red,
+							})
+						);
+					};
+					//GW triggerという文字を表示
+					if (redline_mjd > c) {
+						E.push(
+							e.createElement(
+								"text",
+								{
+									x: y(redline_mjd) + 2,
+									y: 10,
+									fontSize: "80%",
+									fill: i.Color.white,
+									opacity: 0.7,
+								},
+								"GW trigger"
+							),
+						);
+					};
+					// MAXIのトリガー時刻を表示(青線)を描画
+					if (blueline_mjd > c) {
+						E.push(
+							e.createElement("path", {
+								d: ["M" + y(blueline_mjd) + ", 1v225"],
+								stroke: i.Color.blue,
+							}),
+						);
+					};
+					//sigma max dptcという文字を表示
+					if (blueline_mjd > c) {
+						E.push(
+							e.createElement(
+								"text",
+								{
+									x: y(blueline_mjd) + 2,
+									y: 10,
+									fontSize: "80%",
+									fill: i.Color.white,
+									opacity: 0.7,
+								},
+								"sigma max dptc" 
+							),
+						);
+					};
+					// フィルターをかけた配列の各要素に対して青線を引く
+					filBlineArrayMJD.forEach(value => {
+						E.push(
+							e.createElement("path", {
+								d: ["M" + y(value) + ", 1v225"],
+								stroke: i.Color.lightblue,
+								// strokeOpacity: 0.5, 
+							}),
+						);
+					});
 					if (h) {
 					  var S = v.main.length - 1;
 					  v.main.forEach(function (t, n) {
@@ -9814,20 +9811,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						);
 					  }),
 						//光度曲線上部のUTCという文字の表示
-						E.push(
-						  e.createElement(
-							"text",
-							{
-							  key: "dateLabel",
-							  x: y(s),
-							  y: d - 4 - p,
-							  fill: i.Color.white,
-							  dominantBaseline: "baseline",
-							  textAnchor: "end",
-							},
-							"UTC"
-						  )
-						);
+						// E.push(
+						//   e.createElement(
+						// 	"text",
+						// 	{
+						// 	  key: "dateLabel",
+						// 	  x: y(s),
+						// 	  y: d - 4 - p,
+						// 	  fill: i.Color.white,
+						// 	  dominantBaseline: "baseline",
+						// 	  textAnchor: "end",
+						// 	},
+						// 	"UTC"
+						//   )
+						// );
 					  ////////////////////////////////////////////////////////////////////////////////////
 					  //表示されている年月日の中で最頻値の年月日を取得
 					  result = num[Math.round(num.length / 2) - 1];
@@ -10752,45 +10749,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                     },
                                     "s"),
 								),
-								// plottypeの選択するラジオボタンの表示
-								// n.createElement.apply(
-								//   void 0,
-								//   [
-								// 	"li",
-								// 	null,
-								// 	n.createElement(
-                                //         "label", 
-                                //         {
-                                //           style: {color: "white"}
-                                //         }, 
-                                //     "Plot type: "),
-								//   ].concat(
-								// 	o.AvailablePlotTypes.map(function (e) {
-								// 	  return n.createElement(
-								// 		"label",
-								// 		{
-								// 		  className: p.default.radioLabel,
-                                //           style: {color: "white"},
-								// 		},
-								// 		n.createElement("input", {
-								// 		  type: "radio",
-								// 		  name: o.URLParameterKey.plotType,
-								// 		  value: e,
-								// 		  defaultChecked: y.plotType === e,
-								// 		  onChange: function (e) {
-								// 			T({
-								// 			  plotType: c.filterPlotType(
-								// 				e.currentTarget.value
-								// 			  ),
-								// 			});
-								// 		  },
-								// 		}),
-								// 		o.AvailablePlotTypeTitles[e]
-								// 	  );
-								// 	}),
-								// 	["."]
-								//   )
-								// ),
 							  // エネルギーバンドの選択するラジオボタンの表示
 							    n.createElement.apply(
                                   void 0,
