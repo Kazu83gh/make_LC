@@ -168,9 +168,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
     // グラフの上限を固定するためにカウント数の最大値を取得
     // all_LCdataの奇数番目(カウント数)のみを抽出
-    let all_LCdata_count = all_LCdata.filter((element, index) => index % 2 !== 0);
-    let highest_count = Math.max(...all_LCdata_count);
-    let sqrt_highest_count = Math.sqrt(highest_count);
+    // let all_LCdata_count = all_LCdata.filter((element, index) => index % 2 !== 0);
+    // let highest_count = Math.max(...all_LCdata_count);
+    // let sqrt_highest_count = Math.sqrt(highest_count);
 
 	// MAXI trigger(青線)を描画するための下準備
 	maxiTriUnix = dptc2unix(maxiTriArray[0]);
@@ -8588,11 +8588,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							(d = b[(m = 2 * y + 3)]),
 							  (A = b[m + 1]),
 							  (n[y] = Math.min(n[y], d - A)),
-							  //(a[y] = Math.max(a[y], d + A)),
+							  (a[y] = Math.max(a[y], d + A)),
 							  //Y軸を固定、1番多いカウント数＋誤差を最大値としている
-                              (a[y] = highest_count + sqrt_highest_count), 
-                              //console.log("all_LCdata_count" + Math.max(...all_LCdata_count)),
-                              //console.log("最大値は" + a[y]);
+                              //(a[y] = highest_count + sqrt_highest_count), 
 							  t.push(b);
 						}
 						//console.log(n[0]); //minとmax//工事中
@@ -9306,7 +9304,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						//console.log(e);
 						return e;
 					  });
-					var u = e.getTickScale(t, r, s, [1, 2, 5, 10, 20, 50, 100]);
+					var u = e.getTickScale(t, r, s, [1, 2, 5, 10, 20]);
 					// 第３引数は目盛りの候補の配列
 					if (u) {
 					  for (var n = [], a = u.firstMain; a < r; a += u.mainScale)
@@ -9344,11 +9342,11 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  //YTicksの設定、YTicksを宣言するとこれが呼ばれる。
 				  exports.YTicks = e.memo(function (n) {
 					var a = n.min,
-					  c = n.max,
-					  o = n.left,
-					  l = n.bottom,
-					  s = n.height,
-					  u = t.getTicks(a, c, s / 100);
+					  	c = n.max,
+					  	o = n.left,
+					  	l = n.bottom,
+					  	s = n.height,
+					  	u = t.getTicks(a, c, s / 100);
 					if (!u) return null;
 					var m = c - a,
 					  h = s / m,
@@ -9809,22 +9807,22 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							(x || v.toString)(t)
 						  )
 						);
-					  }),
+					  });
 						//光度曲線上部のUTCという文字の表示
-						// E.push(
-						//   e.createElement(
-						// 	"text",
-						// 	{
-						// 	  key: "dateLabel",
-						// 	  x: y(s),
-						// 	  y: d - 4 - p,
-						// 	  fill: i.Color.white,
-						// 	  dominantBaseline: "baseline",
-						// 	  textAnchor: "end",
-						// 	},
-						// 	"UTC"
-						//   )
-						// );
+						E.push(
+						  e.createElement(
+							"text",
+							{
+							  key: "dateLabel",
+							  x: y(s),
+							  y: d - 4 - p,
+							  fill: i.Color.white,
+							  dominantBaseline: "baseline",
+							  textAnchor: "end",
+							},
+							"UTC"
+						  )
+						);
 					  ////////////////////////////////////////////////////////////////////////////////////
 					  //表示されている年月日の中で最頻値の年月日を取得
 					  result = num[Math.round(num.length / 2) - 1];
