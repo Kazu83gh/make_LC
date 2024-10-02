@@ -201,7 +201,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     	return graph_data;
     };
 
-    let Create_LightCurve = function () {
+    let zoomLC = function () {
     	setTimeout(function () {
     	if (graph_scale_change[0] != 0) {
         	//console.log("来た");
@@ -211,7 +211,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         	}
         	// 初期化部分
         	Re_Reload = 0;
-        	graph_scale_change[0] = 0;
+			graph_scale_change[0] = 0;
         	graph_scale_change[1] = 0;
         } else if (graph_scale_change[0] == 0 && shift_event) {
         	//console.log("シフト押されてる");
@@ -235,7 +235,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		//console.log(graph_Summarize(dict_LCdata));
 		console.log("GPSとdptcの差:" + valueGPS2DPTC);
 		console.log("GPSとdptcの差(整数):" + parseInt(valueGPS2DPTC));
-	
+		console.log("graph_scale_change[0] = " + graph_scale_change[0]);
+		console.log("graph_scale_change[1] = " + graph_scale_change[1]);
+
 		//dict_LCdataをもとに光度曲線の描画
     	ParcelRequire = (function (e, r, t, n) {
 			var i,
@@ -7932,6 +7934,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  (e.red = "#ff0000"),
 					  (e.green = "#007f00"),
 					  (e.blue = "#0000ff"),
+					  (e.yellow = "#ffff00"),
+					  (e.orange = "#ff8c00"),
 					  (e.lightblue = "#71c5e8");
 					})((p = exports.Color || (exports.Color = {}))),
 					// バンドごとに光度曲線の色を設定
@@ -9051,7 +9055,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                 };
 
                   //制限時間内にクリックした回数でダブルクリックかを判定
-                  //ダブルクリックした時に呼ばれる。工事中
+                  //ダブルクリックした時に呼ばれる。
                   document.onclick = function () {
                     clickCount += 1;
                     //下の関数の中では使えないため外に出す。
@@ -9072,7 +9076,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                             graph_scale_change[0] == 0 &&
                             target_id
                           ) {
-                            //初期表示範囲から選択したデータの時間を比べ差異を格納。発表
+                            //初期表示範囲から選択したデータの時間を比べ差異を格納。
                             let start_MJDRange =
                               graph_data[graph_num][0][0] -
                               10 / 86400 -
@@ -9114,7 +9118,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                               }, 540); //この処理を540ミリ秒経過後に完了させる。
 
                               //ダブルクリックされたときに新しい光度曲線を作成して、画面に表示
-                              Create_LightCurve();
+                              zoomLC();
 
                               //divタグ内の要素がもしもなくなってしまった時の対処。
                               setTimeout(function () {
@@ -9346,7 +9350,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  	o = n.left,
 					  	l = n.bottom,
 					  	s = n.height,
-					  	u = t.getTicks(a, c, s / 100);
+					  	//u = t.getTicks(a, c, s / 100);
+						u = t.getTicks(a, c, s / 25);
 					if (!u) return null;
 					var m = c - a,
 					  h = s / m,
@@ -9675,10 +9680,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  dptcXmax = unix2dptc(a.mjd2UnixFloat(s)) - 0.5, //グラフの右端のdptc(小数型)
 					  T = t.getTicks(dptcXmin, dptcXmax, k / 200),
 					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
-					  redline_mjd = reqWubQ.judgeMJD(gwTriUnix),
-					  blueline_mjd = reqWubQ.judgeMJD(maxiTriUnix),
-					  blineArrayMJD = maxiTriUnixOther.map(unixTime => reqWubQ.judgeMJD(unixTime)),
-					  filBlineArrayMJD = blineArrayMJD.filter(value => value > c), //グラフの外で描画されないようにフィルター
+					  gwLineMJD = reqWubQ.judgeMJD(gwTriUnix),
+					  maxiLineMJD = reqWubQ.judgeMJD(maxiTriUnix),
+					  maxiArrayMJD = maxiTriUnixOther.map(unixTime => reqWubQ.judgeMJD(unixTime)),
+					  filMaxiArrayMJD = maxiArrayMJD.filter(value => value > c), //グラフの外で描画されないようにフィルター
 					  result = "";
 					if (!T || !v) return null;
 					var j = k / (s - c),
@@ -9728,21 +9733,21 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						}),
 						];
 					//GWのtrggertimeを表示(赤線)を描画
-					if (redline_mjd > c) {
+					if (gwLineMJD > c) {
 						E.push(
 							e.createElement("path", {
-								d: ["M" + y(redline_mjd) + ", 1v225"],
-								stroke: i.Color.red,
+								d: ["M" + y(gwLineMJD) + ", 1v225"],
+								stroke: i.Color.orange,
 							})
 						);
 					};
 					//GW triggerという文字を表示
-					if (redline_mjd > c) {
+					if (gwLineMJD > c) {
 						E.push(
 							e.createElement(
 								"text",
 								{
-									x: y(redline_mjd) + 2,
+									x: y(gwLineMJD) + 2,
 									y: 10,
 									fontSize: "80%",
 									fill: i.Color.white,
@@ -9753,21 +9758,21 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						);
 					};
 					// MAXIのトリガー時刻を表示(青線)を描画
-					if (blueline_mjd > c) {
+					if (maxiLineMJD > c) {
 						E.push(
 							e.createElement("path", {
-								d: ["M" + y(blueline_mjd) + ", 1v225"],
-								stroke: i.Color.blue,
+								d: ["M" + y(maxiLineMJD) + ", 1v225"],
+								stroke: i.Color.yellow,
 							}),
 						);
 					};
 					//sigma max dptcという文字を表示
-					if (blueline_mjd > c) {
+					if (maxiLineMJD > c) {
 						E.push(
 							e.createElement(
 								"text",
 								{
-									x: y(blueline_mjd) + 2,
+									x: y(maxiLineMJD) + 2,
 									y: 10,
 									fontSize: "80%",
 									fill: i.Color.white,
@@ -9778,12 +9783,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						);
 					};
 					// フィルターをかけた配列の各要素に対して青線を引く
-					filBlineArrayMJD.forEach(value => {
+					filMaxiArrayMJD.forEach(value => {
 						E.push(
 							e.createElement("path", {
 								d: ["M" + y(value) + ", 1v225"],
-								stroke: i.Color.lightblue,
-								// strokeOpacity: 0.5, 
+								stroke: i.Color.yellow,
+								strokeOpacity: 0.5, 
 							}),
 						);
 					});
@@ -10227,7 +10232,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					(exports.LightCurve = function (e) {
                       exports.h = t.useState(e.preferences.mjdRange);  
                       exports.h[0][0] += graph_scale_change[0];
-                      exports.h[0][1] -= graph_scale_change[1];  
+                      exports.h[0][1] -= graph_scale_change[1]; 
+					//console.log(t.useState(e.preferences.mjdRange)); 
 
 					  var u = t.useRef(null),
 						s = t.useState(0.94 * window.innerWidth),
