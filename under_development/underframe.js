@@ -9082,8 +9082,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                 			// 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する
                                 			while (exports.parent.firstChild) {
                                 	  			exports.parent.removeChild(
-                                	    		exports.parent.firstChild
-                                	  		);
+                                	    			exports.parent.firstChild
+                                	  			);
                                 	  		// 全て消えてしまう場合はこのへんを修正
                                 	  		// if (delete_child == 6) {
                                 	  		//   break;
@@ -9111,7 +9111,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	                                		// }
 	                              		}, 700); //この判定は700ミリ秒経過後に実行される
 	                            	}
-									
+
 	                            	child_remove();
                           		}
                         	} else {
