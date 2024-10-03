@@ -9302,13 +9302,15 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  exports.__esModule = !0;
 				  var e = require("./getTickScale");
 				  let MJDChange = require("@maxi-js/date-tools");
-				  exports.getTicks = function (t, r, s, i) {
+				  /////exports.getTicks = function (t, r, s, i) {
+				  exports.getTicks = function (t, r, s, base, i) {
 					void 0 === i &&
 					  (i = function (e) {
 						//console.log(e);
 						return e;
 					  });
-					var u = e.getTickScale(t, r, s, [1, 2, 5, 10, 20]);
+					/////var u = e.getTickScale(t, r, s, [1, 2, 5, 10, 20]);
+					var u = e.getTickScale(t, r, s, [1, 2, 5, 10, 20], base);
 					// 第３引数は目盛りの候補の配列
 					if (u) {
 					  for (var n = [], a = u.firstMain; a < r; a += u.mainScale)
@@ -9351,7 +9353,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  	l = n.bottom,
 					  	s = n.height,
 					  	//u = t.getTicks(a, c, s / 100);
-						u = t.getTicks(a, c, s / 25);
+						u = t.getTicks(a, c, s / 30, 5);
 					if (!u) return null;
 					var m = c - a,
 					  h = s / m,
