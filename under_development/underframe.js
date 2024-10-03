@@ -9009,38 +9009,24 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
                 //カーソルの位置がどのデータに近いかを判定;
-                //let cursor_position = function (data, cursor_time) {
-                //  let i, array_num; //array_numは配列内で最小の値が入っている場所。
-                //  let dptc =        [
-                //  //カーソルの位置のdptcと各データの中央のdptcの差を代入。
-                //  for (i = 0; i < data.length; i++) {
-                //    dptc.push(
-                //      Math.abs(
-                //        t.mjd2Unix(data[i][Math.round(data[i].length / 2)][0]) -
-                //          cursor_time
-                //      )
-                //    );
-                //  }
-                //console.log(dptc);
-
 				let cursor_position = function (data, cursor_time) {
 					let i, array_num; //array_numは配列内で最小の値が入っている場所。
 					let dptc = [];
 				  
 					for (i = 0; i < data.length; i++) {
-					  // data[i]が存在する時にのみ実行
-					  if (data[i]) {
-						let middleIndex = Math.round(data[i].length / 2);
-						// middleIndexが有効な値がどうか
-						if (middleIndex < data[i].length) {
-						  dptc.push(
-							Math.abs(
-							  t.mjd2Unix(data[i][middleIndex][0]) -
-								cursor_time
-							)
-						  );
-						}
-					  }
+					    // data[i]が存在する時にのみ実行
+					    if (data[i]) {
+							let middleIndex = Math.round(data[i].length / 2);
+							// middleIndexが有効な値がどうか
+							if (middleIndex < data[i].length) {
+						  		dptc.push(
+									Math.abs(
+							  			t.mjd2Unix(data[i][middleIndex][0]) -
+										cursor_time
+									)
+						  		);
+							}
+					  	}
 					}
 					// console.log(dptc);
 
@@ -9050,108 +9036,99 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                         ? dptc.indexOf(Math.min(...dptc))
                         : (array_num = null);
 
-                    //console.log(array_num);
                 	return array_num;
                 };
 
-                  //制限時間内にクリックした回数でダブルクリックかを判定
-                  //ダブルクリックした時に呼ばれる。
-                  document.onclick = function () {
+                //制限時間内にクリックした回数でダブルクリックかを判定
+                document.onclick = function () {
                     clickCount += 1;
-                    //下の関数の中では使えないため外に出す。
+                    //下の関数の中では使えないため外に出す
                     let target_id = event.target.id == "can_zoom" ? true : false;
                     let shift_on = event.shiftKey ? true : false;
 
                     if (clickCount === 1) {
-                      //タイマーをセットし、タイマー終了時にカウントに応じた処理をする
-                      timer = setTimeout(() => {
-                        if (clickCount === 2) {
-                          let graph_num = cursor_position(
-                            graph_data,
-                            t.mjd2Unix(m(i.x))
-                          );
+                      	//タイマーをセットし、タイマー終了時にカウントに応じた処理をする
+                      	timer = setTimeout(() => {
+							//ダブルクリックのときの処理
+                        	if (clickCount === 2) {
+                          		let graph_num = cursor_position(graph_data, t.mjd2Unix(m(i.x)));
 
-                          if (
-                            graph_num != null &&
-                            graph_scale_change[0] == 0 &&
-                            target_id
-                          ) {
-                            //初期表示範囲から選択したデータの時間を比べ差異を格納。
-                            let start_MJDRange =
-                              graph_data[graph_num][0][0] -
-                              10 / 86400 -
-                              initial_MJDRange[0];
-                            let end_MJDRange =
-                              initial_MJDRange[1] -
-                              (graph_data[graph_num][
-                                graph_data[graph_num].length - 1
-                              ][0] +
-                                10 / 86400);
+                          		if (
+                            		graph_num != null &&
+                            		graph_scale_change[0] == 0 &&
+                            		target_id
+                          		) {
+                            		//初期表示範囲から選択したデータの時間を比べ差異を格納
+                            		let start_MJDRange =
+                              			graph_data[graph_num][0][0] -
+                              			10 / 86400 -
+                              			initial_MJDRange[0];
+                            		let end_MJDRange =
+                              			initial_MJDRange[1] -
+                              			(graph_data[graph_num][graph_data[graph_num].length - 1][0] +
+                                		10 / 86400);
 
-                            //shiftを押されていた場合初期表示画面に戻す。
-                            if (shift_on) {
-                              start_MJDRange = 0;
-                              end_MJDRange = 0;
-                              // graph_scale_change = [0, 0];
-                              shift_event = true;
-                            }
+                            	//shiftを押されていた場合初期表示画面に戻す
+                            	if (shift_on) {
+                              		start_MJDRange = 0;
+                              		end_MJDRange = 0;
+                              		// graph_scale_change = [0, 0];
+                              		shift_event = true;
+                            	}
 
-                            //拡大時一回すべて消した後変更したものを表示。
-                            function child_remove() {
-                              setTimeout(function () {
-                                // 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する。
-                                while (exports.parent.firstChild) {
-                                  exports.parent.removeChild(
-                                    exports.parent.firstChild
-                                  );
-                                  // 全て消えてしまう場合はこのへんを修正
-                                  // if (delete_child == 6) {
-                                  //   break;
-                                  // }
-                                  // delete_child++;
-                                }
+                            	//拡大時一回すべて消した後変更したものを表示。
+                            	function child_remove() {
+                              		setTimeout(function () {
+                                		// 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する
+                                		while (exports.parent.firstChild) {
+                                  			exports.parent.removeChild(
+                                    		exports.parent.firstChild
+                                  		);
+                                  		// 全て消えてしまう場合はこのへんを修正
+                                  		// if (delete_child == 6) {
+                                  		//   break;
+                                  		// }
+                                  		// delete_child++;
+                                		}
 
-                                graph_scale_change[0] = start_MJDRange;
-                                graph_scale_change[1] = end_MJDRange;
-                                //console.log("子要素 削除完了");
-                                //console.log(graph_data[graph_num]);
-                              }, 540); //この処理を540ミリ秒経過後に完了させる。
+                                		graph_scale_change[0] = start_MJDRange;
+                                		graph_scale_change[1] = end_MJDRange;
+                              		}, 540); //この処理を540ミリ秒経過後に完了させる
 
-                              //ダブルクリックされたときに新しい光度曲線を作成して、画面に表示
-                              zoomLC();
+                              		//新しい光度曲線を作成
+                              		zoomLC();
 
-                              //divタグ内の要素がもしもなくなってしまった時の対処。
-                              setTimeout(function () {
-                                if (exports.parent.childElementCount != 1) {
-                                  //一旦全部初期化
-                                  console.log("表示エラーが発生しました");
-
-                                  graph_scale_change = [0, 0];
-                                  createLC(pre_LCdata); //一旦初期表示画面にする。
-                                } else if (exports.parent.childElementCount == 1) {
-                                  //console.log("正常に動作している。");
-                                  //console.log(graph_scale_change);
-                                }
-                              }, 700); //この判定は700ミリ秒経過後に実行される。
-                            }
-                            child_remove();
-                          }
-                        } else {
-                          console.log("クリックカウント" + clickCount);
-                        }
-                        //変数をリセット
-                        timer = null;
-                        clickCount = 0;
-                      }, time_over);
+                              		//divタグ内の要素がもしもなくなってしまった時の対処
+                              		setTimeout(function () {
+                                		if (exports.parent.childElementCount != 1) {
+                                	  		console.log("表示エラーが発生しました");
+										
+									  		//一旦全部初期化
+                                	  		graph_scale_change = [0, 0];
+                                	  		createLC(pre_LCdata); 
+                                		} 
+										// else if (exports.parent.childElementCount == 1) {
+                                		// }
+                              		}, 700); //この判定は700ミリ秒経過後に実行される
+                            	}
+                            	child_remove();
+                          		}
+                        	} else {
+                          	console.log("クリックカウント" + clickCount);
+                        	}
+                        	//初期化
+                        	timer = null;
+                        	clickCount = 0;
+                      	}, time_over);
                     }
-                  };
+                };
 		  
 				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		  
-					let date = new Date(t.mjd2Unix(m(i.x)) * 1000 - 32400000); //new Dateの()内について、表示はUTCなので9時間引かなければいけない。
-					let Hour = ("00" + date.getHours()).slice(-2); //時間
-					let Minute = ("00" + date.getMinutes()).slice(-2); //分
-					let Second = ("00" + date.getSeconds()).slice(-2); //秒
+				let date = new Date(t.mjd2Unix(m(i.x)) * 1000 - 32400000); //new Dateの()内について、表示はUTCなので9時間引かなければいけない。
+				let Hour = ("00" + date.getHours()).slice(-2); //時間
+				let Minute = ("00" + date.getMinutes()).slice(-2); //分
+				let Second = ("00" + date.getSeconds()).slice(-2); //秒
 		  
 				//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		  
