@@ -9068,50 +9068,51 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                               			(graph_data[graph_num][graph_data[graph_num].length - 1][0] +
                                 		10 / 86400);
 
-                            	//shiftを押されていた場合初期表示画面に戻す
-                            	if (shift_on) {
-                              		start_MJDRange = 0;
-                              		end_MJDRange = 0;
-                              		// graph_scale_change = [0, 0];
-                              		shift_event = true;
-                            	}
+                            		//shiftを押されていた場合初期表示画面に戻す
+                            		if (shift_on) {
+                              			start_MJDRange = 0;
+                              			end_MJDRange = 0;
+                              			// graph_scale_change = [0, 0];
+                              			shift_event = true;
+                            		}
 
-                            	//拡大時一回すべて消した後変更したものを表示。
-                            	function child_remove() {
-                              		setTimeout(function () {
-                                		// 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する
-                                		while (exports.parent.firstChild) {
-                                  			exports.parent.removeChild(
-                                    		exports.parent.firstChild
-                                  		);
-                                  		// 全て消えてしまう場合はこのへんを修正
-                                  		// if (delete_child == 6) {
-                                  		//   break;
-                                  		// }
-                                  		// delete_child++;
-                                		}
+                            		//拡大時一回すべて消した後変更したものを表示。
+                            		function child_remove() {
+                              			setTimeout(function () {
+                                			// 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する
+                                			while (exports.parent.firstChild) {
+                                	  			exports.parent.removeChild(
+                                	    		exports.parent.firstChild
+                                	  		);
+                                	  		// 全て消えてしまう場合はこのへんを修正
+                                	  		// if (delete_child == 6) {
+                                	  		//   break;
+                                	  		// }
+                                	  		// delete_child++;
+                                			}
 
-                                		graph_scale_change[0] = start_MJDRange;
-                                		graph_scale_change[1] = end_MJDRange;
-                              		}, 540); //この処理を540ミリ秒経過後に完了させる
+                                			graph_scale_change[0] = start_MJDRange;
+                                			graph_scale_change[1] = end_MJDRange;
+                              			}, 540); //この処理を540ミリ秒経過後に完了させる
 
-                              		//新しい光度曲線を作成
-                              		zoomLC();
+	                              		//新しい光度曲線を作成
+	                              		zoomLC();
 
-                              		//divタグ内の要素がもしもなくなってしまった時の対処
-                              		setTimeout(function () {
-                                		if (exports.parent.childElementCount != 1) {
-                                	  		console.log("表示エラーが発生しました");
-										
-									  		//一旦全部初期化
-                                	  		graph_scale_change = [0, 0];
-                                	  		createLC(pre_LCdata); 
-                                		} 
-										// else if (exports.parent.childElementCount == 1) {
-                                		// }
-                              		}, 700); //この判定は700ミリ秒経過後に実行される
-                            	}
-                            	child_remove();
+	                              		//divタグ内の要素がもしもなくなってしまった時の対処
+	                              		setTimeout(function () {
+	                                		if (exports.parent.childElementCount != 1) {
+	                                	  		console.log("表示エラーが発生しました");
+											
+										  		//一旦全部初期化
+	                                	  		graph_scale_change = [0, 0];
+	                                	  		createLC(pre_LCdata); 
+	                                		} 
+											// else if (exports.parent.childElementCount == 1) {
+	                                		// }
+	                              		}, 700); //この判定は700ミリ秒経過後に実行される
+	                            	}
+									
+	                            	child_remove();
                           		}
                         	} else {
                           	console.log("クリックカウント" + clickCount);
