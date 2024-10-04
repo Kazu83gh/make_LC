@@ -211,10 +211,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         	}
         	// 初期化部分
         	Re_Reload = 0;
-			graph_scale_change[0] = 0;
-        	graph_scale_change[1] = 0;
         } else if (graph_scale_change[0] == 0 && shift_event) {
-        	//console.log("シフト押されてる");
         	shift_event = false;
         	createLC(pre_LCdata);
         }
@@ -233,10 +230,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		console.log(Tolist(dptc_count_data));
     	graph_data = graph_Summarize(dict_LCdata);
 		//console.log(graph_Summarize(dict_LCdata));
-		console.log("GPSとdptcの差:" + valueGPS2DPTC);
+		//console.log("GPSとdptcの差:" + valueGPS2DPTC);
 		console.log("GPSとdptcの差(整数):" + parseInt(valueGPS2DPTC));
-		console.log("graph_scale_change[0] = " + graph_scale_change[0]);
-		console.log("graph_scale_change[1] = " + graph_scale_change[1]);
 
 		//dict_LCdataをもとに光度曲線の描画
     	ParcelRequire = (function (e, r, t, n) {
@@ -8069,12 +8064,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					(function (e) {
 					  (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
 					  // (e.font = "font");
-					})((t = exports.URLParameterKey || (exports.URLParameterKey = {}))),
+					})((t = exports.URLParameterKey || (exports.URLParameterKey = {}))), 
 					//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-					(exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)), //表示範囲のスタート地点、データから1時間前から表示開始
-					(exports.endMJD = data_day.judgeMJD(
-					  dict_LCdata[dict_LCdata.length - 1][0] + 3600
-					)), //表示範囲の終了地点、最後のデータから1時間後まで表示する。
+					//表示範囲のスタート地点、データから1時間前から表示開始
+					(exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600) + graph_scale_change[0]),
+					//表示範囲の終了地点、最後のデータから1時間後まで表示する。
+					(exports.endMJD = data_day.judgeMJD(dict_LCdata[dict_LCdata.length - 1][0] + 3600) - graph_scale_change[1]),
                     (initial_MJDRange = [exports.epochMJD, exports.endMJD]),
 					//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		  
@@ -9055,7 +9050,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
                           		if (
                             		graph_num != null &&
-                            		graph_scale_change[0] == 0 &&
+                            		//graph_scale_change[0] == 0 &&
                             		target_id
                           		) {
                             		//初期表示範囲から選択したデータの時間を比べ差異を格納
@@ -9076,7 +9071,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                               			shift_event = true;
                             		}
 
-                            		//拡大時一回すべて消した後変更したものを表示。
+                            		//光度曲線を削除した後、拡大した光度曲線を表示
                             		function child_remove() {
                               			setTimeout(function () {
                                 			// 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する
@@ -10210,10 +10205,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						};
 				  }),
 					(exports.LightCurve = function (e) {
-                      exports.h = t.useState(e.preferences.mjdRange);  
-                      exports.h[0][0] += graph_scale_change[0];
-                      exports.h[0][1] -= graph_scale_change[1]; 
-					//console.log(t.useState(e.preferences.mjdRange)); 
+                      exports.h = t.useState(e.preferences.mjdRange);
 
 					  var u = t.useRef(null),
 						s = t.useState(0.94 * window.innerWidth),
@@ -10224,7 +10216,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						f = v[0],
 						m = v[1],
 						d = a - c.left - c.right,
-						// h = t.useState(e.preferences.mjdRange),
+						//h = t.useState(e.preferences.mjdRange),
 						g = exports.h[0],
 						p = exports.h[1],
 						E = t.useState(null),
@@ -10759,8 +10751,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                           defaultChecked: selectedEnergyBand === e, 
                                           onChange: function (e) {
                                             ////////////// 選択肢ごとの処理 //////////////
-                                            //console.log('選択前の格納データ = ' + pre_LCdata)
-                                            //console.log('選択されたエネルギーバンド = ' + e.currentTarget.value);
                                             selectedEnergyBand = e.currentTarget.value;
                                             switch (selectedEnergyBand) {
                                               case "All":
@@ -10779,16 +10769,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                                 // デフォルトの処理
                                                 break;
                                             }
-                                            // console.log('格納データ = ' + pre_LCdata)
   
                                             // 光度曲線を消去
                                             var divs = document.getElementsByTagName('div');
                                             for(var i = 0; i < divs.length; i++){
                                               divs[i].innerHTML = '';
                                             };
-                                            // console.log('光度曲線を消去しました。');
   
-                                            // 光度曲線を再描画
+                                            // 光度曲線を再描画	
                                             createLC(pre_LCdata);
                                             /////////////////////////////////////////////
                                           },
