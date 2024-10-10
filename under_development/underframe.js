@@ -100,6 +100,13 @@ function unix2dptc(unixTime){
 	return dptc;
 }
 
+// unixtimeからMJDに変換する関数
+function unix2MJD(data) {
+	let judge = (data * 1000 + 35067168e5) / 864e5;
+
+	return judge;
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //　[dptc, count, dptc, count, ...]の形から
@@ -166,6 +173,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     // jsonデータの受け取り、変数に格納
 	let pre_LCdata = all_LCdata;
 
+	//光度曲線の表示範囲を設定(横軸)
+	let dict_AllLCdata = Tolist(all_LCdata);
+	startAllRange = unix2MJD(dict_AllLCdata[0][0] - 3600);
+	endAllRange = unix2MJD(dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600);
+	
+	startRange = startAllRange;
+	endRange = endAllRange;
+
     // グラフの上限を固定するためにカウント数の最大値を取得
     // all_LCdataの奇数番目(カウント数)のみを抽出
     // let all_LCdata_count = all_LCdata.filter((element, index) => index % 2 !== 0);
@@ -177,8 +192,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	console.log("dptc → UNIX \n" + maxiTriArray[0] + " → " + maxiTriUnix);
 
 	let maxiTriUnixOther = [...maxiTriArray.slice(1).map(dptc2unix)];
-	//console.log("maxiTriUnixOther : ", maxiTriUnixOther);
-
+	
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // 各グラフを一つのまとまりとして再び配列に格納する。（拡大機能に使用、underframe_proの外に出すと拡大機能が使えなくなる）
@@ -217,7 +231,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         }
       }, 540);
     };
-
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// ここから光度曲線の描画
@@ -8066,13 +8079,22 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  // (e.font = "font");
 					})((t = exports.URLParameterKey || (exports.URLParameterKey = {}))), 
 					//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+					(exports.epochAllMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600) + graph_scale_change[0]),
+					(exports.endAllMJD = data_day.judgeMJD(dict_LCdata[dict_LCdata.length - 1][0] + 3600) - graph_scale_change[1]),
 					//表示範囲のスタート地点、データから1時間前から表示開始
-					(exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600) + graph_scale_change[0]),
-					//表示範囲の終了地点、最後のデータから1時間後まで表示する。
-					(exports.endMJD = data_day.judgeMJD(dict_LCdata[dict_LCdata.length - 1][0] + 3600) - graph_scale_change[1]),
+					(exports.epochMJD = startRange),
+					//(exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)),
+					//(exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600) + graph_scale_change[0]),
+					//(exports.epochMJD = exports.epochAllMJD),
+					//(exports.epochMJD = startAllRange),
+					//表示範囲の終了地点、最後のデータから1時間後まで表示
+					(exports.endMJD = endRange),
+					//(exports.endMJD = data_day.judgeMJD(dict_LCdata[dict_LCdata.length - 1][0] + 3600)),
+					//(exports.endMJD = data_day.judgeMJD(dict_LCdata[dict_LCdata.length - 1][0] + 3600) - graph_scale_change[1]),
+					//(exports.endMJD = exports.endAllMJD),
+					//(exports.endMJD = endAllRange),
                     (initial_MJDRange = [exports.epochMJD, exports.endMJD]),
 					//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		  
 					//ページのタイトルを表示
 					//(exports.pageTitle = "MAXI GSC Data Viewer"),
 					//(exports.pageTitle = "光度曲線テスト"),
@@ -8083,6 +8105,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  return 150; //0.2 * window.innerHeight;
 					}),
 					(exports.bandCount = 1) /*4*/;
+					console.log("graph_scale_change[0] : " + graph_scale_change[0]);
+					console.log("epochMJD :" + r.epochMJD);
+					console.log("graph_scale_change[1] : " + graph_scale_change[1]);
+					console.log("endMJD :" + r.endMJD);
 				},
 				{
 				  "../types": "ZHoe",
@@ -8985,7 +9011,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  exports.__esModule = !0;
 				  var e = require("react"),
 					t = require("@maxi-js/date-tools"),
-					r = require("../../types");
+					r = require("../../types"),
+					req39BI = require("./constants");
 				  exports.Cursor = e.memo(function (o) {
 					var i = o.cursor,
 					  l = o.svgHeight, //縦線の長さの設定
@@ -9067,7 +9094,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                             		if (shift_on) {
                               			start_MJDRange = 0;
                               			end_MJDRange = 0;
-                              			// graph_scale_change = [0, 0];
+										startRange = startAllRange;
+										endRange = endAllRange;
+
                               			shift_event = true;
                             		}
 
@@ -9088,6 +9117,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
                                 			graph_scale_change[0] = start_MJDRange;
                                 			graph_scale_change[1] = end_MJDRange;
+
+											startRange = startRange + start_MJDRange;
+											endRange = endRange - end_MJDRange;
+
                               			}, 540); //この処理を540ミリ秒経過後に完了させる
 
 	                              		//新しい光度曲線を作成
@@ -9184,6 +9217,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  react: "SAdv",
 				  "@maxi-js/date-tools": "LNvY",
 				  "../../types": "ZHoe",
+				  "./constants": "39BI",
 				},
 			  ],
 			  "4NfL": [
@@ -9334,7 +9368,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						return l - h * (e - a);
 					  },
 					  //縦目盛りの値の計算式
-					  //f = Math.max(Math.ceil(1 - Math.log10(m)), 0),
+					  f = Math.max(Math.ceil(1 - Math.log10(m)), 0),
 					  d = [
 						e.createElement("path", {
 						  key: "ticks",
@@ -10206,6 +10240,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  }),
 					(exports.LightCurve = function (e) {
                       exports.h = t.useState(e.preferences.mjdRange);
+					//   console.log(exports.h[0][0]);
+					//   console.log(exports.h[0][1]);
+					  startRange = exports.h[0][0];
+					  endRange = exports.h[0][1];
 
 					  var u = t.useRef(null),
 						s = t.useState(0.94 * window.innerWidth),
