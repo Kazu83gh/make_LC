@@ -192,7 +192,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	console.log("dptc → UNIX \n" + maxiTriArray[0] + " → " + maxiTriUnix);
 
 	let maxiTriUnixOther = [...maxiTriArray.slice(1).map(dptc2unix)];
-	
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // 各グラフを一つのまとまりとして再び配列に格納する。（拡大機能に使用、underframe_proの外に出すと拡大機能が使えなくなる）
@@ -8078,23 +8078,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  (e.mjdRange = "mjd"), (e.binSize = "bin"), (e.plotType = "plot");
 					  // (e.font = "font");
 					})((t = exports.URLParameterKey || (exports.URLParameterKey = {}))), 
-					//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-					(exports.epochAllMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600) + graph_scale_change[0]),
-					(exports.endAllMJD = data_day.judgeMJD(dict_LCdata[dict_LCdata.length - 1][0] + 3600) - graph_scale_change[1]),
 					//表示範囲のスタート地点、データから1時間前から表示開始
 					(exports.epochMJD = startRange),
 					//(exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600)),
-					//(exports.epochMJD = data_day.judgeMJD(dict_LCdata[0][0] - 3600) + graph_scale_change[0]),
-					//(exports.epochMJD = exports.epochAllMJD),
-					//(exports.epochMJD = startAllRange),
 					//表示範囲の終了地点、最後のデータから1時間後まで表示
 					(exports.endMJD = endRange),
 					//(exports.endMJD = data_day.judgeMJD(dict_LCdata[dict_LCdata.length - 1][0] + 3600)),
-					//(exports.endMJD = data_day.judgeMJD(dict_LCdata[dict_LCdata.length - 1][0] + 3600) - graph_scale_change[1]),
-					//(exports.endMJD = exports.endAllMJD),
-					//(exports.endMJD = endAllRange),
                     (initial_MJDRange = [exports.epochMJD, exports.endMJD]),
-					//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 					//ページのタイトルを表示
 					//(exports.pageTitle = "MAXI GSC Data Viewer"),
 					//(exports.pageTitle = "光度曲線テスト"),
@@ -8105,10 +8095,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  return 150; //0.2 * window.innerHeight;
 					}),
 					(exports.bandCount = 1) /*4*/;
-					console.log("graph_scale_change[0] : " + graph_scale_change[0]);
-					console.log("epochMJD :" + r.epochMJD);
-					console.log("graph_scale_change[1] : " + graph_scale_change[1]);
-					console.log("endMJD :" + r.endMJD);
 				},
 				{
 				  "../types": "ZHoe",
