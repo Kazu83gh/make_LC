@@ -173,11 +173,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     // jsonデータの受け取り、変数に格納
 	let pre_LCdata = all_LCdata;
 
-	//光度曲線の表示範囲を設定(横軸)
+	//光度曲線のデフォルトの表示範囲を設定(横軸)
 	let dict_AllLCdata = Tolist(all_LCdata);
 	startAllRange = unix2MJD(dict_AllLCdata[0][0] - 3600);
 	endAllRange = unix2MJD(dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600);
 	
+	//光度曲線の表示範囲を記憶する変数
 	startRange = startAllRange;
 	endRange = endAllRange;
 
@@ -197,23 +198,27 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
     // 各グラフを一つのまとまりとして再び配列に格納する。（拡大機能に使用、underframe_proの外に出すと拡大機能が使えなくなる）
     let graph_Summarize = function (data) {
-    	let i;
-    	let array = [];
-    	let graph_data = [];
-
-    	// 92分間の時間の差がある一つ一つのグラフをそれぞれ配列にまとめる。
-    	for (i = 0; i < data.length - 1; i++) {
-			// 800秒未満の場合は同じ配列にまとめる
-			if (Math.abs(data[i][0] - data[i + 1][0]) < 800) {
-    			array.push(data[i]);
-    		} else {
-    			graph_data.push(array);
-    			array = [];
-    		}
-    	}
-    	graph_data.push(array); // 最後のarrayを格納。
-    	return graph_data;
-    };
+		let i;
+		let array = [];
+		let graph_data = [];
+	
+		// 最初のデータは無条件で配列に追加
+		array.push(data[0]);
+	
+		// まとまりごとの配列を作成
+		for (i = 1; i < data.length; i++) {
+			// 前のデータとの差が800秒未満の場合は同じ配列にまとめる
+			if (Math.abs(data[i][0] - data[i - 1][0]) < 800) {
+				array.push(data[i]);
+			} else {
+				// それ以外の場合は新しい配列としてまとめる
+				graph_data.push(array);
+				array = [data[i]];
+			}
+		}
+		graph_data.push(array); // 最後のarrayを格納
+		return graph_data;
+	};
 
     let zoomLC = function () {
     	setTimeout(function () {
@@ -242,7 +247,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		dict_LCdata = Tolist(dptc_count_data); 
 		console.log(Tolist(dptc_count_data));
     	graph_data = graph_Summarize(dict_LCdata);
-		//console.log(graph_Summarize(dict_LCdata));
+		console.log(graph_Summarize(dict_LCdata));
 		//console.log("GPSとdptcの差:" + valueGPS2DPTC);
 		console.log("GPSとdptcの差(整数):" + parseInt(valueGPS2DPTC));
 
@@ -9018,34 +9023,29 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
                 //カーソルの位置がどのデータに近いかを判定;
 				let cursor_position = function (data, cursor_time) {
-					let i, array_num; //array_numは配列内で最小の値が入っている場所。
+					let i;
 					let dptc = [];
-				  
+				
 					for (i = 0; i < data.length; i++) {
-					    // data[i]が存在する時にのみ実行
-					    if (data[i]) {
-							let middleIndex = Math.round(data[i].length / 2);
-							// middleIndexが有効な値がどうか
+						if (data[i]) {
+							let middleIndex = Math.round((data[i].length - 1) / 2);
 							if (middleIndex < data[i].length) {
-						  		dptc.push(
+								dptc.push(
 									Math.abs(
-							  			t.mjd2Unix(data[i][middleIndex][0]) -
-										cursor_time
+										t.mjd2Unix(data[i][middleIndex][0]) - cursor_time
 									)
-						  		);
+								);
 							}
-					  	}
+						}
 					}
-					// console.log(dptc);
-
-                    //データの中央の時間からカーソルが200秒未満の距離でクリックされたらなら、配列の番号をarray_numに格納。そうでない時はnull。
-                    array_num =
-                      dptc[dptc.indexOf(Math.min(...dptc))] < 200
-                        ? dptc.indexOf(Math.min(...dptc))
-                        : (array_num = null);
-
-                	return array_num;
-                };
+				
+					//dptc配列の中で最小の値を取得
+					let minDistance = Math.min(...dptc);
+					//200秒未満の場合はその配列番号を返す、ない場合はnullを返す
+					let array_num = minDistance < 200 ? dptc.indexOf(minDistance) : null;
+				
+					return array_num;
+				};
 
                 //制限時間内にクリックした回数でダブルクリックかを判定
                 document.onclick = function () {
@@ -9492,7 +9492,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						var o = [];
 						for (f = u.firstSub; f < a; f += u.subScale)
 						  o.push(new Date(f * t).getTime());
-						console.log("MinuteTicks");
+						//console.log("MinuteTicks");
 						return {
 						  step: u.step,
 						  stepOffset: u.stepOffset,
@@ -10110,7 +10110,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					a = require("./Area"),
 					n = e(require("../../util/catalog"));
 				  exports.Body = t.memo(function (e) {
-                    //widthがもし0になってもエラーにならないように。発表
+                    //widthがもし0になってもエラーにならないように。
                     if (e.svgWidth != 0) {
                       width_error_anti = e.svgWidth;
                     } else if (e.svgWidth == 0) {
