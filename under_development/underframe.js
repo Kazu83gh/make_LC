@@ -146,7 +146,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	let num = []
         choice_binsize = 1, //設定されているbinsizeを格納
         choice_PlotType = "point", //設定されているPlotTypeを格納
-        initial_MJDRange = [], //初期の表示範囲を格納
+        //initial_MJDRange = [], //初期の表示範囲を格納
         shift_event = false, //shiftが押されているか。
         width_error_anti = 0, //エラー防止処置
         time_over = 230, //制限時間
@@ -8088,7 +8088,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					//表示範囲の終了地点、最後のデータから1時間後まで表示
 					(exports.endMJD = endRange),
 					//(exports.endMJD = data_day.judgeMJD(dict_LCdata[dict_LCdata.length - 1][0] + 3600)),
-                    (initial_MJDRange = [exports.epochMJD, exports.endMJD]),
+                    //(initial_MJDRange = [exports.epochMJD, exports.endMJD]),
 					//ページのタイトルを表示
 					//(exports.pageTitle = "MAXI GSC Data Viewer"),
 					//(exports.pageTitle = "光度曲線テスト"),
@@ -9091,21 +9091,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                           		let graph_num = cursor_position(graph_data, t.mjd2Unix(m(i.x)));
 
                           		if (graph_num != null && target_id && !shift_on) {
-                            		//初期表示範囲から選択したデータの時間を比べ差異を格納
-                            		let start_MJDRange =
-                              			graph_data[graph_num][0][0] -
-                              			10 / 86400 -
-                              			initial_MJDRange[0];
-                            		let end_MJDRange =
-                              			initial_MJDRange[1] -
-                              			(graph_data[graph_num][graph_data[graph_num].length - 1][0] +
-                                		10 / 86400);
-
-									startRange = startRange + start_MJDRange;
-									endRange = endRange - end_MJDRange;
+									//ダブルクリックされた場合、そのデータのみを表示する
+									startRange = graph_data[graph_num][0][0] - 10 / 86400;
+									endRange = graph_data[graph_num][graph_data[graph_num].length - 1][0] + 10 / 86400;
 
 	                            	child_remove();
-                          		} else if (shift_on && target_id) {
+                          		} else if (target_id && shift_on) {
 									//shiftを押されていた場合、初期表示画面に戻す
 									startRange = startAllRange;
 									endRange = endAllRange;	
