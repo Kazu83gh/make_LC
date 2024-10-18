@@ -144,7 +144,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
     // 変数
 	let num = []
-        graph_scale_change = [0, 0],
         choice_binsize = 1, //設定されているbinsizeを格納
         choice_PlotType = "point", //設定されているPlotTypeを格納
         initial_MJDRange = [], //初期の表示範囲を格納
@@ -222,19 +221,19 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
     let zoomLC = function () {
     	setTimeout(function () {
-    	if (graph_scale_change[0] != 0) {
-        	//console.log("来た");
-        	if (Re_Reload == 0) {
-        		Re_Reload += 1;
+			if (startRange != startAllRange && endRange != endAllRange) {
+        		if (Re_Reload == 0) {
+        			Re_Reload += 1;
+        			createLC(pre_LCdata);
+        		}
+
+        		// 初期化部分
+        		Re_Reload = 0;
+			} else if (startRange == startAllRange && endRange == endAllRange && shift_event) {
+        		shift_event = false;
         		createLC(pre_LCdata);
         	}
-        	// 初期化部分
-        	Re_Reload = 0;
-        } else if (graph_scale_change[0] == 0 && shift_event) {
-        	shift_event = false;
-        	createLC(pre_LCdata);
-        }
-      }, 540);
+      	}, 540);
     };
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -9021,7 +9020,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
                 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-                //カーソルの位置がどのデータに近いかを判定;
+                //カーソルの位置がどのデータに近いかを判定する関数
 				let cursor_position = function (data, cursor_time) {
 					let i;
 					let dptc = [];
@@ -9047,6 +9046,36 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					return array_num;
 				};
 
+				//光度曲線を削除した後、拡大した光度曲線を表示する関数
+				function child_remove() {
+					setTimeout(function () {
+					  	// 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する
+					  	while (exports.parent.firstChild) {
+							exports.parent.removeChild(exports.parent.firstChild);
+							// 全て消えてしまう場合はこのへんを修正
+							// if (delete_child == 6) {
+							//   break;
+							// }
+							// delete_child++;
+					  	}
+					}, 540); //この処理を540ミリ秒経過後に完了させる
+
+					//新しい光度曲線を作成
+					zoomLC();
+
+					//divタグ内の要素がもしもなくなってしまった時の対処
+					setTimeout(function () {
+						if (exports.parent.childElementCount != 1) {
+							console.log("表示エラーが発生しました");
+						
+							//一旦全部初期化
+						  	startRange = startAllRange;
+						  	endRange = endAllRange;
+							createLC(pre_LCdata); 
+						} 
+					}, 700); //この判定は700ミリ秒経過後に実行される
+			  	}
+
                 //制限時間内にクリックした回数でダブルクリックかを判定
                 document.onclick = function () {
                     clickCount += 1;
@@ -9061,11 +9090,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                         	if (clickCount === 2) {
                           		let graph_num = cursor_position(graph_data, t.mjd2Unix(m(i.x)));
 
-                          		if (
-                            		graph_num != null &&
-                            		//graph_scale_change[0] == 0 &&
-                            		target_id
-                          		) {
+                          		if (graph_num != null && target_id && !shift_on) {
                             		//初期表示範囲から選択したデータの時間を比べ差異を格納
                             		let start_MJDRange =
                               			graph_data[graph_num][0][0] -
@@ -9076,60 +9101,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                               			(graph_data[graph_num][graph_data[graph_num].length - 1][0] +
                                 		10 / 86400);
 
-                            		//shiftを押されていた場合初期表示画面に戻す
-                            		if (shift_on) {
-                              			start_MJDRange = 0;
-                              			end_MJDRange = 0;
-										startRange = startAllRange;
-										endRange = endAllRange;
-
-                              			shift_event = true;
-                            		}
-
-                            		//光度曲線を削除した後、拡大した光度曲線を表示
-                            		function child_remove() {
-                              			setTimeout(function () {
-                                			// 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する
-                                			while (exports.parent.firstChild) {
-                                	  			exports.parent.removeChild(
-                                	    			exports.parent.firstChild
-                                	  			);
-                                	  		// 全て消えてしまう場合はこのへんを修正
-                                	  		// if (delete_child == 6) {
-                                	  		//   break;
-                                	  		// }
-                                	  		// delete_child++;
-                                			}
-
-                                			graph_scale_change[0] = start_MJDRange;
-                                			graph_scale_change[1] = end_MJDRange;
-
-											startRange = startRange + start_MJDRange;
-											endRange = endRange - end_MJDRange;
-
-                              			}, 540); //この処理を540ミリ秒経過後に完了させる
-
-	                              		//新しい光度曲線を作成
-	                              		zoomLC();
-
-	                              		//divタグ内の要素がもしもなくなってしまった時の対処
-	                              		setTimeout(function () {
-	                                		if (exports.parent.childElementCount != 1) {
-	                                	  		console.log("表示エラーが発生しました");
-											
-										  		//一旦全部初期化
-	                                	  		graph_scale_change = [0, 0];
-	                                	  		createLC(pre_LCdata); 
-	                                		} 
-											// else if (exports.parent.childElementCount == 1) {
-	                                		// }
-	                              		}, 700); //この判定は700ミリ秒経過後に実行される
-	                            	}
+									startRange = startRange + start_MJDRange;
+									endRange = endRange - end_MJDRange;
 
 	                            	child_remove();
-                          		}
+                          		} else if (shift_on && target_id) {
+									//shiftを押されていた場合、初期表示画面に戻す
+									startRange = startAllRange;
+									endRange = endAllRange;	
+									shift_event = true;
+
+									child_remove();
+								}
                         	} else {
-                          	console.log("クリックカウント" + clickCount);
+                          		console.log("クリックカウント" + clickCount);
                         	}
                         	//初期化
                         	timer = null;
