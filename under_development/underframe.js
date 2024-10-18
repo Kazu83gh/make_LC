@@ -219,6 +219,35 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		return graph_data;
 	};
 
+	//ズーム機能に使用する関数
+	let zoomArray = function (data) {
+		let i;
+		let result = [];
+
+    	for (let i = 0; i < data.length; i++) {
+    	    const currentArray = data[i];
+    	    result.push(currentArray[0][0]);
+    	    result.push(currentArray[currentArray.length - 1][0]);
+    	}
+
+    	return result;
+	}
+
+	sumAlldata = graph_Summarize(dict_AllLCdata);
+	zoomAlldata = zoomArray(sumAlldata);
+
+	//ダブルクリックした近くにデータがあるかを判定する関数
+	let zoomJudge = function (data) {
+		//引数とzoomAlldataの値を比較し、差が200未満のものがあればtrue
+		for (let i = 0; i < zoomAlldata.length; i++) {
+		  if (Math.abs(data - zoomAlldata[i]) < 200) {
+			return true; // 差が200未満の場合trueを返す
+		  }
+		}
+
+		return false; // 該当する値がない場合はfalse
+	}
+
     let zoomLC = function () {
     	setTimeout(function () {
 			if (startRange != startAllRange && endRange != endAllRange) {
@@ -244,9 +273,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     function createLC(dptc_count_data) {
     	//console.log(dptc_count_data); 
 		dict_LCdata = Tolist(dptc_count_data); 
-		console.log(Tolist(dptc_count_data));
+		//console.log(Tolist(dptc_count_data));
     	graph_data = graph_Summarize(dict_LCdata);
-		console.log(graph_Summarize(dict_LCdata));
+		//console.log(graph_Summarize(dict_LCdata));
 		//console.log("GPSとdptcの差:" + valueGPS2DPTC);
 		console.log("GPSとdptcの差(整数):" + parseInt(valueGPS2DPTC));
 
@@ -9018,34 +9047,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						return c + (e / n) * s;
 					  };
 
-                ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-                //カーソルの位置がどのデータに近いかを判定する関数
-				let cursor_position = function (data, cursor_time) {
-					let i;
-					let dptc = [];
-				
-					for (i = 0; i < data.length; i++) {
-						if (data[i]) {
-							let middleIndex = Math.round((data[i].length - 1) / 2);
-							if (middleIndex < data[i].length) {
-								dptc.push(
-									Math.abs(
-										t.mjd2Unix(data[i][middleIndex][0]) - cursor_time
-									)
-								);
-							}
-						}
-					}
-				
-					//dptc配列の中で最小の値を取得
-					let minDistance = Math.min(...dptc);
-					//200秒未満の場合はその配列番号を返す、ない場合はnullを返す
-					let array_num = minDistance < 200 ? dptc.indexOf(minDistance) : null;
-				
-					return array_num;
-				};
-
 				//光度曲線を削除した後、拡大した光度曲線を表示する関数
 				function child_remove() {
 					setTimeout(function () {
@@ -9088,12 +9089,26 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                       	timer = setTimeout(() => {
 							//ダブルクリックのときの処理
                         	if (clickCount === 2) {
-                          		let graph_num = cursor_position(graph_data, t.mjd2Unix(m(i.x)));
+                          		//let graph_num = cursor_position(graph_data, t.mjd2Unix(m(i.x)));
+								console.log("zoomJudge: " + zoomJudge(t.mjd2Unix(m(i.x))));
 
-                          		if (graph_num != null && target_id && !shift_on) {
-									//ダブルクリックされた場合、そのデータのみを表示する
-									startRange = graph_data[graph_num][0][0] - 10 / 86400;
-									endRange = graph_data[graph_num][graph_data[graph_num].length - 1][0] + 10 / 86400;
+								if (zoomJudge(t.mjd2Unix(m(i.x))) && target_id && !shift_on) {
+									const differences = zoomAlldata.map(value => ({
+										value: value,
+										difference: Math.abs(t.mjd2Unix(m(i.x)) - value)
+									  }));
+									
+									  // 差が小さい順にソート
+									  differences.sort((a, b) => a.difference - b.difference);
+									
+									  // 最も差が小さい2つの値を取得
+									  const closestValues = differences.slice(0, 2).map(item => item.value);
+									
+									  // 取得した2つの値を元の値が小さい順にソート
+									  closestValues.sort((a, b) => a - b);
+
+									startRange = unix2MJD(closestValues[0]) - 10 / 86400;
+									endRange = unix2MJD(closestValues[1]) + 10 / 86400;
 
 	                            	child_remove();
                           		} else if (target_id && shift_on) {
