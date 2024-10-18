@@ -9089,23 +9089,22 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                       	timer = setTimeout(() => {
 							//ダブルクリックのときの処理
                         	if (clickCount === 2) {
-                          		//let graph_num = cursor_position(graph_data, t.mjd2Unix(m(i.x)));
-								console.log("zoomJudge: " + zoomJudge(t.mjd2Unix(m(i.x))));
+								//console.log("zoomJudge: " + zoomJudge(t.mjd2Unix(m(i.x))));
 
 								if (zoomJudge(t.mjd2Unix(m(i.x))) && target_id && !shift_on) {
 									const differences = zoomAlldata.map(value => ({
 										value: value,
 										difference: Math.abs(t.mjd2Unix(m(i.x)) - value)
-									  }));
+									}));
 									
-									  // 差が小さい順にソート
-									  differences.sort((a, b) => a.difference - b.difference);
-									
-									  // 最も差が小さい2つの値を取得
-									  const closestValues = differences.slice(0, 2).map(item => item.value);
-									
-									  // 取得した2つの値を元の値が小さい順にソート
-									  closestValues.sort((a, b) => a - b);
+									// 差が小さい順にソート
+									differences.sort((a, b) => a.difference - b.difference);
+								
+									// 最も差が小さい2つの値を取得
+									const closestValues = differences.slice(0, 2).map(item => item.value);
+								
+									// 取得した2つの値を元の値が小さい順にソート
+									closestValues.sort((a, b) => a - b);
 
 									startRange = unix2MJD(closestValues[0]) - 10 / 86400;
 									endRange = unix2MJD(closestValues[1]) + 10 / 86400;
