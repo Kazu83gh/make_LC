@@ -173,7 +173,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	let pre_LCdata = all_LCdata;
 
 	//光度曲線のデフォルトの表示範囲を設定(横軸)
-	let dict_AllLCdata = Tolist(all_LCdata);
+	const dict_AllLCdata = Tolist(all_LCdata);
 	startAllRange = unix2MJD(dict_AllLCdata[0][0] - 3600);
 	endAllRange = unix2MJD(dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600);
 	
@@ -8490,7 +8490,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					n = this;
 				  (exports.__esModule = !0),
 					//計算結果が何を表しているかわからない。
+					//getAB(count数, count err)
 					(exports.getAB = function (t, e) {
+					  //eが0の場合は0、それ以外は 1/e^2
 					  var n = 0 === e ? 0 : 1 / Math.pow(e, 2);
 					  return [n, t * n];
 					}),
@@ -8499,7 +8501,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					//受け取ったデータをMJDにする場所。
 					(exports.judgeMJD = function (data) {
 					  let judge =
-						//0.5 / 86400 +  // この足し算なんのため？
+						0.5 / 86400 +  //十字の中心は0.5秒後
 						(data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS;
 	
 					  return judge;
@@ -8508,6 +8510,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		  
 					  //8301行目のbにデータを返す。
 					  (exports.getRollingAverageBin = function (t, e, n, r) {
+						//console.log("r: " + r);
+						// console.log("r[0]" + r[0]);
+						// console.log("r[1]" + r[1]);
 						var o = r[0],
 						  a = r[1],
 						  i = r[2], //i以降は2，3，4の光度曲線のデータはないため必要ない。
@@ -8516,33 +8521,42 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						  c = r[5],
 						  s = r[6],
 						  f = r[7];
+						//////////追加部分////////
+						//let centMJD = (e + n) / 2; //これ追加で中央になる
+						/////////////////////////
 						return [
-						  t,
-						  e - 0.5 / 86400,
-						  n + 0.5 / 86400,
-						  a / o,
-						  Math.pow(o, -0.5),
-						  u / i, //これ以降は光度曲線のデータがないため必要ない
-						  Math.pow(i, -0.5),
-						  c / l,
-						  Math.pow(l, -0.5),
-						  f / s,
-						  Math.pow(s, -0.5),
+						  t, //時刻MJD（十字の中心）
+						  //centMJD, //これ追加で中央になる
+						  e - 0.5 / 86400, //時刻-エラー
+						  n + 0.5 / 86400, //時刻+エラー
+						  a / o, //(おそらく)カウント数
+						  Math.pow(o, -0.5), //カウント数のエラーバーの大きさ
+						  //これ以降は光度曲線のデータがないため必要ない
+						  u / i, //NaN
+						  Math.pow(i, -0.5), //NaN
+						  c / l, //NaN
+						  Math.pow(l, -0.5), //NaN
+						  f / s, //NaN
+						  Math.pow(s, -0.5), //NaN
 						];
-					  })
+					  })   
 					),
 					//bins、minX、minYの設定
 					//rにdict_LCdata、oにはbinsizeが入っている
 					(exports.count = true);
 				  exports.getRollingAverage = function (r, o) {
+					//console.log("bef_r: " + r);
 					//dptcをMJDにして再代入。
 					if (this.count) {
 					  for (let i = 0; i < r.length; i++) {
 						r[i][0] = exports.judgeMJD(r[i][0]);
 					  }
 					}
-		  
 					this.count = false;
+
+					//console.log("aft_r: " + r);
+					//console.log("o: " + o);
+
 					return t(n, void 0, Promise, function () {
 					  var t,
 						n,
@@ -8566,78 +8580,138 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						A,
 						M,
 						B;
+						//rがいいか、dict_LCdataがいいかはあとで判断
+						let startBin = r[0][0] - 0.5 / 86400;
+						let endBin = r[r.length - 1][0] + 0.5 / 86400;
+						t = [];
+						//const startBin = unix2MJD(dict_AllLCdata[0][0]) - o/2;
+						//const endBin = unix2MJD(dict_AllLCdata[dict_AllLCdata.length - 1][0]) + o/2;
 					  return e(this, function (e) {
 						for (
-						  t = [],
-							n = [1 / 0, 1 / 0, 1 / 0, 1 / 0],
-							a = [0, 0, 0, 0],
-							i = [],
-							u = [0, 0, 0, 0, 0, 0, 0, 0],
-							l = function (t) {
-							  //console.log(t); //dict_LCdata
-							  var e = t[0],
-								n = exports.getAB(t[1], t[2]), //t[1]にはデータの2個目が、t[2]にはデータの3個目が入っている。
-								r = n[0],
-								o = n[1],
-								a = exports.getAB(t[3], t[4]), //t[3]にはデータの4個目が、t[4]にはデータの5個目が入っている。だがこれ以降はデータ無し
-								l = a[0],
-								c = a[1],
-								s = exports.getAB(t[5], t[6]), //t[5]にはデータの6個目が、t[6]にはデータの7個目が入っている。
-								f = s[0],
-								h = s[1],
-								p = exports.getAB(t[7], t[8]), //t[7]にはデータの8個目が、t[8]にはデータの9個目が入っている。
-								g = [e, r, o, l, c, f, h, p[0], p[1]]; //ここにはすべてのデータが格納されている
-							  //console.log(g);
-							  i.push(g), //iの中にすべて入れている
-								u.forEach(function (t, e) {
-								  //console.log(t);
-								  u[e] = t + g[e + 1];
-								});
-							},
-							c = function () {
-							  var t = i.shift(); //配列の中の一番初めのデータ以外をtに代入
-							  t &&
-								u.forEach(function (e, n) {
-								  u[n] = e - t[n + 1];
-								  //console.log(u[n]);
-								});
-							},
-							s = o / 2,
-							f = r.length,
-							h = 0,
-							p = 0;
-						  p < f;
-						  p++
+							///////////////////////////新
+							startBin; startBin <= endBin; startBin += o
+							//console.log("startBin: " + startBin),
+							//console.log("endBin: " + endBin),
+							///////////////////////////
+
+						///////////////////////////旧
+						//   t = [],
+						// 	n = [1 / 0, 1 / 0, 1 / 0, 1 / 0],
+						// 	a = [0, 0, 0, 0],
+						// 	i = [],
+						// 	u = [0, 0, 0, 0, 0, 0, 0, 0],
+						// 	l = function (t) {
+						// 	  //console.log(t); //dict_LCdata
+						// 	  var e = t[0], //tは、[dptc, count数, count err]
+						// 		n = exports.getAB(t[1], t[2]), //getAB(count数, count err)
+						// 		r = n[0],
+						// 		o = n[1],
+						// 		a = exports.getAB(t[3], t[4]), //[NaN, NaN]
+						// 		l = a[0], //NaN
+						// 		c = a[1], //NaN
+						// 		s = exports.getAB(t[5], t[6]), //[NaN, NaN]
+						// 		f = s[0], //NaN
+						// 		h = s[1], //NaN
+						// 		p = exports.getAB(t[7], t[8]), //[NaN, NaN]
+						// 		g = [e, r, o, l, c, f, h, p[0], p[1]]; //上記の値がまとめて格納されている
+						// 		//console.log("n[0]: " + n[0] + "   n[1]: " + n[1]);
+						// 	  	//console.log(g);
+						// 	  	//console.log("n: " + n);
+						// 	  	i.push(g), //gをiの中にすべて格納
+						// 		//console.log("i: " + i);
+						// 		u.forEach(function (t, e) { //tがNaNになってる
+						// 		  //console.log("t: " + t +"  e: " + e);
+						// 		  u[e] = t + g[e + 1]; 
+						// 		  //console.log("u[e]" + u[e]);
+						// 		});
+						// 	},
+						// 	c = function () {
+						// 	  var t = i.shift(); //配列の中の一番初めのデータ以外をtに代入
+						// 	  //console.log("t: " + t);
+						// 	  t &&
+						// 		u.forEach(function (e, n) { //eがNaNになってる
+						// 		  //console.log("e: " + e +"  n: " + n);
+						// 		  u[n] = e - t[n + 1];
+						// 		  //console.log("u[n]" + u[n]);
+						// 		});
+						// 	},
+						// 	s = o / 2,
+						// 	f = r.length,
+						// 	h = 0,
+						// 	p = 0;
+						//   p < f;
+						//   p++
+						///////////////////////////
 						) {
-						  for (
-							g = r[p][0],
-							  /*ここでdict_LCdataの時間を抜き出している。*/ v = g + s;
-							h < f && (x = r[h]) && x[0] < v;
-		  
-						  )
-							l(x), h++;
-						  for (w = g - s; i[0][0] < w; ) c();
-						  for (
-							b = exports.getRollingAverageBin(
-							  g,
-							  i[0][0],
-							  i[i.length - 1][0],
-							  u //このデータは何？
-							),
-							  // console.log(b),
-							  y = 0;
-							y < 4;
-							y++
-						  )
-							(d = b[(m = 2 * y + 3)]),
-							  (A = b[m + 1]),
-							  (n[y] = Math.min(n[y], d - A)),
-							  (a[y] = Math.max(a[y], d + A)),
-							  //Y軸を固定、1番多いカウント数＋誤差を最大値としている
-                              //(a[y] = highest_count + sqrt_highest_count), 
-							  t.push(b);
+
+							///////////////////////////新
+							//console.log("o: " + o);
+							//console.log("startBin: " + startBin);
+
+							let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
+							//console.log("dataInRange: " + dataInRange);
+							// console.log("dataInRange[1][1]: " + dataInRange[1][1]);
+
+							if (dataInRange.length != 0){
+								let centMJD = startBin + o/2;
+								//console.log("centMJD: " + centMJD);
+								let sumCount = 0;
+								//console.log("sumCount: " + sumCount);
+
+    							for (let i = 0; i < dataInRange.length; i++) {
+    							    sumCount += dataInRange[i][1];
+    							}
+
+								//console.log("sumCount: " + sumCount);
+
+								let plotData = [centMJD, centMJD - o/2, centMJD + o/2, sumCount, Math.sqrt(sumCount), NaN, NaN, NaN, NaN, NaN, NaN];
+								n = [0, NaN, NaN, NaN];  //臨時で固定
+								a = [8, NaN, NaN, NaN];  //臨時で固定
+								//console.log(plotData);
+								t.push(plotData);
+								//console.log("t: " + t);
+							};
+							///////////////////////////
+
+						///////////////////////////旧
+						//   for ( 
+						// 	g = r[p][0],   // ここでdict_LCdataの時間を抜き出している
+						// 	v = g + s;
+						// 	h < f && (x = r[h]) && x[0] < v;
+						//   )
+						// 	l(x), h++;
+						//   for (w = g - s; i[0][0] < w; ) c();
+						//   for (
+						// 	// console.log("o: " + o),
+						// 	// console.log("s: " + s),
+						// 	//console.log("i[0][0]: " + i[0][0]),
+						// 	//console.log("i[i.length - 1][0]: " + i[i.length - 1][0]),
+						// 	b = exports.getRollingAverageBin(
+						// 	  g,
+						// 	  i[0][0],
+						// 	  i[i.length - 1][0],
+						// 	  u //重みつき平均のためのデータ
+						// 	),
+						// 	//console.log("u: " + u),
+						// 	//console.log("count: " + b[3]),
+						// 	//console.log("count err: " + b[4]),
+						// 	  y = 0;
+						// 	y < 4;
+						// 	y++
+						//   )
+						// 	(d = b[(m = 2 * y + 3)]),
+						// 	(A = b[m + 1]),
+						// 	  (n[y] = Math.min(n[y], d - A)),
+						// 	  (a[y] = Math.max(a[y], d + A)),
+						// 	//   console.log("n: " + n + "  a: " + a);
+						// 	  //Y軸を固定、1番多いカウント数＋誤差を最大値としている
+                        //       //(a[y] = highest_count + sqrt_highest_count), 
+						// 	  t.push(b); //処理後のbin、bがまとめて格納されている
+						// 	  //console.log("t: " + t);
+						// 	  //console.log("t[0][1]: " + t[0][1]);
+						// 	  //console.log("t[0][2]: " + t[0][2]);
+						///////////////////////////
 						}
-						//console.log(n[0]); //minとmax//工事中
 						return (
 						  (M = r[0][0]),
 						  (B = r[r.length - 1][0]),
@@ -8797,13 +8871,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  //e.get(r.URLParameterKey.binSize);
 					  return {
 						//ここのbinsizeを変更することでも光度曲線の十字の数を変更することができる
-						binSize: exports.filterBinSize(e.get(r.URLParameterKey.binSize)),
-						mjdRange: exports.filterMJDRange(
-						  e.get(r.URLParameterKey.mjdRange)
+						binSize: exports.filterBinSize(
+							e.get(r.URLParameterKey.binSize)
 						),
-		  
+						mjdRange: exports.filterMJDRange(
+						  	e.get(r.URLParameterKey.mjdRange)
+						),
 						plotType: exports.filterPlotType(
-						  e.get(r.URLParameterKey.plotType)
+						  	e.get(r.URLParameterKey.plotType)
 						),
 						//font: exports.filterFont(e.get(r.URLParameterKey.font)),
 					  };
@@ -10033,6 +10108,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							);
 					  } else {
 						var _ = -1;
+						//console.log(x.bins);
 						//plottypeがpointの光度曲線の作成場所
 						M.push(
 						  e.createElement("path", {
@@ -10043,11 +10119,11 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							  .map(function (e) {
 								if (e[1] < _) return "";
 								_ = e[2];
-								var t = z(e[0]),
+								var t = z(e[0]), //十字の中心のx座標
 								  i = z(e[1]),
 								  n = z(e[2]),
 								  r = P(e[w]),
-								  a = e[A] * B,
+								  a = e[A] * B, //カウント数のエラーバーの長さ
 								  o = [];
 								if (l < n && i < s) {
 								  o.push(
