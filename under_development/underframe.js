@@ -156,6 +156,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         Re_Reload = 0, //再リロードするか
 		selectedEnergyBand = "All"; //デフォルトで選択されるエネルギーバンド
 
+	const binSizeOptions = [1, 2, 4, 8, 16, 32, 64];
+
     // データの格納
 	const all_LCdata = LCdata.All,
 		  high_LCdata = LCdata.High,
@@ -8499,7 +8501,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		  
 					//受け取ったデータをMJDにする場所。
-					(exports.judgeMJD = function (data) {
+					(exports.judgeMJD = function (data) { //*MJD
 					  let judge =
 						0.5 / 86400 +  //十字の中心は0.5秒後
 						(data * 1000 - judge_dptc.MJDEpochDate) / judge_dptc.DAY_MS;
@@ -8527,8 +8529,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						return [
 						  t, //時刻MJD（十字の中心）
 						  //centMJD, //これ追加で中央になる
-						  e - 0.5 / 86400, //時刻-エラー
-						  n + 0.5 / 86400, //時刻+エラー
+						  e - 0.5 / 86400, //時刻-エラー //*MJD
+						  n + 0.5 / 86400, //時刻+エラー //*MJD
 						  a / o, //(おそらく)カウント数
 						  Math.pow(o, -0.5), //カウント数のエラーバーの大きさ
 						  //これ以降は光度曲線のデータがないため必要ない
@@ -8558,34 +8560,37 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					//console.log("o: " + o);
 
 					return t(n, void 0, Promise, function () {
-					  var t,
-						n,
-						a,
-						i,
-						u,
-						l,
-						c,
-						s,
-						f,
-						h,
-						p,
-						g,
-						v,
-						x,
-						w,
-						b,
-						y,
-						m,
-						d,
-						A,
-						M,
-						B;
+					  	var t,
+							n,
+							a,
+							i,
+							u,
+							l,
+							c,
+							s,
+							f,
+							h,
+							p,
+							g,
+							v,
+							x,
+							w,
+							b,
+							y,
+							m,
+							d,
+							A,
+							M,
+							B,
+							bfendErr;
 						//rがいいか、dict_LCdataがいいかはあとで判断
-						let startBin = r[0][0] - 0.5 / 86400;
-						let endBin = r[r.length - 1][0] + 0.5 / 86400;
+						let startBin = r[0][0] - 0.5 / 86400; //*MJD
+						let endBin = r[r.length - 1][0] + 0.5 / 86400; //*MJD
+						//let startBin = unix2MJD(dict_AllLCdata[0][0]) - o/2;
+						//let endBin = unix2MJD(dict_AllLCdata[dict_AllLCdata.length - 1][0]) + o/2;
 						t = [];
-						//const startBin = unix2MJD(dict_AllLCdata[0][0]) - o/2;
-						//const endBin = unix2MJD(dict_AllLCdata[dict_AllLCdata.length - 1][0]) + o/2;
+						n = [0.0, NaN, NaN, NaN]; //縦軸の最小値
+						a = [1.0, NaN, NaN, NaN]; //縦軸の最大値（データに応じて更新）
 					  return e(this, function (e) {
 						for (
 							///////////////////////////新
@@ -8643,33 +8648,37 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						//   p++
 						///////////////////////////
 						) {
-
 							///////////////////////////新
-							//console.log("o: " + o);
-							//console.log("startBin: " + startBin);
-
 							let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
-							//console.log("dataInRange: " + dataInRange);
-							// console.log("dataInRange[1][1]: " + dataInRange[1][1]);
 
 							if (dataInRange.length != 0){
-								let centMJD = startBin + o/2;
-								//console.log("centMJD: " + centMJD);
 								let sumCount = 0;
 								//console.log("sumCount: " + sumCount);
 
     							for (let i = 0; i < dataInRange.length; i++) {
-    							    sumCount += dataInRange[i][1];
+    							    sumCount += dataInRange[i][1]; //count数を足す
     							}
+								
+								let centMJD = startBin + o/2;
+								let startErr = centMJD - o/2;
+								let binInt = o * 86400; //*MJD
+								let countSec = sumCount / binInt; //1秒あたりのカウント数
 
-								//console.log("sumCount: " + sumCount);
+								//一つ前のendErrと比較して、startErrが小さい場合は前のendErrをstartErrに代入
+								if ( bfendErr > startErr ) {
+									startErr = bfendErr;
+								} 
 
-								let plotData = [centMJD, centMJD - o/2, centMJD + o/2, sumCount, Math.sqrt(sumCount), NaN, NaN, NaN, NaN, NaN, NaN];
-								n = [0, NaN, NaN, NaN];  //臨時で固定
-								a = [8, NaN, NaN, NaN];  //臨時で固定
-								//console.log(plotData);
+								let endErr = centMJD + o/2;
+
+								// let plotData = [centMJD, startErr, endErr, sumCount, Math.sqrt(sumCount), NaN, NaN, NaN, NaN, NaN, NaN];
+								// let countPlusErr = sumCount + Math.sqrt(sumCount);
+								let plotData = [centMJD, startErr, endErr, countSec, Math.sqrt(countSec), NaN, NaN, NaN, NaN, NaN, NaN];
+								let countPlusErr = countSec + Math.sqrt(countSec);
+								(a[0] = Math.max(a[0], countPlusErr));
 								t.push(plotData);
-								//console.log("t: " + t);
+
+								bfendErr = endErr; //endErrを記録
 							};
 							///////////////////////////
 
@@ -8713,6 +8722,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						///////////////////////////
 						}
 						return (
+							//console.log("t: " + t),
 						  (M = r[0][0]),
 						  (B = r[r.length - 1][0]),
 						  [
@@ -8837,7 +8847,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  ////引数eを受け取りそれを数値に変換（1〜100の範囲、デフォルトは20）
 				  exports.default_binsize = 1; //binsizeの初期設定
 				  (exports.filterBinSize = function (e) {
-					let num = 1 / 86400; //桁数限定したものを格納。
+					let num = 1 / 86400; //桁数限定したものを格納。 //*MJD
 					return t.clamp(
 					  (e && Number(e)) || num * this.default_binsize,
 					  num,
@@ -9181,8 +9191,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									// 取得した2つの値を元の値が小さい順にソート
 									closestValues.sort((a, b) => a - b);
 
-									startRange = unix2MJD(closestValues[0]) - 10 / 86400;
-									endRange = unix2MJD(closestValues[1]) + 10 / 86400;
+									startRange = unix2MJD(closestValues[0]) - 10 / 86400; //*MJD
+									endRange = unix2MJD(closestValues[1]) + 10 / 86400; //*MJD
 
 	                            	child_remove();
                           		} else if (target_id && shift_on) {
@@ -9736,18 +9746,18 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  g = o.mjdToString,
 					  x = o.dateToString,
 					  p = o.lineHeight,
-					  dptcXmin = unix2dptc(a.mjd2UnixFloat(c)) - 0.5, //グラフの左端のdptc(小数型)
-					  dptcXmax = unix2dptc(a.mjd2UnixFloat(s)) - 0.5, //グラフの右端のdptc(小数型)
+					  dptcXmin = unix2dptc(a.mjd2UnixFloat(c)) - 0.5, //グラフの左端のdptc(小数型) //*MJD
+					  dptcXmax = unix2dptc(a.mjd2UnixFloat(s)) - 0.5, //グラフの右端のdptc(小数型) //*MJD
 					  T = t.getTicks(dptcXmin, dptcXmax, k / 200),
-					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定
-					  gwLineMJD = reqWubQ.judgeMJD(gwTriUnix),
-					  maxiLineMJD = reqWubQ.judgeMJD(maxiTriUnix),
-					  maxiArrayMJD = maxiTriUnixOther.map(unixTime => reqWubQ.judgeMJD(unixTime)),
+					  v = r.getDateTicks(a.mjdToDate(c), a.mjdToDate(s), k / 200),//横軸上部のdptcの設定 //*MJD
+					  gwLineMJD = reqWubQ.judgeMJD(gwTriUnix), //*MJD
+					  maxiLineMJD = reqWubQ.judgeMJD(maxiTriUnix), //*MJD
+					  maxiArrayMJD = maxiTriUnixOther.map(unixTime => reqWubQ.judgeMJD(unixTime)), //*MJD
 					  filMaxiArrayMJD = maxiArrayMJD.filter(value => value > c), //グラフの外で描画されないようにフィルター
 					  result = "";
 					if (!T || !v) return null;
 					var j = k / (s - c),
-						y = function (e) { //mjdをx座標に変換
+						y = function (e) { //mjdをx座標に変換 //*MJD
 					  		return u + j * (e - c);
 						},
 						dptcrat = k / (dptcXmax - dptcXmin),
@@ -10043,12 +10053,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						(M.push(
 						  e.createElement(n.YTicks, {
 							key: "yTicks",
-							min: C,
-							max: q,
-							left: l,
-							right: s,
-							top: c,
-							bottom: m,
+							min: C, //下端(カウント数)
+							max: q, //上端(カウント数)
+							left: l, //左端
+							right: s, //右端
+							top: c, //上端(svg座標)
+							bottom: m, //下端(svg座標)
 							width: h,
 							height: u,
 						  })
@@ -10108,7 +10118,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							);
 					  } else {
 						var _ = -1;
-						//console.log(x.bins);
 						//plottypeがpointの光度曲線の作成場所
 						M.push(
 						  e.createElement("path", {
@@ -10120,9 +10129,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								if (e[1] < _) return "";
 								_ = e[2];
 								var t = z(e[0]), //十字の中心のx座標
-								  i = z(e[1]),
-								  n = z(e[2]),
-								  r = P(e[w]),
+								  i = z(e[1]), //dptcのエラーバーの左端
+								  n = z(e[2]), //dptcのエラーバーの右端
+								  r = P(e[w]), //十字の中心のy座標
 								  a = e[A] * B, //カウント数のエラーバーの長さ
 								  o = [];
 								if (l < n && i < s) {
@@ -10130,7 +10139,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
 								  ); //sとnで小さいほうの数字が入れられる。
 								  if (S(t)) {
-									o.push("M" + t + "," + (r - a) + "v" + 2 * a);
+									//o.push("M" + t + "," + (r - a) + "v" + 2 * a);
+									o.push("M" + t + "," + (r - a) + "V" + Math.min(m, (r + a)));
+									//カウント数が１未満での十字が下に突き抜けないように変更
 								  }
 								}
 								return o.join("");
@@ -10797,6 +10808,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								  n.createElement("input", {
 									id: o.URLParameterKey.binSize,
 									type: "number",
+									//type: "text",
+									list: "binSizeOptions", // list属性を追加
+									step: 1, 
 									min: 1, //min: 0.00001, //下限の値
 									max: 100, //max: 0.001, //上限の値
 									defaultValue: c.default_binsize,
@@ -10804,10 +10818,19 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									  T({
 										binSize: c.filterBinSize(
 										  e.currentTarget.value * (1 / 86400)
-										), //ここでbinsizeの変更をグラフに反映している？
+										),
 									  });
 									},
 								  }),
+								  n.createElement("datalist", { id: "binSizeOptions" },
+								      binSizeOptions.map(size => n.createElement("option", { value: size }))
+								  ),
+								//   n.createElement("datalist", { id: "binSizeOptions" },
+								// 	n.createElement("option", { value: "1" }),
+								// 	n.createElement("option", { value: "2" }),
+								// 	n.createElement("option", { value: "4" }),
+								// 	n.createElement("option", { value: "8" })
+								//   ),
 								  n.createElement(
                                     "label", 
                                     {
