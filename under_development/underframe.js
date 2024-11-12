@@ -10030,6 +10030,19 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						  dateLabel: g,
 						  lineHeight: p,
 						}),
+						e.createElement(
+							"text",
+							{
+							  	x: l,
+							  	y: m * 0.2,
+							  	fontSize: "100%",
+							  	fill: t.Color.white,
+								writingMode: "tb", 
+								glyphOrientationVertical: "0",
+    							transform: "rotate(180, " + (l - 20) + ", " + (m / 2) + ")",
+							},
+							"count / sec"
+						),
 					  ];
 					if (f && x) {
 					  var j = h / (y - k),
