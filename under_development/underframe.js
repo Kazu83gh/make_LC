@@ -152,13 +152,28 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         Re_Reload = 0, //再リロードするか
 		selectedEnergyBand = "All"; //デフォルトで選択されるエネルギーバンド
 
-	const binSizeOptions = [1, 2, 4, 8, 16, 32, 64];
+	//const binSizeOptions = [1, 2, 4, 8, 16, 32, 64];
+	// const validSteps = [1, 2, 4, 8, 16, 32, 64, 128];
+
+	// function getNextValue(currentValue, direction) {
+	//   // 入力された値を探す
+	//   const currentIndex = validSteps.findIndex((val) => val >= currentValue);
+	//   if (direction === "up") {
+	//     // 上矢印: 次のステップ
+	//     return validSteps[Math.min(currentIndex + 1, validSteps.length - 1)];
+	//   } else if (direction === "down") {
+	//     // 下矢印: 前のステップ
+	//     return validSteps[Math.max(currentIndex - 1, 0)];
+	//   }
+	//   return currentValue;
+	// }
 
     // データの格納
 	const all_LCdata = LCdata.All,
 		  high_LCdata = LCdata.High,
 	      med_LCdata = LCdata.Med,
-		  low_LCdata = LCdata.Low;
+		  low_LCdata = LCdata.Low,
+		  comb_LCdata = [...high_LCdata, ...med_LCdata, ...low_LCdata];
 
     // コンソールへの表示
 	console.log('----  LCdata ----')
@@ -166,6 +181,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	console.log("High", high_LCdata);
     console.log("Med", med_LCdata);
 	console.log("Low", low_LCdata);
+	console.log("Comb", comb_LCdata);
   
     // jsonデータの受け取り、変数に格納
 	let pre_LCdata = all_LCdata;
@@ -267,7 +283,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
     //dict_LCdataをもとに光度曲線の描画
     function createLC(dptc_count_data) {
-    	//console.log(dptc_count_data); 
+    	console.log(dptc_count_data); 
 		dict_LCdata = Tolist(dptc_count_data); 
 		//console.log(Tolist(dptc_count_data));
     	graph_data = graph_Summarize(dict_LCdata);
@@ -7944,9 +7960,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					//   (e.sans = "sans"), (e.serif = "serif");
 					// })((n = exports.Font || (exports.Font = {}))),
 					 ////////////////////////////////////////
-                    // エネルギーバンドごとの表示をするために追加
+                    // エネルギーバンドごとの表示をするために追加//*test
                     (function (e) {
-                      (e.all = "All"), (e.high = "High"), (e.med = "Med"),(e.low = "Low");
+                      (e.all = "All"), (e.high = "High"), (e.med = "Med"),(e.low = "Low"),(e.test = "test");
                     })((w = exports.EnergyBand || (exports.EnergyBand = {}))),
                     ////////////////////////////////////////
 					(function (e) {
@@ -7975,12 +7991,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  (e.orange = "#ff8c00"),
 					  (e.lightblue = "#71c5e8");
 					})((p = exports.Color || (exports.Color = {}))),
-					// バンドごとに光度曲線の色を設定
+					// バンドごとに光度曲線の色を設定//*test
 					(exports.BandColors =
 						(((o = {})[w.all] = p.white),
                     	(o[w.low] = p.red),
                     	(o[w.med] = p.green),
                     	(o[w.high] = p.blue),
+						(o[w.test] = p.lightblue),
 						o));
 				},
 				{},
@@ -8082,15 +8099,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  (((e = {})[r.PlotType.Point] = "Point"),
 					  (e[r.PlotType.Line] = "Line"),
 					  e)),
-					// エネルギーバンドごとの表示をするための設定
-					(exports.AvailableEnergyBands = [r.EnergyBand.all, r.EnergyBand.low, r.EnergyBand.med, r.EnergyBand.high]),
+					// エネルギーバンドごとの表示をするための設定//*test
+					(exports.AvailableEnergyBands = [r.EnergyBand.all, 
+													r.EnergyBand.low, 
+													r.EnergyBand.med, 
+													r.EnergyBand.high, 
+													r.EnergyBand.test]),
 					//console.log(exports.AvailableEnergyBands),
-					// エネルギーバンドタイトル
+					// エネルギーバンドタイトル//*test
 					(exports.AvailableEnergyBandTitles =
 						(((e = {})[r.EnergyBand.all] = "2-20keV"),
 						(e[r.EnergyBand.low] = "2-4keV"),
 						(e[r.EnergyBand.med] = "4-10keV"),
 						(e[r.EnergyBand.high] = "10-20keV"),
+						(e[r.EnergyBand.test] = "test"),
 						e)),
 					//console.log(exports.AvailableEnergyBandTitles),
 					//フォントの種類を格納している。
@@ -8530,45 +8552,48 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							B,
 							bfendErr;
 						//rがいいか、dict_LCdataがいいかはあとで判断
-						let startBin = r[0][0] - 0.5; 
-						let endBin = r[r.length - 1][0] + 0.5; 
+						// let startBin = r[0][0] - 0.5; 
+						// let endBin = r[r.length - 1][0] + 0.5; 
 						//let startBin = dict_AllLCdata[0][0] - o/2;
 						//let endBin = dict_AllLCdata[dict_AllLCdata.length - 1][0] + o/2;
 						t = [];
 						n = [0.0, NaN, NaN, NaN]; //縦軸の最小値
 						a = [1.0, NaN, NaN, NaN]; //縦軸の最大値（データに応じて更新）
 					  return e(this, function (e) {
-						for ( startBin; startBin <= endBin; startBin += o) {
-							let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
+						for (let i = 0; i < zoomAlldata.length - 1; i += 2) {
+							let startBin = zoomAlldata[i] - 0.5;
+							let endBin = zoomAlldata[i + 1] + 0.5;
 
-							if (dataInRange.length != 0){
-								let sumCount = 0;
-
-    							for (let i = 0; i < dataInRange.length; i++) {
-    							    sumCount += dataInRange[i][1]; //count数を足しあげる
-    							}
+							for ( startBin; startBin <= endBin; startBin += o) {
+								let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
+							
+								if (dataInRange.length != 0){
+									let sumCount = 0;
 								
-								let centMJD = startBin + o / 2;
-								let startErr = centMJD - o / 2;
-								//let binInt = o; 
-								//let countSec = sumCount / binInt; 
-								let countSec = sumCount / o; //1秒あたりのカウント数
-
-								//一つ前のendErrと比較して、startErrが小さい場合は前のendErrをstartErrに代入
-								if ( bfendErr > startErr ) {
-									startErr = bfendErr;
-								} 
-
-								let endErr = centMJD + o / 2;
-								let plotData = [centMJD, startErr, endErr, countSec, Math.sqrt(countSec), NaN, NaN, NaN, NaN, NaN, NaN];
-								let countPlusErr = countSec + Math.sqrt(countSec);
-
-								(a[0] = Math.max(a[0], countPlusErr));
-
-								t.push(plotData);
-
-								bfendErr = endErr; //endErrを記録
-							};
+    								for (let i = 0; i < dataInRange.length; i++) {
+    								    sumCount += dataInRange[i][1]; //count数を足しあげる
+    								}
+									
+									let centMJD = startBin + o / 2;
+									let startErr = centMJD - o / 2;
+									let countSec = sumCount / o; //1秒あたりのカウント数
+								
+									//一つ前のendErrと比較して、startErrが小さい場合は前のendErrをstartErrに代入
+									if ( bfendErr > startErr ) {
+										startErr = bfendErr;
+									} 
+								
+									let endErr = centMJD + o / 2;
+									let plotData = [centMJD, startErr, endErr, countSec, Math.sqrt(countSec), NaN, NaN, NaN, NaN, NaN, NaN];
+									let countPlusErr = countSec + Math.sqrt(countSec);
+								
+									(a[0] = Math.max(a[0], countPlusErr));
+								
+									t.push(plotData);
+								
+									bfendErr = endErr; //endErrを記録
+								};
+							}
 						}
 						return (
 						  (M = r[0][0]),
@@ -9629,7 +9654,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                               var i = (t - T.stepOffset) % T.step == 0;
                               return (
                                 "M" +
-								dptc2path(e) + //eのままだと0.5ずれるので0.5引く
+								dptc2path(e) +
                                 //y(e) +
                                 "," +
                                 f +
@@ -9642,11 +9667,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						  stroke: i.Color.white,
 						}),
 						];
-					//GWのtrggertimeを表示(赤線)を描画
+					//GWのtrggertimeを描画
 					if (gwTriUnix > c) {
 						E.push(
 							e.createElement("path", {
-								d: ["M" + y(gwTriUnix) + ", 1v225"],
+								//d: ["M" + y(gwTriUnix) + ", 1v225"],
+								d: ["M" + y(gwTriUnix) + ", 1V" + d 
+									+"l -6,-16 M" +	y(gwTriUnix) + "," + d 
+									+"l 6,-16"],
 								stroke: i.Color.orange,
 							})
 						);
@@ -9667,11 +9695,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							),
 						);
 					};
-					// MAXIのトリガー時刻を表示(青線)を描画
+					// MAXIのトリガー時刻を描画
 					if (maxiTriUnix > c) {
 						E.push(
 							e.createElement("path", {
-								d: ["M" + y(maxiTriUnix) + ", 1v225"],
+								//d: ["M" + y(maxiTriUnix) + ", 1v225"],
+								d: ["M" + y(maxiTriUnix) + ", 1V" + d 
+									+"l -6,-16 M" +	y(maxiTriUnix) + "," + d 
+									+"l 6,-16"],
 								stroke: i.Color.yellow,
 							}),
 						);
@@ -9692,11 +9723,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							),
 						);
 					};
-					// フィルターをかけた配列の各要素に対して青線を引く
+					// フィルターをかけた配列の各要素に対して線を引く
 					filMaxiArrayUnix.forEach(value => {
 						E.push(
 							e.createElement("path", {
-								d: ["M" + y(value) + ", 1v225"],
+								//d: ["M" + y(value) + ", 1v225"],
+								d: ["M" + y(value) + ", 15V" + d 
+									+"l -3,-8 M" +	y(value) + "," + d 
+									+"l 3,-8"],
 								stroke: i.Color.yellow,
 								strokeOpacity: 0.5, 
 							}),
@@ -10657,32 +10691,63 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									},
 									"Bin size: "
 								  ),
+								  //bin sizeの入力
+								  ////////////////////////////////////////////////////////
+								  //number、入力はできるが、1,2,4,…の選択ができない
 								  n.createElement("input", {
 									id: o.URLParameterKey.binSize,
 									type: "number",
 									//type: "text",
-									list: "binSizeOptions", // list属性を追加
-									step: 1, 
+									// list: "binSizeOptions", // list属性を追加
+									step: 1,
 									min: 1, //下限の値
 									max: 128, //上限の値
 									defaultValue: c.default_binsize,
 									onChange: function (e) {
 									  T({
 										binSize: c.filterBinSize(
-										  e.currentTarget.value
+											e.currentTarget.value
 										),
 									  });
 									},
 								  }),
-								  n.createElement("datalist", { id: "binSizeOptions" },
-								      binSizeOptions.map(size => n.createElement("option", { value: size }))
-								  ),
-								//   n.createElement("datalist", { id: "binSizeOptions" },
-								// 	n.createElement("option", { value: "1" }),
-								// 	n.createElement("option", { value: "2" }),
-								// 	n.createElement("option", { value: "4" }),
-								// 	n.createElement("option", { value: "8" })
+								//   n.createElement(
+								//   	"datalist",
+								//   	{id: "binSizeOptions"},
+								//   	[
+								//   	  n.createElement("option", {value: 1}, "1"),
+								//   	  n.createElement("option", {value: 2}, "2"),
+								//   	  n.createElement("option", {value: 4}, "4"),
+								//   	  n.createElement("option", {value: 8}, "8"),
+								//   	  n.createElement("option", {value: 16}, "16"),
+								//   	  n.createElement("option", {value: 32}, "32"),
+								//   	  n.createElement("option", {value: 64}, "64"),
+								//   	  n.createElement("option", {value: 128}, "128")
+								//   	]
 								//   ),
+								  ////////////////////////////////////////////////////////
+								  //select、入力できない
+								//   n.createElement("select", {
+								//   	id: o.URLParameterKey.binSize,
+								//   	defaultValue: c.default_binsize,
+								//   	onChange: function (e) {
+								//   	  T({
+								//   		binSize: c.filterBinSize(
+								// 				e.currentTarget.value
+								// 			),
+								//   	  });
+								//   	},
+								//     }, [
+								// 		n.createElement("option", { value: 1 }, "1"),
+								// 		n.createElement("option", { value: 2 }, "2"),
+								// 		n.createElement("option", { value: 4 }, "4"),
+								// 		n.createElement("option", { value: 8 }, "8"),
+								// 		n.createElement("option", { value: 16 }, "16"),
+								// 		n.createElement("option", { value: 32 }, "32"),
+								// 		n.createElement("option", { value: 64 }, "64"),
+								// 		n.createElement("option", { value: 128 }, "128")
+								// 	]),
+								  ////////////////////////////////////////////////////////
 								  n.createElement(
                                     "label", 
                                     {
@@ -10730,6 +10795,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                               case "Low":
                                                 pre_LCdata = low_LCdata;
                                                 break;
+											  case "test": //*test
+											  	pre_LCdata = comb_LCdata;
+											  	break;
                                               default:
                                                 // デフォルトの処理
                                                 break;
