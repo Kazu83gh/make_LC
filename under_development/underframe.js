@@ -150,7 +150,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         clickCount = 0, //クリックされた回数。
         delete_child = 0, //子要素を何個削除したかカウント
         Re_Reload = 0, //再リロードするか
-		selectedEnergyBand = "All"; //デフォルトで選択されるエネルギーバンド
+		selectedEnergyBand = "All", //デフォルトで選択されるエネルギーバンド
+		stepBin = 1; //デフォルトで選択されるbinsize
+		stepBef = 1; //一つ前のbinsizeを格納するための変数
 
 	//const binSizeOptions = [1, 2, 4, 8, 16, 32, 64];
 	// const validSteps = [1, 2, 4, 8, 16, 32, 64, 128];
@@ -172,8 +174,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	const all_LCdata = LCdata.All,
 		  high_LCdata = LCdata.High,
 	      med_LCdata = LCdata.Med,
-		  low_LCdata = LCdata.Low,
-		  comb_LCdata = [...high_LCdata, ...med_LCdata, ...low_LCdata];
+		  low_LCdata = LCdata.Low
+		  //,
+		  //comb_LCdata = [...high_LCdata, ...med_LCdata, ...low_LCdata]
+		  ;
 
     // コンソールへの表示
 	console.log('----  LCdata ----')
@@ -181,7 +185,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	console.log("High", high_LCdata);
     console.log("Med", med_LCdata);
 	console.log("Low", low_LCdata);
-	console.log("Comb", comb_LCdata);
+	//console.log("Comb", comb_LCdata);
   
     // jsonデータの受け取り、変数に格納
 	let pre_LCdata = all_LCdata;
@@ -8577,6 +8581,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									let centMJD = startBin + o / 2;
 									let startErr = centMJD - o / 2;
 									let countSec = sumCount / o; //1秒あたりのカウント数
+									let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
+									let countErr  = rSumCount / o; //1秒あたりのカウント数の誤差	
 								
 									//一つ前のendErrと比較して、startErrが小さい場合は前のendErrをstartErrに代入
 									if ( bfendErr > startErr ) {
@@ -8584,10 +8590,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									} 
 								
 									let endErr = centMJD + o / 2;
-									let plotData = [centMJD, startErr, endErr, countSec, Math.sqrt(countSec), NaN, NaN, NaN, NaN, NaN, NaN];
-									let countPlusErr = countSec + Math.sqrt(countSec);
+									let plotData = [centMJD, startErr, endErr, countSec, countErr, NaN, NaN, NaN, NaN, NaN, NaN];
+									let countPlusErr = countSec + countErr;
 								
-									(a[0] = Math.max(a[0], countPlusErr));
+									a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
 								
 									t.push(plotData);
 								
@@ -8595,6 +8601,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								};
 							}
 						}
+
+						a[0] = a[0] * 1.2; //十字が見切れないように縦軸の最大値を調整(1.2倍に)
+
 						return (
 						  (M = r[0][0]),
 						  (B = r[r.length - 1][0]),
@@ -9672,7 +9681,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						E.push(
 							e.createElement("path", {
 								//d: ["M" + y(gwTriUnix) + ", 1v225"],
-								d: ["M" + y(gwTriUnix) + ", 1V" + d 
+								d: ["M" + y(gwTriUnix) + ", 9V" + d 
 									+"l -6,-16 M" +	y(gwTriUnix) + "," + d 
 									+"l 6,-16"],
 								stroke: i.Color.orange,
@@ -9685,8 +9694,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							e.createElement(
 								"text",
 								{
-									x: y(gwTriUnix) + 2,
-									y: 10,
+									x: y(gwTriUnix) - 5,
+									y: 5,
 									fontSize: "80%",
 									fill: i.Color.white,
 									opacity: 0.7,
@@ -9700,7 +9709,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						E.push(
 							e.createElement("path", {
 								//d: ["M" + y(maxiTriUnix) + ", 1v225"],
-								d: ["M" + y(maxiTriUnix) + ", 1V" + d 
+								d: ["M" + y(maxiTriUnix) + ", 9V" + d 
 									+"l -6,-16 M" +	y(maxiTriUnix) + "," + d 
 									+"l 6,-16"],
 								stroke: i.Color.yellow,
@@ -9714,7 +9723,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								"text",
 								{
 									x: y(maxiTriUnix) + 2,
-									y: 10,
+									y: 17,
 									fontSize: "80%",
 									fill: i.Color.white,
 									opacity: 0.7,
@@ -9728,11 +9737,11 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						E.push(
 							e.createElement("path", {
 								//d: ["M" + y(value) + ", 1v225"],
-								d: ["M" + y(value) + ", 15V" + d 
+								d: ["M" + y(value) + ", 20V" + d 
 									+"l -3,-8 M" +	y(value) + "," + d 
 									+"l 3,-8"],
 								stroke: i.Color.yellow,
-								strokeOpacity: 0.5, 
+								strokeOpacity: 0.7, 
 							}),
 						);
 					});
@@ -9908,7 +9917,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							"text",
 							{
 							  	x: l - 40,
-							  	y: m * 0.3,
+							  	y: m * 0.35,
 							  	fontSize: "100%",
 							  	fill: t.Color.white,
 								writingMode: "vertical-lr", 
@@ -10164,7 +10173,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  ? {
 						  left: 56,
 						  right: 0.5,
-						  top: 32,
+						  top: 37, //文字表示のため、変更（もとは32）
 						  bottom: 32,
 						  gap: 6,
 						  lineHeight: 12,
@@ -10173,7 +10182,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  ? {
 						  left: 64,
 						  right: 0.5,
-						  top: 32,
+						  top: 37, //文字表示のため、変更（もとは32）
 						  bottom: 32,
 						  gap: 6,
 						  lineHeight: 14,
@@ -10181,7 +10190,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  : {
 						  left: 70,
 						  right: 0.5,
-						  top: 32,
+						  top: 37, //文字表示のため、変更（もとは32）
 						  bottom: 32,
 						  gap: 6,
 						  lineHeight: 16,
@@ -10691,63 +10700,106 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									},
 									"Bin size: "
 								  ),
-								  //bin sizeの入力
-								  ////////////////////////////////////////////////////////
-								  //number、入力はできるが、1,2,4,…の選択ができない
+								//   //number、入力はできるが、1,2,4,…の選択ができない
+								//   n.createElement("input", {
+								// 	id: o.URLParameterKey.binSize,
+								// 	type: "number",
+								// 	//type: "text",
+								// 	// list: "binSizeOptions", // list属性を追加
+								// 	//step: 1,
+								// 	step: stepBin,
+								// 	min: 1, //下限の値
+								// 	max: 128, //上限の値
+								// 	defaultValue: c.default_binsize,
+								// 	onChange: function (e) {
+								// 		//console.log("e.currentTarget.value: " + e.currentTarget.value);
+								// 	  	T({
+								// 			binSize: c.filterBinSize(
+								// 				e.currentTarget.value
+								// 			),
+								// 	  	});
+
+								// 		console.log("stepBef: " + stepBef);
+								// 		let intCurrentValue = parseInt(e.currentTarget.value, 10);
+								// 		console.log("intCurrentValue: " + intCurrentValue);
+
+								// 		stepBin = intCurrentValue * 2 - 1;
+
+								// 		// if (intCurrentValue > stepBef) {
+								// 		// 	console.log("UP");
+								// 		// 	stepBin = intCurrentValue * 2 - 1;
+								// 		// } else if (intCurrentValue < stepBef) {
+								// 		// 	console.log("DOWN");
+								// 		// 	stepBin = intCurrentValue / 2;
+								// 		// } else {
+								// 		// 	console.log("EQUAL");
+								// 		// 	stepBin = intCurrentValue * 2 - 1;
+								// 		// }
+
+								// 		//stepBef = intCurrentValue;
+								// 		//console.log("e.currentTarget.value: " + e.currentTarget.value);
+								// 		//stepBin = e.currentTarget.value * 2 - 1;
+								// 	  	//console.log("stepBin: " + stepBin);
+								// 	},
+								//   }),
+								//bin sizeの入力
 								  n.createElement("input", {
 									id: o.URLParameterKey.binSize,
 									type: "number",
-									//type: "text",
-									// list: "binSizeOptions", // list属性を追加
-									step: 1,
-									min: 1, //下限の値
-									max: 128, //上限の値
+									min: 1,
+									max: 128,
 									defaultValue: c.default_binsize,
-									onChange: function (e) {
-									  T({
-										binSize: c.filterBinSize(
-											e.currentTarget.value
-										),
-									  });
+									onMouseDown: function(e) { //スピンボタンをクリックしたときの処理
+										const input = e.currentTarget;
+										const rect = input.getBoundingClientRect();
+										const clickSpin = e.clientX > (rect.left + 0.57 * rect.width);
+										const isSpinUp = e.clientY < (rect.top + rect.height / 2);
+										const currentValue = parseInt(input.value, 10);
+								
+										if (clickSpin && isSpinUp) {  // 上ボタン
+											const newValue = currentValue * 2 - 1;
+											//console.log("newValue: " + newValue);
+											if (newValue <= 128) {
+												input.value = parseInt(newValue, 10);
+												T({ binSize: c.filterBinSize(newValue) });
+											}
+										} else if (clickSpin) {  // 下ボタン
+											const newValue = currentValue / 2 + 1;
+											//console.log("newValue: " + newValue);
+											if (newValue >= 1) {
+												input.value = parseInt(newValue, 10);
+												T({ binSize: c.filterBinSize(newValue) });
+											}
+										}
 									},
+									onKeyDown: function(e) { //上下キーを押したときの処理
+										if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+											const currentValue = parseInt(e.currentTarget.value, 10);
+											
+											if (e.key === "ArrowUp") {
+												e.preventDefault();
+												const newValue = currentValue * 2;
+												if (newValue <= 128) {
+													e.currentTarget.value = newValue;
+													T({ binSize: c.filterBinSize(newValue) });
+												}
+											} else if (e.key === "ArrowDown") {
+												e.preventDefault();
+												const newValue = currentValue / 2;
+												if (newValue >= 1) {
+													e.currentTarget.value = newValue;
+													T({ binSize: c.filterBinSize(newValue) });
+												}
+											}
+										}
+									},
+									onChange: function(e) {
+										const value = parseInt(e.currentTarget.value, 10);
+										if (!isNaN(value)) {
+											T({ binSize: c.filterBinSize(value) });
+										}
+									}
 								  }),
-								//   n.createElement(
-								//   	"datalist",
-								//   	{id: "binSizeOptions"},
-								//   	[
-								//   	  n.createElement("option", {value: 1}, "1"),
-								//   	  n.createElement("option", {value: 2}, "2"),
-								//   	  n.createElement("option", {value: 4}, "4"),
-								//   	  n.createElement("option", {value: 8}, "8"),
-								//   	  n.createElement("option", {value: 16}, "16"),
-								//   	  n.createElement("option", {value: 32}, "32"),
-								//   	  n.createElement("option", {value: 64}, "64"),
-								//   	  n.createElement("option", {value: 128}, "128")
-								//   	]
-								//   ),
-								  ////////////////////////////////////////////////////////
-								  //select、入力できない
-								//   n.createElement("select", {
-								//   	id: o.URLParameterKey.binSize,
-								//   	defaultValue: c.default_binsize,
-								//   	onChange: function (e) {
-								//   	  T({
-								//   		binSize: c.filterBinSize(
-								// 				e.currentTarget.value
-								// 			),
-								//   	  });
-								//   	},
-								//     }, [
-								// 		n.createElement("option", { value: 1 }, "1"),
-								// 		n.createElement("option", { value: 2 }, "2"),
-								// 		n.createElement("option", { value: 4 }, "4"),
-								// 		n.createElement("option", { value: 8 }, "8"),
-								// 		n.createElement("option", { value: 16 }, "16"),
-								// 		n.createElement("option", { value: 32 }, "32"),
-								// 		n.createElement("option", { value: 64 }, "64"),
-								// 		n.createElement("option", { value: 128 }, "128")
-								// 	]),
-								  ////////////////////////////////////////////////////////
 								  n.createElement(
                                     "label", 
                                     {
