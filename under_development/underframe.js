@@ -10692,7 +10692,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									onMouseDown: function(e) { //スピンボタンをクリックしたときの処理
 										const input = e.currentTarget;
 										const rect = input.getBoundingClientRect();
-										const clickSpin = e.clientX > (rect.left + 0.57 * rect.width);
+										//const clickSpin = e.clientX > (rect.left + 0.57 * rect.width);
+										const clickSpin = e.clientX > (rect.right - 20);
 										const isSpinUp = e.clientY < (rect.top + rect.height / 2);
 										const currentValue = parseInt(input.value, 10);
 								
