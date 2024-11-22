@@ -150,25 +150,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         clickCount = 0, //クリックされた回数。
         delete_child = 0, //子要素を何個削除したかカウント
         Re_Reload = 0, //再リロードするか
-		selectedEnergyBand = "All", //デフォルトで選択されるエネルギーバンド
-		stepBin = 1; //デフォルトで選択されるbinsize
-		stepBef = 1; //一つ前のbinsizeを格納するための変数
-
-	//const binSizeOptions = [1, 2, 4, 8, 16, 32, 64];
-	// const validSteps = [1, 2, 4, 8, 16, 32, 64, 128];
-
-	// function getNextValue(currentValue, direction) {
-	//   // 入力された値を探す
-	//   const currentIndex = validSteps.findIndex((val) => val >= currentValue);
-	//   if (direction === "up") {
-	//     // 上矢印: 次のステップ
-	//     return validSteps[Math.min(currentIndex + 1, validSteps.length - 1)];
-	//   } else if (direction === "down") {
-	//     // 下矢印: 前のステップ
-	//     return validSteps[Math.max(currentIndex - 1, 0)];
-	//   }
-	//   return currentValue;
-	// }
+		selectedEnergyBand = "All"; //デフォルトで選択されるエネルギーバンド
 
     // データの格納
 	const all_LCdata = LCdata.All,
@@ -10700,48 +10682,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									},
 									"Bin size: "
 								  ),
-								//   //number、入力はできるが、1,2,4,…の選択ができない
-								//   n.createElement("input", {
-								// 	id: o.URLParameterKey.binSize,
-								// 	type: "number",
-								// 	//type: "text",
-								// 	// list: "binSizeOptions", // list属性を追加
-								// 	//step: 1,
-								// 	step: stepBin,
-								// 	min: 1, //下限の値
-								// 	max: 128, //上限の値
-								// 	defaultValue: c.default_binsize,
-								// 	onChange: function (e) {
-								// 		//console.log("e.currentTarget.value: " + e.currentTarget.value);
-								// 	  	T({
-								// 			binSize: c.filterBinSize(
-								// 				e.currentTarget.value
-								// 			),
-								// 	  	});
-
-								// 		console.log("stepBef: " + stepBef);
-								// 		let intCurrentValue = parseInt(e.currentTarget.value, 10);
-								// 		console.log("intCurrentValue: " + intCurrentValue);
-
-								// 		stepBin = intCurrentValue * 2 - 1;
-
-								// 		// if (intCurrentValue > stepBef) {
-								// 		// 	console.log("UP");
-								// 		// 	stepBin = intCurrentValue * 2 - 1;
-								// 		// } else if (intCurrentValue < stepBef) {
-								// 		// 	console.log("DOWN");
-								// 		// 	stepBin = intCurrentValue / 2;
-								// 		// } else {
-								// 		// 	console.log("EQUAL");
-								// 		// 	stepBin = intCurrentValue * 2 - 1;
-								// 		// }
-
-								// 		//stepBef = intCurrentValue;
-								// 		//console.log("e.currentTarget.value: " + e.currentTarget.value);
-								// 		//stepBin = e.currentTarget.value * 2 - 1;
-								// 	  	//console.log("stepBin: " + stepBin);
-								// 	},
-								//   }),
 								//bin sizeの入力
 								  n.createElement("input", {
 									id: o.URLParameterKey.binSize,
@@ -10758,14 +10698,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								
 										if (clickSpin && isSpinUp) {  // 上ボタン
 											const newValue = currentValue * 2 - 1;
-											//console.log("newValue: " + newValue);
 											if (newValue <= 128) {
 												input.value = parseInt(newValue, 10);
 												T({ binSize: c.filterBinSize(newValue) });
 											}
 										} else if (clickSpin) {  // 下ボタン
 											const newValue = currentValue / 2 + 1;
-											//console.log("newValue: " + newValue);
 											if (newValue >= 1) {
 												input.value = parseInt(newValue, 10);
 												T({ binSize: c.filterBinSize(newValue) });
