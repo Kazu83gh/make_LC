@@ -150,16 +150,15 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         clickCount = 0, //クリックされた回数。
         delete_child = 0, //子要素を何個削除したかカウント
         Re_Reload = 0, //再リロードするか
-		selectedEnergyBand = "All"; //デフォルトで選択されるエネルギーバンド
+		selectedEnergyBand = "All", //デフォルトで選択されるエネルギーバンド
+		changeBinsize = 1; //デフォルトで選択されるbinsize
 
     // データの格納
 	const all_LCdata = LCdata.All,
 		  high_LCdata = LCdata.High,
 	      med_LCdata = LCdata.Med,
-		  low_LCdata = LCdata.Low
-		  //,
-		  //comb_LCdata = [...high_LCdata, ...med_LCdata, ...low_LCdata]
-		  ;
+		  low_LCdata = LCdata.Low,
+		  comb_LCdata = [...LCdata.High, ...LCdata.Med, ...LCdata.Low];
 
     // コンソールへの表示
 	console.log('----  LCdata ----')
@@ -167,7 +166,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	console.log("High", high_LCdata);
     console.log("Med", med_LCdata);
 	console.log("Low", low_LCdata);
-	//console.log("Comb", comb_LCdata);
+	console.log("Comb", comb_LCdata);
   
     // jsonデータの受け取り、変数に格納
 	let pre_LCdata = all_LCdata;
@@ -267,9 +266,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	// ここから光度曲線の描画
 	createLC(pre_LCdata);
 
-    //dict_LCdataをもとに光度曲線の描画
+    // dict_LCdataをもとに光度曲線の描画
     function createLC(dptc_count_data) {
-    	console.log(dptc_count_data); 
+    	//console.log(dptc_count_data); 
 		dict_LCdata = Tolist(dptc_count_data); 
 		//console.log(Tolist(dptc_count_data));
     	graph_data = graph_Summarize(dict_LCdata);
@@ -8536,54 +8535,86 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							A,
 							M,
 							B,
-							bfendErr;
-						//rがいいか、dict_LCdataがいいかはあとで判断
-						// let startBin = r[0][0] - 0.5; 
-						// let endBin = r[r.length - 1][0] + 0.5; 
-						//let startBin = dict_AllLCdata[0][0] - o/2;
-						//let endBin = dict_AllLCdata[dict_AllLCdata.length - 1][0] + o/2;
+							bfendErr,
+							dataNum;
 						t = [];
 						n = [0.0, NaN, NaN, NaN]; //縦軸の最小値
 						a = [1.0, NaN, NaN, NaN]; //縦軸の最大値（データに応じて更新）
+						dataNum = 0;
 					  return e(this, function (e) {
 						for (let i = 0; i < zoomAlldata.length - 1; i += 2) {
 							let startBin = zoomAlldata[i] - 0.5;
 							let endBin = zoomAlldata[i + 1] + 0.5;
 
-							for ( startBin; startBin <= endBin; startBin += o) {
-								let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
-							
-								if (dataInRange.length != 0){
-									let sumCount = 0;
-								
-    								for (let i = 0; i < dataInRange.length; i++) {
-    								    sumCount += dataInRange[i][1]; //count数を足しあげる
-    								}
-									
-									let centMJD = startBin + o / 2;
-									let startErr = centMJD - o / 2;
+							let sumCount = 0;
+							for (; startBin <= endBin; startBin += o) {
+								///////////////////////////////////////////////////////////////////////////////////////////
+								for(; dataNum < r.length && startBin + o >= r[dataNum][0]; dataNum++) {	
+									sumCount += r[dataNum][1];
+								};
+
+								if (sumCount != 0) {
+									let centUNIX = startBin + o / 2;
+									let startErr = centUNIX - o / 2;
 									let countSec = sumCount / o; //1秒あたりのカウント数
 									let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
-									let countErr  = rSumCount / o; //1秒あたりのカウント数の誤差	
-								
-									//一つ前のendErrと比較して、startErrが小さい場合は前のendErrをstartErrに代入
-									if ( bfendErr > startErr ) {
-										startErr = bfendErr;
-									} 
-								
-									let endErr = centMJD + o / 2;
-									let plotData = [centMJD, startErr, endErr, countSec, countErr, NaN, NaN, NaN, NaN, NaN, NaN];
+									let countErr = rSumCount / o; //1秒あたりのカウント数の誤差	
+
+									let endErr = centUNIX + o / 2;
+									let plotData = [centUNIX, //十字の中心
+													startErr, //エラーバーの左端
+													endErr, //エラーバーの右端
+													countSec, //1秒あたりのカウント数
+													countErr, //カウント数のエラーの長さ
+													NaN, NaN, NaN, NaN, NaN, NaN];
+													
 									let countPlusErr = countSec + countErr;
 								
 									a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
 								
 									t.push(plotData);
+								}
+
+								sumCount = 0; //初期化
+								///////////////////////////////////////////////////////////////////////////////////////////
+								// let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
+							
+								// if (dataInRange.length != 0){
+								// 	let sumCount = 0;
 								
-									bfendErr = endErr; //endErrを記録
-								};
+    							// 	for (let i = 0; i < dataInRange.length; i++) {
+    							// 	    sumCount += dataInRange[i][1]; //count数を足しあげる
+    							// 	}
+
+								// 	console.log("sumCount :" + sumCount);
+									
+								// 	let centUNIX = startBin + o / 2;
+								// 	let startErr = centUNIX - o / 2;
+								// 	let countSec = sumCount / o; //1秒あたりのカウント数
+								// 	let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
+								// 	let countErr = rSumCount / o; //1秒あたりのカウント数の誤差	
+								
+								// 	//一つ前のendErrと比較して、startErrが小さい場合は前のendErrをstartErrに代入
+								// 	if ( bfendErr > startErr ) {
+								// 		startErr = bfendErr;
+								// 	} 
+								
+								// 	let endErr = centUNIX + o / 2;
+								// 	let plotData = [centUNIX, startErr, endErr, countSec, countErr, NaN, NaN, NaN, NaN, NaN, NaN];
+								// 	let countPlusErr = countSec + countErr;
+								
+								// 	a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
+								
+								// 	t.push(plotData);
+								
+								// 	bfendErr = endErr; //endErrを記録
+								//  };
+								///////////////////////////////////////////////////////////////////////////////////////////
+
 							}
 						}
 
+						//console.log("dataNum :" + dataNum);
 						a[0] = a[0] * 1.2; //十字が見切れないように縦軸の最大値を調整(1.2倍に)
 
 						return (
@@ -8708,8 +8739,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					r = require("./constants"),
 					i = require("./isAvailablePlotType"),
 					n = require("@maxi-js/date-tools");
-				  ////引数eを受け取りそれを数値に変換（1〜128の範囲、デフォルトは1）
-				  exports.default_binsize = 1; //binsizeの初期設定
+				  //引数eを受け取りそれを数値に変換（1〜128の範囲、デフォルトは1）
+				  exports.default_binsize = changeBinsize; //binsizeの初期設定
 				  (exports.filterBinSize = function (e) {
 					return t.clamp(
 					  (e && Number(e)) || this.default_binsize,
@@ -9898,11 +9929,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						e.createElement(
 							"text",
 							{
-							  	x: l - 40,
-							  	y: m * 0.35,
-							  	fontSize: "100%",
-							  	fill: t.Color.white,
-								writingMode: "vertical-lr", 
+								//文字を回転させている関係でx,yの値が逆になっているので注意
+								x: - c - u / 2 - 45,
+								y: l - 40,
+								fontSize: "100%",
+								fill: t.Color.white,
+								transform: "rotate(-90)",
 							},
 							"count / sec"
 						),
@@ -9993,7 +10025,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							  })
 							);
 					  } else {
-						var _ = -1;
+						//var _ = -1;
 						//plottypeがpointの光度曲線の作成場所
 						M.push(
 						  e.createElement("path", {
@@ -10002,8 +10034,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							d: x.bins
 							  //eには色々計算されたデータが入っている。
 							  .map(function (e) {
-								if (e[1] < _) return "";
-								_ = e[2];
+								//if (e[1] < _) return "";
+								//_ = e[2];
 								var t = z(e[0]), //十字の中心のx座標
 								  i = z(e[1]), //dptcのエラーバーの左端
 								  n = z(e[2]), //dptcのエラーバーの右端
@@ -10018,7 +10050,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								  if (S(t)) {
 									//o.push("M" + t + "," + (r - a) + "v" + 2 * a);
 									o.push("M" + t + "," + (r - a) + "V" + Math.min(m, (r + a)));
-									//カウント数が１未満での十字が下に突き抜けないように変更
+									//カウント数が１未満の時に十字が下に突き抜けないように変更
 								  }
 								}
 								return o.join("");
@@ -10736,6 +10768,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 										const value = parseInt(e.currentTarget.value, 10);
 										if (!isNaN(value)) {
 											T({ binSize: c.filterBinSize(value) });
+											changeBinsize = value;
 										}
 									}
 								  }),
