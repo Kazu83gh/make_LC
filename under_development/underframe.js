@@ -8620,17 +8620,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
 								}
 							}
-							console.log("dataNum :" + dataNum);
-							changeEBArray.push(dataNum);
+							changeEBArray.push(t.length);
 							loopCount++;
 						}
 
-						//console.log("loopCount :" + loopCount);
-						//console.log("loopCount :" + loopCount);
-						// console.log("dataNum :" + dataNum);
-						console.log("changeEBArray :" + changeEBArray);
-						// console.log("r.length :" + r.length);
-						//console.log("t:" + t);
 						a[0] = a[0] * 1.2; //十字が見切れないように縦軸の最大値を調整(1.2倍に)
 
 						return (
@@ -10041,6 +10034,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							  })
 							);
 					  } else {
+						//console.log("x.bins: " + x.bins);
 						if (loopCount === 1) { //All,Low,Med,Highの処理
 							//var _ = -1;
 							//plottypeがpointの光度曲線の作成場所
@@ -10081,7 +10075,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								  	key: t.PlotType.Point,
 								  	id: "can_zoom",
 								  	d: x.bins
-										.slice(0, changeEBArray[0] + 1)
+										.slice(0, changeEBArray[0])
 										.map(function (e) {
 										  	var t = z(e[0]), //十字の中心のx座標
 												i = z(e[1]), //dptcのエラーバーの左端
@@ -10108,7 +10102,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								  	key: t.PlotType.Point,
 								  	id: "can_zoom",
 								  	d: x.bins
-										.slice(changeEBArray[0] + 1, changeEBArray[1] + 1)
+										.slice(changeEBArray[0], changeEBArray[1])
 										.map(function (e) {
 										  	var t = z(e[0]), //十字の中心のx座標
 												i = z(e[1]), //dptcのエラーバーの左端
@@ -10135,7 +10129,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								  	key: t.PlotType.Point,
 								  	id: "can_zoom",
 								  	d: x.bins
-										.slice(changeEBArray[1] + 1, x.bins.length)
+										.slice(changeEBArray[1], x.bins.length)
 										.map(function (e) {
 										  	var t = z(e[0]), //十字の中心のx座標
 												i = z(e[1]), //dptcのエラーバーの左端
