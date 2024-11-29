@@ -143,7 +143,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         choice_binsize = 1, //設定されているbinsizeを格納
         choice_PlotType = "point", //設定されているPlotTypeを格納
         //initial_MJDRange = [], //初期の表示範囲を格納
-        shift_event = false, //shiftが押されているか。
+        shift_event = false, //shiftが押されているか
+		zoom_event = false, //拡大されているか
         width_error_anti = 0, //エラー防止処置
         time_over = 230, //制限時間
         timer = null,
@@ -151,7 +152,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         delete_child = 0, //子要素を何個削除したかカウント
         Re_Reload = 0, //再リロードするか
 		selectedEnergyBand = "All", //デフォルトで選択されるエネルギーバンド
-		changeBinsize = 1; //デフォルトで選択されるbinsize
+		changeBinsize = 1, //デフォルトで選択されるbinsize
+		loopCount = 0, //3色同時表示用
+		changeEBArray = []; //3色同時表示用
 
     // データの格納
 	const all_LCdata = LCdata.All,
@@ -8541,80 +8544,93 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						n = [0.0, NaN, NaN, NaN]; //縦軸の最小値
 						a = [1.0, NaN, NaN, NaN]; //縦軸の最大値（データに応じて更新）
 						dataNum = 0;
+						loopCount = 0;
+						changeEBArray = [];
 					  return e(this, function (e) {
-						for (let i = 0; i < zoomAlldata.length - 1; i += 2) {
-							let startBin = zoomAlldata[i] - 0.5;
-							let endBin = zoomAlldata[i + 1] + 0.5;
+						while (dataNum !== r.length) {
+							for (let i = 0; i < zoomAlldata.length - 1; i += 2) {
+								let startBin = zoomAlldata[i] - 0.5;
+								let endBin = zoomAlldata[i + 1] + 0.5;
 
-							let sumCount = 0;
-							for (; startBin <= endBin; startBin += o) {
-								///////////////////////////////////////////////////////////////////////////////////////////
-								for(; dataNum < r.length && startBin + o >= r[dataNum][0]; dataNum++) {	
-									sumCount += r[dataNum][1];
-								};
+								let sumCount = 0;
+								for (; startBin <= endBin; startBin += o) {
+									///////////////////////////////////////////////////////////////////////////////////////////
+									//for(; dataNum < r.length && startBin + o >= r[dataNum][0]; dataNum++) {	
+									for(; dataNum < r.length && startBin <= r[dataNum][0] && startBin + o >= r[dataNum][0]; dataNum++) {	
+										sumCount += r[dataNum][1];
+									};
 
-								if (sumCount != 0) {
-									let centUNIX = startBin + o / 2;
-									let startErr = centUNIX - o / 2;
-									let countSec = sumCount / o; //1秒あたりのカウント数
-									let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
-									let countErr = rSumCount / o; //1秒あたりのカウント数の誤差	
+									if (sumCount != 0) {
+										let centUNIX = startBin + o / 2; //十字の中心
+										let startErr = centUNIX - o / 2; //エラーバーの左端
+										let endErr = centUNIX + o / 2; //エラーバーの右端
+										let countSec = sumCount / o; //1秒あたりのカウント数
+										let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
+										let countErr = rSumCount / o; //1秒あたりのカウント数の誤差	
 
-									let endErr = centUNIX + o / 2;
-									let plotData = [centUNIX, //十字の中心
-													startErr, //エラーバーの左端
-													endErr, //エラーバーの右端
-													countSec, //1秒あたりのカウント数
-													countErr, //カウント数のエラーの長さ
-													NaN, NaN, NaN, NaN, NaN, NaN];
-													
-									let countPlusErr = countSec + countErr;
+										let plotData = [centUNIX, //十字の中心
+														startErr, //エラーバーの左端
+														endErr, //エラーバーの右端
+														countSec, //1秒あたりのカウント数
+														countErr, //カウント数のエラーの長さ
+														NaN, NaN, NaN, NaN, NaN, NaN];
+
+										t.push(plotData);
+
+										let countPlusErr = countSec + countErr;
+										
+										a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
+									}
+
+									sumCount = 0; //初期化
+									///////////////////////////////////////////////////////////////////////////////////////////
+									// let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
 								
-									a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
-								
-									t.push(plotData);
+									// if (dataInRange.length != 0){
+									// 	let sumCount = 0;
+
+    								// 	for (let i = 0; i < dataInRange.length; i++) {
+    								// 	    sumCount += dataInRange[i][1]; //count数を足しあげる
+    								// 	}
+
+									// 	console.log("sumCount :" + sumCount);
+
+									// 	let centUNIX = startBin + o / 2;
+									// 	let startErr = centUNIX - o / 2;
+									// 	let countSec = sumCount / o; //1秒あたりのカウント数
+									// 	let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
+									// 	let countErr = rSumCount / o; //1秒あたりのカウント数の誤差	
+
+									// 	//一つ前のendErrと比較して、startErrが小さい場合は前のendErrをstartErrに代入
+									// 	if ( bfendErr > startErr ) {
+									// 		startErr = bfendErr;
+									// 	} 
+
+									// 	let endErr = centUNIX + o / 2;
+									// 	let plotData = [centUNIX, startErr, endErr, countSec, countErr, NaN, NaN, NaN, NaN, NaN, NaN];
+									// 	let countPlusErr = countSec + countErr;
+
+									// 	a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
+
+									// 	t.push(plotData);
+
+									// 	bfendErr = endErr; //endErrを記録
+									//  };
+									///////////////////////////////////////////////////////////////////////////////////////////
+
 								}
-
-								sumCount = 0; //初期化
-								///////////////////////////////////////////////////////////////////////////////////////////
-								// let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
-							
-								// if (dataInRange.length != 0){
-								// 	let sumCount = 0;
-								
-    							// 	for (let i = 0; i < dataInRange.length; i++) {
-    							// 	    sumCount += dataInRange[i][1]; //count数を足しあげる
-    							// 	}
-
-								// 	console.log("sumCount :" + sumCount);
-									
-								// 	let centUNIX = startBin + o / 2;
-								// 	let startErr = centUNIX - o / 2;
-								// 	let countSec = sumCount / o; //1秒あたりのカウント数
-								// 	let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
-								// 	let countErr = rSumCount / o; //1秒あたりのカウント数の誤差	
-								
-								// 	//一つ前のendErrと比較して、startErrが小さい場合は前のendErrをstartErrに代入
-								// 	if ( bfendErr > startErr ) {
-								// 		startErr = bfendErr;
-								// 	} 
-								
-								// 	let endErr = centUNIX + o / 2;
-								// 	let plotData = [centUNIX, startErr, endErr, countSec, countErr, NaN, NaN, NaN, NaN, NaN, NaN];
-								// 	let countPlusErr = countSec + countErr;
-								
-								// 	a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
-								
-								// 	t.push(plotData);
-								
-								// 	bfendErr = endErr; //endErrを記録
-								//  };
-								///////////////////////////////////////////////////////////////////////////////////////////
-
 							}
+							console.log("dataNum :" + dataNum);
+							changeEBArray.push(dataNum);
+							loopCount++;
 						}
 
-						//console.log("dataNum :" + dataNum);
+						//console.log("loopCount :" + loopCount);
+						//console.log("loopCount :" + loopCount);
+						// console.log("dataNum :" + dataNum);
+						console.log("changeEBArray :" + changeEBArray);
+						// console.log("r.length :" + r.length);
+						//console.log("t:" + t);
 						a[0] = a[0] * 1.2; //十字が見切れないように縦軸の最大値を調整(1.2倍に)
 
 						return (
@@ -10025,45 +10041,128 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							  })
 							);
 					  } else {
-						//var _ = -1;
-						//plottypeがpointの光度曲線の作成場所
-						M.push(
-						  e.createElement("path", {
-							key: t.PlotType.Point,
-                            id: "can_zoom",
-							d: x.bins
-							  //eには色々計算されたデータが入っている。
-							  .map(function (e) {
-								//if (e[1] < _) return "";
-								//_ = e[2];
-								var t = z(e[0]), //十字の中心のx座標
-								  i = z(e[1]), //dptcのエラーバーの左端
-								  n = z(e[2]), //dptcのエラーバーの右端
-								  r = P(e[w]), //十字の中心のy座標
-								  a = e[A] * B, //カウント数のエラーバーの長さ
-								  o = [];
-								//console.log("r:" + r);
-								if (l < n && i < s) {
-								  o.push(
-									"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
-								  ); //sとnで小さいほうの数字が入れられる。
-								  if (S(t)) {
-									//o.push("M" + t + "," + (r - a) + "v" + 2 * a);
-									o.push("M" + t + "," + (r - a) + "V" + Math.min(m, (r + a)));
-									//カウント数が１未満の時に十字が下に突き抜けないように変更
-								  }
-								}
-								return o.join("");
-							  })
-							  .join(""),
-							stroke: E,
-						  })
-						);
+						if (loopCount === 1) { //All,Low,Med,Highの処理
+							//var _ = -1;
+							//plottypeがpointの光度曲線の作成場所
+							M.push(
+							  	e.createElement("path", {
+									key: t.PlotType.Point,
+                        	  	  	id: "can_zoom",
+									d: x.bins
+									  	.map(function (e) {
+											//if (e[1] < _) return "";
+											//_ = e[2];
+											var t = z(e[0]), //十字の中心のx座標
+											  	i = z(e[1]), //dptcのエラーバーの左端
+											  	n = z(e[2]), //dptcのエラーバーの右端
+											  	r = P(e[w]), //十字の中心のy座標
+											  	a = e[A] * B, //カウント数のエラーバーの長さ
+											  	o = [];
+											//console.log("r:" + r);
+											if (l < n && i < s) {
+											  	o.push(
+													"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
+											  	); //sとnで小さいほうの数字が入れられる。
+											  	if (S(t)) {
+													//o.push("M" + t + "," + (r - a) + "v" + 2 * a);
+													//カウント数が１未満の時に十字が下に突き抜けないように変更
+													o.push("M" + t + "," + (r - a) + "V" + Math.min(m, (r + a)));
+											  	}
+											}
+											return o.join("");
+									  	})
+									  	.join(""),
+									stroke: E,
+							  	})
+							);	
+					    } else if (loopCount === 3) { //3色同時表示の処理
+							M.push( //Highの表示
+								e.createElement("path", {
+								  	key: t.PlotType.Point,
+								  	id: "can_zoom",
+								  	d: x.bins
+										.slice(0, changeEBArray[0] + 1)
+										.map(function (e) {
+										  	var t = z(e[0]), //十字の中心のx座標
+												i = z(e[1]), //dptcのエラーバーの左端
+												n = z(e[2]), //dptcのエラーバーの右端
+												r = P(e[w]), //十字の中心のy座標
+												a = e[A] * B, //カウント数のエラーバーの長さ
+												o = [];
+										  	if (l < n && i < s) {
+												o.push(
+												  	"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
+												);
+												if (S(t)) {
+												  	o.push("M" + t + "," + (r - a) + "V" + Math.min(m, (r + a)));
+												}
+										  	}
+										  	return o.join("");
+										})
+										.join(""),
+										stroke: t.Color.blue,
+								})
+							);
+							M.push( //Medの表示
+								e.createElement("path", {
+								  	key: t.PlotType.Point,
+								  	id: "can_zoom",
+								  	d: x.bins
+										.slice(changeEBArray[0] + 1, changeEBArray[1] + 1)
+										.map(function (e) {
+										  	var t = z(e[0]), //十字の中心のx座標
+												i = z(e[1]), //dptcのエラーバーの左端
+												n = z(e[2]), //dptcのエラーバーの右端
+												r = P(e[w]), //十字の中心のy座標
+												a = e[A] * B, //カウント数のエラーバーの長さ
+												o = [];
+										  	if (l < n && i < s) {
+												o.push(
+												  	"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
+												);
+												if (S(t)) {
+												  	o.push("M" + t + "," + (r - a) + "V" + Math.min(m, (r + a)));
+												}
+										  	}
+										  	return o.join("");
+										})
+										.join(""),
+										stroke: t.Color.green,
+								})
+							);
+							M.push( //Lowの表示
+								e.createElement("path", {
+								  	key: t.PlotType.Point,
+								  	id: "can_zoom",
+								  	d: x.bins
+										.slice(changeEBArray[1] + 1, x.bins.length)
+										.map(function (e) {
+										  	var t = z(e[0]), //十字の中心のx座標
+												i = z(e[1]), //dptcのエラーバーの左端
+												n = z(e[2]), //dptcのエラーバーの右端
+												r = P(e[w]), //十字の中心のy座標
+												a = e[A] * B, //カウント数のエラーバーの長さ
+												o = [];
+										  	if (l < n && i < s) {
+												o.push(
+												  	"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
+												);
+												if (S(t)) {
+												  	o.push("M" + t + "," + (r - a) + "V" + Math.min(m, (r + a)));
+												}
+										  	}
+										  	return o.join("");
+										})
+										.join(""),
+										stroke: t.Color.red,
+								})
+							);
+						}
 					  }
 					}
 					//光度曲線本体をgタグの子要素に入れる。
 					return e.createElement("g", {
-					  children: M,
+					  	children: M,
 					});
 				  });
 				},
@@ -10917,6 +11016,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 			["vqK8"],
 			null
 		  );
+		  
           }
         }
 
