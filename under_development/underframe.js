@@ -1,7 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // urlの場所からGPStimeとDPTCの差を取得
-let valueGPS2DPTC = '';
+let recentDptcUnixDiff = '';
 const url = 'http://maxim.phys.cst.nihon-u.ac.jp/mxdata/auxil/GPS2DPTC.txt';
 
 async function fetchData() {
@@ -11,17 +10,15 @@ async function fetchData() {
       throw new Error('Network response was not ok');
     }
     const data = await response.text();
-    valueGPS2DPTC = data;
-    console.log('Data fetched and stored globally:', valueGPS2DPTC);
+    recentDptcUnixDiff = data;
+    console.log('Data fetched and stored globally:', recentDptcUnixDiff);
   } catch (error) {
     console.error('There has been a problem with your fetch operation:', error);
   }
 }
 
 fetchData();
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // GPStime ↔︎ UNIXtimeの変換(将来的にはheasoftのファイルを読み込めるようにする)
 function getleaps() {
 	let leaps = [46828800, 78364801, 109900802, 173059203, 252028804, 315187205, 346723206, 393984007, 425520008, 457056009, 504489610, 551750411, 599184012, 820108813, 914803214, 1025136015, 1119744016, 1167264017];
@@ -83,66 +80,19 @@ function gps2unix(gpsTime){
 	}
 	return unixTime;
 }
-
-// dptcからunixtimeに変換する関数
-function dptc2unix(dptc){
-	let gpsTime = dptc - parseInt(valueGPS2DPTC);
-	let unixTime = gps2unix(gpsTime);
-
-	return unixTime;
-}
-
-// unixtimeからdptcに変換する関数
-function unix2dptc(unixTime){
-	let gpsTime = unix2gps(unixTime);
-	let dptc = gpsTime + parseInt(valueGPS2DPTC);
-	
-	return dptc;
-}
-
-// unixtimeからMJDに変換する関数
-function unix2MJD(data) {
-	let judge = (data * 1000 + 35067168e5) / 864e5;
-
-	return judge;
-}
-
-// [dptc, count, dptc, count, ...]の形から
-// [[UNIX, count, √count], [UNIX, count, √count], ...]の形に変換
-// 十字の中心は0.5秒だけズレるので、0.5を足している 
-let Tolist = function (data) {
-	let array = [];
-	let array1 = [];
-
-	for (let i = 1; i < data.length + 1; i++) {
-		if (i % 2 != 0) {
-			let convertedValue = gps2unix(data[i - 1] - parseInt(valueGPS2DPTC)) + 0.5;
-			array1.push(convertedValue);
-			array1.push(data[i]);
-			array1.push(Math.sqrt(data[i]));
-		} else {
-			array.push(array1);
-			array1 = [];
-		}
-	}
-	return array;
-};
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 // クリックした時に呼び出される関数
 function underframe_pro(LCdata, gwTriUnix, maxiTriArray){ 
     // まず、underframe.htmlのdivタグを全て削除
-    var divs = document.getElementsByTagName('div');
-    for(var i = 0; i < divs.length; i++){
-    divs[i].innerHTML = '';
-    };
-
+	let divs = document.getElementsByTagName('div');
+    while (divs.length > 0) {
+        divs[0].remove();
+    }
+	
     // 変数
 	let num = []
         choice_binsize = 1, //設定されているbinsizeを格納
         choice_PlotType = "point", //設定されているPlotTypeを格納
-        //initial_MJDRange = [], //初期の表示範囲を格納
         shift_event = false, //shiftが押されているか
 		zoom_event = false, //拡大されているか
         width_error_anti = 0, //エラー防止処置
@@ -154,7 +104,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		selectedEnergyBand = "All", //デフォルトで選択されるエネルギーバンド
 		changeBinsize = 1, //デフォルトで選択されるbinsize
 		loopCount = 0, //3色同時表示用
-		changeEBArray = []; //3色同時表示用
+		changeEBArray = [], //3色同時表示用
+		dptcUnixDiff = 0; //dptcとunixtimeの差
 
     // データの格納
 	const all_LCdata = LCdata.All,
@@ -162,6 +113,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	      med_LCdata = LCdata.Med,
 		  low_LCdata = LCdata.Low,
 		  comb_LCdata = [...LCdata.High, ...LCdata.Med, ...LCdata.Low];
+	let convUTC_LCdata = LCdata.UTC;
 
     // コンソールへの表示
 	console.log('----  LCdata ----')
@@ -170,30 +122,66 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     console.log("Med", med_LCdata);
 	console.log("Low", low_LCdata);
 	console.log("Comb", comb_LCdata);
+	console.log("UTC: ", convUTC_LCdata);
   
     // jsonデータの受け取り、変数に格納
 	let pre_LCdata = all_LCdata;
 
-	// 光度曲線のデフォルトの表示範囲を設定(横軸)
-	const dict_AllLCdata = Tolist(all_LCdata);
-	startAllRange = dict_AllLCdata[0][0] - 3600;
-	endAllRange = dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600;
-	
-	// 光度曲線の表示範囲を記憶する変数
-	startRange = startAllRange;
-	endRange = endAllRange;
+	// convUTC_LCdataの値が"2000-01-01T00:00:0."のようになっていた場合、2000-01-01T00:00:00に修正
+	if (convUTC_LCdata.endsWith('.')) {
+		convUTC_LCdata = convUTC_LCdata.slice(0, -1).replace(/:(\d)$/, ':0$1');
+		console.log("修正後のUTC: " + convUTC_LCdata);
+	}
 
-    // グラフの上限を固定するためにカウント数の最大値を取得
-    // all_LCdataの奇数番目(カウント数)のみを抽出
-    // let all_LCdata_count = all_LCdata.filter((element, index) => index % 2 !== 0);
-    // let highest_count = Math.max(...all_LCdata_count);
-    // let sqrt_highest_count = Math.sqrt(highest_count);
+	// dptcとunixtimeの差を確定
+	let fUnix = gps2unix(all_LCdata[0]);
+	console.log("ずれているUNIXtime: " + fUnix);
+	let tUnix = Math.floor(new Date(convUTC_LCdata + 'Z').getTime() / 1000);
+	console.log("ずれていないUNIXtime: " + tUnix);
+	let previousDptcUnixDiff = fUnix - tUnix;
+	console.log("GPS2DPTC.txt から取得した差:" + parseInt(recentDptcUnixDiff));
+	console.log("dptc2utc.sh を用いて計算した差: " + previousDptcUnixDiff);
+	dptcUnixDiff = previousDptcUnixDiff;
 
-	// MAXI trigger(青線)を描画するための下準備
-	maxiTriUnix = dptc2unix(maxiTriArray[0]);
-	console.log("dptc → UNIX \n" + maxiTriArray[0] + " → " + maxiTriUnix);
+	// dptcからunixtimeに変換する関数
+	function dptc2unix(dptc){
+		// let gpsTime = dptc - parseInt(dptcUnixDiff);
+		let gpsTime = dptc - dptcUnixDiff;
+		let unixTime = gps2unix(gpsTime);
 
-	let maxiTriUnixOther = [...maxiTriArray.slice(1).map(dptc2unix)];
+		return unixTime;
+	}
+
+	// unixtimeからdptcに変換する関数
+	function unix2dptc(unixTime){
+		let gpsTime = unix2gps(unixTime);
+		// let dptc = gpsTime + parseInt(dptcUnixDiff);
+		let dptc = gpsTime + dptcUnixDiff;
+
+		return dptc;
+	}
+
+	// [dptc, count, dptc, count, ...]の形から
+	// [[UNIX, count, √count], [UNIX, count, √count], ...]の形に変換する関数
+	// 十字の中心は0.5秒だけズレるので、0.5を足している 
+	let Tolist = function (data) {
+		let array = [];
+		let array1 = [];
+
+		for (let i = 1; i < data.length + 1; i++) {
+			if (i % 2 != 0) {
+				// let convertedValue = gps2unix(data[i - 1] - parseInt(dptcUnixDiff)) + 0.5;
+				let convertedValue = gps2unix(data[i - 1] - dptcUnixDiff) + 0.5;
+				array1.push(convertedValue);
+				array1.push(data[i]);
+				array1.push(Math.sqrt(data[i]));
+			} else {
+				array.push(array1);
+				array1 = [];
+			}
+		}
+		return array;
+	};
 
     // 各グラフを一つのまとまりとして再び配列に格納する。（拡大機能に使用、underframe_proの外に出すと拡大機能が使えなくなる）
     let graph_Summarize = function (data) {
@@ -233,9 +221,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     	return result;
 	}
 
-	sumAlldata = graph_Summarize(dict_AllLCdata);
-	zoomAlldata = zoomArray(sumAlldata);
-
 	// ダブルクリックした近くにデータがあるかを判定する関数
 	let zoomJudge = function (data) {
 		// 引数とzoomAlldataの値を比較し、差が200未満のものがあればtrue
@@ -264,7 +249,25 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
         	}
       	}, 540);
     };
-	////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// 光度曲線のデフォルトの表示範囲を設定(横軸)
+	const dict_AllLCdata = Tolist(all_LCdata);
+	startAllRange = dict_AllLCdata[0][0] - 3600;
+	endAllRange = dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600;
+	
+	// 光度曲線の表示範囲を記憶する変数
+	startRange = startAllRange;
+	endRange = endAllRange;
+
+	// 拡大機能のためにデータをまとめる
+	sumAlldata = graph_Summarize(dict_AllLCdata);
+	zoomAlldata = zoomArray(sumAlldata);
+
+	// MAXI trigger(青線)を描画するための下準備
+	maxiTriUnix = dptc2unix(maxiTriArray[0]);
+	console.log("dptc → UNIX \n" + maxiTriArray[0] + " → " + maxiTriUnix);
+
+	let maxiTriUnixOther = [...maxiTriArray.slice(1).map(dptc2unix)];
 
 	// ここから光度曲線の描画
 	createLC(pre_LCdata);
@@ -276,8 +279,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		//console.log(Tolist(dptc_count_data));
     	graph_data = graph_Summarize(dict_LCdata);
 		//console.log(graph_Summarize(dict_LCdata));
-		//console.log("GPSとdptcの差:" + valueGPS2DPTC);
-		console.log("GPSとdptcの差(整数):" + parseInt(valueGPS2DPTC));
+		//console.log("GPSとdptcの差:" + dptcUnixDiff);
 
 		//dict_LCdataをもとに光度曲線の描画
     	ParcelRequire = (function (e, r, t, n) {
@@ -7948,9 +7950,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					//   (e.sans = "sans"), (e.serif = "serif");
 					// })((n = exports.Font || (exports.Font = {}))),
 					 ////////////////////////////////////////
-                    // エネルギーバンドごとの表示をするために追加//*test
+                    // エネルギーバンドごとの表示をするために追加
                     (function (e) {
-                      (e.all = "All"), (e.high = "High"), (e.med = "Med"),(e.low = "Low"),(e.test = "test");
+					  (e.all = "All"), (e.high = "High"), (e.med = "Med"),(e.low = "Low"),(e.multiColor = "multiColor");
                     })((w = exports.EnergyBand || (exports.EnergyBand = {}))),
                     ////////////////////////////////////////
 					(function (e) {
@@ -7974,18 +7976,18 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  (e.white = "#ffffff"),
 					  (e.red = "#ff0000"),
 					  (e.green = "#007f00"),
-					  (e.blue = "#0000ff"),
+					  (e.blue = "#169fff"),
 					  (e.yellow = "#ffff00"),
 					  (e.orange = "#ff8c00"),
 					  (e.lightblue = "#71c5e8");
 					})((p = exports.Color || (exports.Color = {}))),
-					// バンドごとに光度曲線の色を設定//*test
+					// バンドごとに光度曲線の色を設定
 					(exports.BandColors =
 						(((o = {})[w.all] = p.white),
                     	(o[w.low] = p.red),
                     	(o[w.med] = p.green),
                     	(o[w.high] = p.blue),
-						(o[w.test] = p.lightblue),
+						(o[w.multiColor] = p.lightblue),
 						o));
 				},
 				{},
@@ -8087,21 +8089,22 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  (((e = {})[r.PlotType.Point] = "Point"),
 					  (e[r.PlotType.Line] = "Line"),
 					  e)),
-					// エネルギーバンドごとの表示をするための設定//*test
+					// エネルギーバンドごとの表示をするための設定
 					(exports.AvailableEnergyBands = [r.EnergyBand.all, 
 													r.EnergyBand.low, 
 													r.EnergyBand.med, 
 													r.EnergyBand.high, 
-													r.EnergyBand.test]),
+													r.EnergyBand.multiColor]),
 					//console.log(exports.AvailableEnergyBands),
-					// エネルギーバンドタイトル//*test
+					// エネルギーバンドタイトル
 					(exports.AvailableEnergyBandTitles =
-						(((e = {})[r.EnergyBand.all] = "2-20keV"),
+						(((e = {})[r.EnergyBand.all] = "2-20keV,    "),
 						(e[r.EnergyBand.low] = "2-4keV"),
 						(e[r.EnergyBand.med] = "4-10keV"),
 						(e[r.EnergyBand.high] = "10-20keV"),
-						(e[r.EnergyBand.test] = "test"),
+						(e[r.EnergyBand.multiColor] = "ALL"),
 						e)),
+						
 					//console.log(exports.AvailableEnergyBandTitles),
 					//フォントの種類を格納している。
 					// (exports.AvailableFonts = [r.Font.sans, r.Font.serif]),
@@ -9170,7 +9173,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						  opacity: 0.7,
 						},
 						// UNIXtimeをGPStimeにしたものをdptcに変換して表示
-						parseInt(unix2gps(m(i.x))) + parseInt(valueGPS2DPTC) + " " + "dptc"
+						// parseInt(unix2gps(m(i.x))) + parseInt(dptcUnixDiff) + " " + "dptc"
+						parseInt(unix2gps(m(i.x))) + dptcUnixDiff + " " + "dptc"
 					  ),
 					);
 				  });
@@ -10912,7 +10916,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                               case "Low":
                                                 pre_LCdata = low_LCdata;
                                                 break;
-											  case "test": //*test
+											  case "multiColor":
 											  	pre_LCdata = comb_LCdata;
 											  	break;
                                               default:
