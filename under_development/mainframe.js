@@ -56,6 +56,7 @@ var candidateType;
 var candidateData,candidateData2, candidateData3, candidateData4;
 var nCandidate,nCandidate2;
 
+
 //leftframeからTRIGGER　TIMEを受け取るための関数
 function processDresult(data) {
 	gwTriUnix = data;  
@@ -444,6 +445,7 @@ function loadCSV(path) {
 }
 
 function handleResult() {
+	console.dir(this);
 	if ((this.readyState == 4) && (this.status == 200)) {
 		var text = getAjaxFilter()(this.responseText);
 		CataData = parseCSV(text);
@@ -1342,30 +1344,36 @@ async function printLightCurve(mousePositionObject) {
 
 	// pathタグのdに反映
 	lcPath = await promiseObject;
-	document.getElementById("path-LightCurve").setAttribute("d", lcPath);
+	//document.getElementById("path-LightCurve").setAttribute("d", lcPath);
 }
 
 function popupConfig() {
+	console.log("popupConfig is called");
 	delayTimeString = parent.leftframe.document.getElementById("popupDelay-range").value;
+	console.log("delayTimeString:", delayTimeString);
 	delayTime = parseInt(delayTimeString, 10);
+	console.log("delayTime:", delayTime);
 
 	// micro secに直すため1000倍する, 0の時は100を返す, NaNの時は3000を返す
 	delayTime = delayTime * 1000 || delayTime !== 0 && 3000 || 100;
+	console.log("adjusted delayTime:", delayTime);
 	timer = 0;
 
 	// mouse event は一番上（zindexが最大）の画像にしか発生しない, 常に一番上の画像を選択する必要がある
-	highestTierImgId = "errorImage"
+	//highestTierImgId = "errorImage"
+	highestTierImgId = "triggerMap"; //triggerMapが一番手前の画像
 	skymapObject = document.getElementById(highestTierImgId);
+	console.log("skymapObject:", skymapObject);
 
 	// 上書きしたいのでaddEventListenerは使用しない
 	skymapObject.onmouseout = () => {
+		console.log("mouse is out of skymap");
 		clearTimeout(timer);
 		resetPopup();
-		console.log("mouse is out of skymap");
 	};
 	skymapObject.onmousemove = (e) => {
 		console.log("mouse is moving on skymap");
-		console.log(delayTime);
+		//console.log(delayTime);
 		clearTimeout(timer);
 		resetPopup();
 		timer = setTimeout(lightCurvePopup, delayTime, e);
@@ -1378,6 +1386,7 @@ parent.leftframe.document.getElementById("popupDelay-range")
 
 // light curveをpopupさせる関数, 画像上でマウスを数秒止めると実行される
 async function lightCurvePopup(mousePositionObject) {
+	console.log("lightCurvePopup is called");
 	// mouseの座標から画像の極座標を取得, そのデータを元にlight curveのpathを作成
 	mousePosition2polar(mousePositionObject);
 
@@ -1389,7 +1398,7 @@ async function lightCurvePopup(mousePositionObject) {
 
 	// 極座標を元にlight curveのpathを作成
 	var x = alpha2, y = delta2;
-	var promiseObject = polar2lightCurvePath(x, y, nCandidate2[0][1], nCandidate2[0][0]);
+	//var promiseObject = polar2lightCurvePath(x, y, nCandidate2[0][1], nCandidate2[0][0]); //臨時
 	var lcPath = "";
 
 	// popupの位置を決めるため, 全天画像のサイズを取得, svgの位置に反映
@@ -1413,13 +1422,13 @@ async function lightCurvePopup(mousePositionObject) {
 	loadImgObject = document.getElementById("image-Popup");
 	pathObject = document.getElementById("path-Popup");
 	loadImgObject.style.width = 400;
-	pathObject.setAttribute("d", lcPath);
+	//pathObject.setAttribute("d", lcPath);
 	styleSvg.visibility = "visible";
 
 	// サーバーからの応答を待ちloadingを非表示にする, その後pathタグのdに反映
-	lcPath = await promiseObject;
-	loadImgObject.style.width = 0;
-	pathObject.setAttribute("d", lcPath);
+	//lcPath = await promiseObject; //臨時
+	//loadImgObject.style.width = 0;
+	//pathObject.setAttribute("d", lcPath);
 }
 
 // mouseが動いている間実行される関数
@@ -1453,15 +1462,13 @@ function nearCandidate(mousePositionObject) {
 
 	// テスト用, localにはcsvデータがないのでそれっぽいデータを作っている
 	// dptc_zeroにcandidateData[0][0]は入るように変更
-	if (Math.abs(180 - alpha2) ** 2 + Math.abs(0 - delta2) ** 2 < 900) {
-		var td = ["", candidateData[0][0] + " (4orb, High, 20.84+/-9.36 mCrab)", 180, 0, "", "", "", 1113111] //1324935584
-		nCandidate2 = [td, td].map((value, index) => { td[7] = value[7] + index * 10; return td });
-	}
+	// if (Math.abs(180 - alpha2) ** 2 + Math.abs(0 - delta2) ** 2 < 900) {
+	// 	var td = ["", candidateData[0][0] + " (4orb, High, 20.84+/-9.36 mCrab)", 180, 0, "", "", "", 1113111] //1324935584
+	// 	nCandidate2 = [td, td].map((value, index) => { td[7] = value[7] + index * 10; return td });
+	// }
 
-	//console.log('nCandidate2 = ' + nCandidate2);
-	//console.log('nCandidate2[0][0] = ' + nCandidate2[0][0] + ',  nCandidate2[0][1] = ' +  nCandidate2[0][1]);
-
-	if (nCandidate2) {
+	// nCandidate2が空でない時trueを返す
+	if (Array.isArray(nCandidate2) && nCandidate2.length > 0) {
 		return true;
 	} else {
 		return false;
@@ -1480,6 +1487,12 @@ function hideUnderFrame() {
 
 // 画像上の[x, y](クリックした時に出てくる数字)を入力すると, svgタグで使うlight curveのpathが出力される
 async function polar2lightCurvePath(x, y, detail, diff) {
+	console.log("click : polar2lightCurvePath");
+	let divs = window.parent.underframe.document.getElementsByTagName('div');
+    while (divs.length > 0) {
+        divs[0].remove();
+    }
+
 	var a = []; // aを初期化
 
 	if (diff == "") {
@@ -1572,7 +1585,7 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		type: 'post',				   //どのように
 		data: send,					   //何を渡すのか
 		}).done((LCdata) => {   //受信が成功した時の処理
-			var recive_LCdata = JSON.parse(LCdata);
+			let recive_LCdata = JSON.parse(LCdata);
 
 			//////////////////////////////////////////////////////////////////
 			//値の確認
@@ -1598,6 +1611,26 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		});
 
 		showUnderFrame();
+
+		// underframeを取得
+		//let underframe = window.parent.document.getElementById('underframe');
+		//if (!underframe) {
+		    // underframeが存在しない場合は新しく作成
+			//console.log("なし");
+		    let underframe = document.createElement('div');
+		    underframe.id = 'underframe';
+		    window.parent.underframe.document.body.appendChild(underframe);
+		//}
+
+		// 光度曲線が作成されるまでの間に表示される文字の設定
+		underframe.innerText = 'waiting...'; // テキストを設定
+		underframe.style.color = 'white'; // 文字色を白に設定
+		underframe.style.fontSize = '24px'; // フォントサイズを大きく設定
+		underframe.style.display = 'flex'; // フレックスボックスを使用
+		underframe.style.justifyContent = 'center'; // 水平方向に中央揃え
+		underframe.style.alignItems = 'center'; // 垂直方向に中央揃え
+		underframe.style.height = '100%'; // 高さを100%に設定
+		underframe.style.width = '100%'; // 幅を100%に設定
 }
 
 //↑polar2~~を更に関数化させたい
