@@ -1059,6 +1059,14 @@ window.addEventListener('load', function(){
 function changeCList(cType, cFile){
 	candidateType = cType;
 	console.log('changeCList');
+
+	//テスト用(cTypeがtriggerの場合、ファイル名に"２"を追加する)
+	if (cType.includes('trigger')) {
+		cFile = cFile.replace(/\.csv$/, '2.csv');
+		console.log('cType=' + cType + ' cFile2=' + cFile);
+		loadCandidateCSV(cFile);
+	}
+
 	console.log('cType='+ cType + ' cFile=' + cFile);
 	loadCandidateCSV(cFile);
 }
@@ -1076,8 +1084,10 @@ function handleCandidate(){
 	console.log('--- handleCandidate');
 	console.log('--- candidateType='+candidateType);
 	console.log('ready = ' + this.readyState + 'status =' + this.status);
+	// console.dir(this);
 	if ((this.readyState == 4) && (this.status == 200)) {
 		var text = getAjaxFilter()(this.responseText);
+		// console.log('text :' + text);
 		console.log('handleCandidate');
 		console.log('candidateType='+candidateType);
 		if(candidateType == 'trigger1'){
@@ -1099,11 +1109,11 @@ function handleCandidate(){
 }
 
 function parseCandidateCSV(str) { //γ線バースト？の候補の座標などが書かれたファイルを配列に収める関数
-	//console.log(str);
+	// console.log(str);
 	var lines = str.split(/\n|\r\n|\r/);
+	// console.log(lines);
 	var csvData = new Array();
 
-	console.log(lines);
 	for (var i = 0; i < lines.length - 1; i++) {
 		//console.log('parseCandidateCSV');
 		var array1 = lines[i].split(/,\"/);
@@ -1120,20 +1130,25 @@ function parseCandidateCSV(str) { //γ線バースト？の候補の座標など
 		//console.log(text2);
 		var cells = text2.split(/,/);
 		//console.log(cells);
-		
 	
 		csvData[i] = Data1.concat(cells);
 		//console.log('end');
+
+		// testArr = [1422946499,1422946529,1422946556,1422947699,1422947729,
+		// 	1422952079,1422952109,1422952125,1422953279,1422953288,
+		// 	1,0,1,0,4,1,1,1,0,0];
+ 
+		// csvData[i].push(testArr);
 	}
-	//console.log('start');
-	//console.log(csvData);
+	console.log('start');
+	// console.log(csvData);
 	for( i = 0; i < csvData.length; i++){ //銀経・銀緯を文字列から数値に変換
 		for( j = 0; j < 2; j++){
 			csvData[i][j+2] = parseFloat(csvData[i][j+2]);
 			csvData[i][j+5] = parseFloat(csvData[i][j+5]);
 		}
 	}
-	//console.log(csvData);
+	// console.log("csvData :" + csvData);
 	return csvData;
 }
 
@@ -1396,6 +1411,8 @@ async function lightCurvePopup(mousePositionObject) {
 	// candidateの近くではない時return
 	if (!nearCandidate(mousePositionObject)) { return }
 
+	console.log("nCandidate2[0]:", nCandidate2[0]);
+
 	// 極座標を元にlight curveのpathを作成
 	var x = alpha2, y = delta2;
 	//var promiseObject = polar2lightCurvePath(x, y, nCandidate2[0][1], nCandidate2[0][0]); //臨時
@@ -1421,9 +1438,24 @@ async function lightCurvePopup(mousePositionObject) {
 	// loadingの画像を表示
 	loadImgObject = document.getElementById("image-Popup");
 	pathObject = document.getElementById("path-Popup");
-	loadImgObject.style.width = 400;
+	loadImgObject.style.width = 0; //もと400
 	//pathObject.setAttribute("d", lcPath);
 	styleSvg.visibility = "visible";
+
+	// divに光度曲線用のデータを追加
+	if (popSvg && nCandidate2[0][10]) {
+		// popSvgのdiv要素だけを削除
+		Array.from(popSvg.getElementsByTagName('div')).forEach(div => popSvg.removeChild(div));
+	
+		// 新しいdiv要素を作成
+		let containerDiv = document.createElement('div');
+		let elementsToDisplay = nCandidate2[0].slice(7, 27).join(', ');
+		containerDiv.textContent = elementsToDisplay;
+	
+		// containerDivをpopSvgに追加
+		popSvg.appendChild(containerDiv);
+	}
+	
 
 	// サーバーからの応答を待ちloadingを非表示にする, その後pathタグのdに反映
 	//lcPath = await promiseObject; //臨時
@@ -1467,12 +1499,8 @@ function nearCandidate(mousePositionObject) {
 	// 	nCandidate2 = [td, td].map((value, index) => { td[7] = value[7] + index * 10; return td });
 	// }
 
-	// nCandidate2が空でない時trueを返す
-	if (Array.isArray(nCandidate2) && nCandidate2.length > 0) {
-		return true;
-	} else {
-		return false;
-	}
+	//0 は false、それ以外の数値は true として解釈される
+	return nCandidate2.length;
 }
 
 //underframeを表示する関数
@@ -1586,26 +1614,8 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		data: send,					   //何を渡すのか
 		}).done((LCdata) => {   //受信が成功した時の処理
 			let recive_LCdata = JSON.parse(LCdata);
-
-			//////////////////////////////////////////////////////////////////
-			//値の確認
-			//console.log('nCandidate2= ' + nCandidate2);
-			//console.log('nCandidate2[0][1]= ' + nCandidate2[0][1]);
-			//console.log('nCandidate2[1][1]= ' + nCandidate2[1][1]);
-			//console.log('candidateData[0][0]=' + candidateData[0][0]);
-			//console.log('candidateData[0][1]=' + candidateData[0][1]);
-			//console.log('candidateData[0][2]=' + candidateData[0][2]);
-		   	//console.log(LCdata);	//受信したLCdataはjson(文字列)
-			//console.log("send_zero = " + send.dptc_zero);
-			//console.log("gwTriUnix = " + gwTriUnix);
-			//////////////////////////////////////////////////////////////////
-
-			//LCdataを受け取って、underframeのグラフを作成する関数を呼び出す
-			//window.parent.underframe.underframe_pro(recive_LCdata, send.dptc_zero);
-			//window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix);
-			//window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix, maxiTriDPTC);
 			window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix, maxiTriArray);
-
+			// document.getElementById("svg-Popup").style.visibility = "hidden"; //popupの画像を非表示に
 		}).fail(() => {
 			console.log('failed');
 		});
