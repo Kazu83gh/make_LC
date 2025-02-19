@@ -1414,9 +1414,9 @@ async function lightCurvePopup(mousePositionObject) {
 	console.log("nCandidate2[0]:", nCandidate2[0]);
 
 	// 極座標を元にlight curveのpathを作成
-	var x = alpha2, y = delta2;
+	// var x = alpha2, y = delta2;
 	//var promiseObject = polar2lightCurvePath(x, y, nCandidate2[0][1], nCandidate2[0][0]); //臨時
-	var lcPath = "";
+	// var lcPath = "";
 
 	// popupの位置を決めるため, 全天画像のサイズを取得, svgの位置に反映
 	getImgStatus();
@@ -1435,32 +1435,29 @@ async function lightCurvePopup(mousePositionObject) {
 		mousePositionObject.pageY + popPadding :
 		mousePositionObject.pageY - popHeight - popPadding;
 
+	// 極座標を元にlight curveのpathを作成
+	let dptcArr = nCandidate2[0].slice(7, 17);
+	let countArr = nCandidate2[0].slice(17, 27);
+	// const dptcArr = [1423674119, 1423713127, 1423735417, 1423757705, 1423779995, 1423802284, 1423824574, 1423846864, 1423869154, 1423880290];
+	// const countArr = [3, 4, 4, 2, 2, 0, 2, 2, 4, 8];
+	console.log("dptcArr:", dptcArr);
+	console.log("countArr:", countArr);
+	promiseObject = crtLCPath(dptcArr, countArr);
+	let lcPath = "";
+	// console.log("lcPath2:", promiseObject);
+
 	// loadingの画像を表示
 	loadImgObject = document.getElementById("image-Popup");
 	pathObject = document.getElementById("path-Popup");
-	loadImgObject.style.width = 0; //もと400
-	//pathObject.setAttribute("d", lcPath);
-	styleSvg.visibility = "visible";
-
-	// divに光度曲線用のデータを追加
-	if (popSvg && nCandidate2[0][10]) {
-		// popSvgのdiv要素だけを削除
-		Array.from(popSvg.getElementsByTagName('div')).forEach(div => popSvg.removeChild(div));
-	
-		// 新しいdiv要素を作成
-		let containerDiv = document.createElement('div');
-		let elementsToDisplay = nCandidate2[0].slice(7, 27).join(', ');
-		containerDiv.textContent = elementsToDisplay;
-	
-		// containerDivをpopSvgに追加
-		popSvg.appendChild(containerDiv);
-	}
-	
+	loadImgObject.style.width = 400;
+	//lcPathに正しいpathが格納されれば、光度曲線も表示されるはず
+	pathObject.setAttribute("d", lcPath); 
+	styleSvg.visibility = "visible";	
 
 	// サーバーからの応答を待ちloadingを非表示にする, その後pathタグのdに反映
-	//lcPath = await promiseObject; //臨時
-	//loadImgObject.style.width = 0;
-	//pathObject.setAttribute("d", lcPath);
+	lcPath = await promiseObject;
+	loadImgObject.style.width = 0;
+	pathObject.setAttribute("d", lcPath);
 }
 
 // mouseが動いている間実行される関数
@@ -1512,6 +1509,55 @@ function showUnderFrame() {
 function hideUnderFrame() {
 	parent.document.getElementById("mainFrames").setAttribute("rows", "*, 0");
   }
+
+// popupの光度曲線のためのpathを作成する関数
+async function crtLCPath(dptcArr, countArr) {
+    if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
+        console.error("Invalid input arrays");
+        return [];
+    }
+
+    // SVGのサイズ
+	let popSvg = document.getElementById("svg-Popup");
+	let viewBox = popSvg.getAttribute("viewBox");
+	let [left, top, width, height] = viewBox.split(" ").map(Number);
+	let padding = 20;
+	//console.log("left:", left, "top:", top, "width:", width, "height:", height);
+
+    // X軸（時刻）のスケール変換
+    const minX = Math.min(...dptcArr);
+    const maxX = Math.max(...dptcArr);
+    function scaleX(value) {
+        //return ((value - minX) / (maxX - minX)) * width + left;
+		return ((value - minX) / (maxX - minX)) * (width - 2 * padding) + left + padding;
+    }
+
+    // Y軸（カウント数）のスケール変換（値が大きいほど下に）
+    const minY = 0;
+    const maxY = Math.max(...countArr);
+    function scaleY(value) {
+        //return ((maxY - value) / (maxY - minY)) * height + top;
+		return ((maxY - value) / (maxY - minY)) * (height - 2 * padding) + top + padding;
+    }
+
+    // pathデータの作成
+    let pathData = `M ${scaleX(dptcArr[0])} ${scaleY(countArr[0])}`;
+	// let pathData = `M -400 -100`;
+    for (let i = 1; i < dptcArr.length; i++) {
+        pathData += ` L ${scaleX(dptcArr[i])} ${scaleY(countArr[i])}`;
+    }
+
+	// いらないと思う
+    // `path-Popup` の `d` 属性を更新
+    // const pathElement = document.getElementById("path-Popup");
+    // if (pathElement) {
+    //     pathElement.setAttribute("d", pathData);
+    // } else {
+    //     console.error("Path element not found");
+    // }
+
+    return pathData;
+}
 
 // 画像上の[x, y](クリックした時に出てくる数字)を入力すると, svgタグで使うlight curveのpathが出力される
 async function polar2lightCurvePath(x, y, detail, diff) {
