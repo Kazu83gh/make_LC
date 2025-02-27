@@ -78,7 +78,7 @@
             height: 300;
         }
 
-    #svg-Popup {
+    #popupLC {
         position: absolute;
         top: 0;
         left: 0;
@@ -91,6 +91,7 @@
 
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script type="text/javascript" src="mainframe.js"></script>
 <script type="text/javascript" src="./mainsub.js"></script>
 </head>
@@ -150,10 +151,14 @@
     </svg>
 </div>
 
-<svg id="svg-Popup" viewBox="-400 -100 400 200" preserveAspectRatio="none">
+<!-- <svg id="popupLC" viewBox="-400 -100 400 200" preserveAspectRatio="none">
     <image href="loading.png" id="image-Popup" x="-400" y="-100" height="200" width="0" />
-    <path id="path-Popup" stroke="red" />
-</svg>
+    <path id="path-Popup" stroke="red" fill="none"/>
+</svg> -->
+
+<div id="popupLC">
+
+</div>
 
 </body>
 </html>
