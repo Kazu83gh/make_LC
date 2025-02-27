@@ -1420,7 +1420,7 @@ async function lightCurvePopup(mousePositionObject) {
 
 	// popupの位置を決めるため, 全天画像のサイズを取得, svgの位置に反映
 	getImgStatus();
-	var popSvg = document.getElementById("svg-Popup");
+	var popSvg = document.getElementById("popupLC");
 	var styleSvg = popSvg.style;
 
 	var popHeight = popSvg.clientHeight, popWidth = popSvg.clientWidth;
@@ -1447,22 +1447,22 @@ async function lightCurvePopup(mousePositionObject) {
 	// console.log("lcPath2:", promiseObject);
 
 	// loadingの画像を表示
-	loadImgObject = document.getElementById("image-Popup");
-	pathObject = document.getElementById("path-Popup");
-	loadImgObject.style.width = 400;
+	// loadImgObject = document.getElementById("image-Popup");
+	// pathObject = document.getElementById("path-Popup");
+	// loadImgObject.style.width = 400;
 	//lcPathに正しいpathが格納されれば、光度曲線も表示されるはず
-	pathObject.setAttribute("d", lcPath); 
+	// pathObject.setAttribute("d", lcPath); 
 	styleSvg.visibility = "visible";	
 
 	// サーバーからの応答を待ちloadingを非表示にする, その後pathタグのdに反映
 	lcPath = await promiseObject;
-	loadImgObject.style.width = 0;
-	pathObject.setAttribute("d", lcPath);
+	// loadImgObject.style.width = 0;
+	// pathObject.setAttribute("d", lcPath);
 }
 
 // mouseが動いている間実行される関数
 function resetPopup() {
-	var styleSvg = document.getElementById("svg-Popup").style;
+	var styleSvg = document.getElementById("popupLC").style;
 	styleSvg.visibility = "hidden";
 	// テスト用
 	nCandidate2 = undefined;
@@ -1510,53 +1510,109 @@ function hideUnderFrame() {
 	parent.document.getElementById("mainFrames").setAttribute("rows", "*, 0");
   }
 
-// popupの光度曲線のためのpathを作成する関数
 async function crtLCPath(dptcArr, countArr) {
-    if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
-        console.error("Invalid input arrays");
-        return [];
-    }
-
-    // SVGのサイズ
-	let popSvg = document.getElementById("svg-Popup");
-	let viewBox = popSvg.getAttribute("viewBox");
-	let [left, top, width, height] = viewBox.split(" ").map(Number);
-	let padding = 20;
-	//console.log("left:", left, "top:", top, "width:", width, "height:", height);
-
-    // X軸（時刻）のスケール変換
-    const minX = Math.min(...dptcArr);
-    const maxX = Math.max(...dptcArr);
-    function scaleX(value) {
-        //return ((value - minX) / (maxX - minX)) * width + left;
-		return ((value - minX) / (maxX - minX)) * (width - 2 * padding) + left + padding;
-    }
-
-    // Y軸（カウント数）のスケール変換（値が大きいほど下に）
-    const minY = 0;
-    const maxY = Math.max(...countArr);
-    function scaleY(value) {
-        //return ((maxY - value) / (maxY - minY)) * height + top;
-		return ((maxY - value) / (maxY - minY)) * (height - 2 * padding) + top + padding;
-    }
-
-    // pathデータの作成
-    let pathData = `M ${scaleX(dptcArr[0])} ${scaleY(countArr[0])}`;
-	// let pathData = `M -400 -100`;
-    for (let i = 1; i < dptcArr.length; i++) {
-        pathData += ` L ${scaleX(dptcArr[i])} ${scaleY(countArr[i])}`;
-    }
-
-	// いらないと思う
-    // `path-Popup` の `d` 属性を更新
-    // const pathElement = document.getElementById("path-Popup");
-    // if (pathElement) {
-    //     pathElement.setAttribute("d", pathData);
-    // } else {
-    //     console.error("Path element not found");
+    // if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
+    //     console.error("Invalid input arrays");
+    //     return [];
     // }
 
-    return pathData;
+    // // SVGのサイズを取得
+    // let popSvg = document.getElementById("popupLC");
+    // let viewBox = popSvg.getAttribute("viewBox");
+    // let [left, top, width, height] = viewBox.split(" ").map(Number);
+    // let padding = 20;
+    // let binWidth = 100;  // 帯の幅
+
+    // // X軸（時刻）のスケール変換
+    // const minX = Math.min(...dptcArr);
+    // const maxX = Math.max(...dptcArr);
+    // function scaleX(value) {
+    //     return ((value - minX) / (maxX - minX)) * (width - 2 * padding) + left + padding;
+    // }
+
+    // // Y軸（カウント数）のスケール変換（値が大きいほど下に）
+    // const minY = 0;
+    // const maxY = Math.max(...countArr);
+    // function scaleY(value) {
+    //     return ((maxY - value) / (maxY - minY)) * (height - 2 * padding) + top + padding;
+    // }
+
+    // // ヒストグラム用の path データを作成
+    // let pathData = "";
+    // for (let i = 0; i < dptcArr.length; i++) {
+    //     if (countArr[i] === 0) continue; // yが0のときは描かない
+
+	// 	let x_center = scaleX(dptcArr[i]); // 中心のX座標
+	// 	let binScaled = (binWidth / (maxX - minX)) * (width - 2 * padding); // binWidthをスケール
+	// 	let x1 = x_center - binScaled / 2; // 左端
+	// 	let x2 = x_center + binScaled / 2; // 右端
+    //     let y1 = scaleY(countArr[i]);          // カウント数に対応する Y 座標
+    //     let y0 = scaleY(0);                    // Y=0 の座標（地面の位置）
+
+    //     // 長方形（帯）を描画
+    //     pathData += `M ${x1} ${y0} L ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y0} `;
+    // }
+
+    // return pathData;
+
+	// Plotly で描画 
+	if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
+        console.error("Invalid input arrays");
+        return;
+    }
+
+    // エラーバーの値を全て1.00に設定
+    const errorArr = countArr.map(() => 1.00);
+
+    // Plotly のデータ設定
+    let trace = {
+        x: dptcArr,
+        y: countArr,
+        mode: "markers",
+        marker: {
+            color: "black",
+            size: 6  // マーカーサイズを小さくする
+        },
+        error_y: {
+            type: "data",
+            array: errorArr,
+            visible: true,
+            thickness: 1,  // エラーバーを細くする
+            width: 4       // 横バーを小さくする
+        }
+    };
+
+    // レイアウト設定
+	let layout = {
+	    title: {
+	        text: "", // タイトルを削除
+	        font: { size: 10 }
+	    },
+	    xaxis: { 
+	        title: { text: "", font: { size: 8 } }, // X軸のタイトルを削除
+	        tickfont: { size: 7 },
+	        showticklabels: false // X軸の目盛りテキストを非表示
+	    },
+	    yaxis: { 
+	        title: { text: "", font: { size: 8 } }, // Y軸のタイトルを削除
+	        tickfont: { size: 7 },
+	        showticklabels: false // Y軸の目盛りテキストを非表示
+	    },
+	    showlegend: false,
+	    margin: { l: 5, r: 5, t: 5, b: 5 },  // マージンをさらに縮小
+	    autosize: true,
+	    height: 90,  // divの高さに合わせる
+	    width: 180   // divの幅に合わせる
+	};
+
+    // Plotly で描画
+    let config = { 
+        responsive: true,
+        displayModeBar: false,  // モードバーを非表示
+        staticPlot: true        // インタラクティブ機能を無効化してサイズを節約
+    };
+    
+    Plotly.newPlot("popupLC", [trace], layout, config);
 }
 
 // 画像上の[x, y](クリックした時に出てくる数字)を入力すると, svgタグで使うlight curveのpathが出力される
@@ -1661,7 +1717,7 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		}).done((LCdata) => {   //受信が成功した時の処理
 			let recive_LCdata = JSON.parse(LCdata);
 			window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix, maxiTriArray);
-			// document.getElementById("svg-Popup").style.visibility = "hidden"; //popupの画像を非表示に
+			document.getElementById("popupLC").style.visibility = "hidden"; //popupの画像を非表示に
 		}).fail(() => {
 			console.log('failed');
 		});
