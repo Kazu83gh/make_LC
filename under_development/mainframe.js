@@ -1438,12 +1438,24 @@ async function lightCurvePopup(mousePositionObject) {
 	// 極座標を元にlight curveのpathを作成
 	let dptcArr = nCandidate2[0].slice(7, 17);
 	let countArr = nCandidate2[0].slice(17, 27);
-	// const dptcArr = [1423674119, 1423713127, 1423735417, 1423757705, 1423779995, 1423802284, 1423824574, 1423846864, 1423869154, 1423880290];
-	// const countArr = [3, 4, 4, 2, 2, 0, 2, 2, 4, 8];
+	let expotmArr = nCandidate2[0].slice(27, 37);
 	console.log("dptcArr:", dptcArr);
 	console.log("countArr:", countArr);
-	promiseObject = crtLCPath(dptcArr, countArr);
-	let lcPath = "";
+	console.log("expotmArr:", expotmArr);
+
+	// 単位時間あたりのカウント数に変換
+	let countRateArr;
+	if (expotmArr && expotmArr.length === 10) {
+		countRateArr = countArr.map((count, index) => count / (expotmArr[index] || 1));
+	} else {
+		// expotm が無効な場合は生のカウント数を使用
+		console.log("露光時間データがないか無効です。生のカウント数を使用します");
+		countRateArr = [...countArr];
+	}
+	console.log("countRateArr:", countRateArr);
+
+	promiseObject = crtLCPath(dptcArr, countRateArr);
+	//let lcPath = "";
 	// console.log("lcPath2:", promiseObject);
 
 	// loadingの画像を表示
@@ -1455,7 +1467,7 @@ async function lightCurvePopup(mousePositionObject) {
 	styleSvg.visibility = "visible";	
 
 	// サーバーからの応答を待ちloadingを非表示にする, その後pathタグのdに反映
-	lcPath = await promiseObject;
+	//lcPath = await promiseObject;
 	// loadImgObject.style.width = 0;
 	// pathObject.setAttribute("d", lcPath);
 }
@@ -1464,6 +1476,7 @@ async function lightCurvePopup(mousePositionObject) {
 function resetPopup() {
 	var styleSvg = document.getElementById("popupLC").style;
 	styleSvg.visibility = "hidden";
+	document.getElementById("popupLC").innerHTML = "";
 	// テスト用
 	nCandidate2 = undefined;
 }
@@ -1496,6 +1509,8 @@ function nearCandidate(mousePositionObject) {
 	// 	nCandidate2 = [td, td].map((value, index) => { td[7] = value[7] + index * 10; return td });
 	// }
 
+	// console.log("nCandidate2:", nCandidate2);
+
 	//0 は false、それ以外の数値は true として解釈される
 	return nCandidate2.length;
 }
@@ -1511,58 +1526,27 @@ function hideUnderFrame() {
   }
 
 async function crtLCPath(dptcArr, countArr) {
-    // if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
-    //     console.error("Invalid input arrays");
-    //     return [];
-    // }
-
-    // // SVGのサイズを取得
-    // let popSvg = document.getElementById("popupLC");
-    // let viewBox = popSvg.getAttribute("viewBox");
-    // let [left, top, width, height] = viewBox.split(" ").map(Number);
-    // let padding = 20;
-    // let binWidth = 100;  // 帯の幅
-
-    // // X軸（時刻）のスケール変換
-    // const minX = Math.min(...dptcArr);
-    // const maxX = Math.max(...dptcArr);
-    // function scaleX(value) {
-    //     return ((value - minX) / (maxX - minX)) * (width - 2 * padding) + left + padding;
-    // }
-
-    // // Y軸（カウント数）のスケール変換（値が大きいほど下に）
-    // const minY = 0;
-    // const maxY = Math.max(...countArr);
-    // function scaleY(value) {
-    //     return ((maxY - value) / (maxY - minY)) * (height - 2 * padding) + top + padding;
-    // }
-
-    // // ヒストグラム用の path データを作成
-    // let pathData = "";
-    // for (let i = 0; i < dptcArr.length; i++) {
-    //     if (countArr[i] === 0) continue; // yが0のときは描かない
-
-	// 	let x_center = scaleX(dptcArr[i]); // 中心のX座標
-	// 	let binScaled = (binWidth / (maxX - minX)) * (width - 2 * padding); // binWidthをスケール
-	// 	let x1 = x_center - binScaled / 2; // 左端
-	// 	let x2 = x_center + binScaled / 2; // 右端
-    //     let y1 = scaleY(countArr[i]);          // カウント数に対応する Y 座標
-    //     let y0 = scaleY(0);                    // Y=0 の座標（地面の位置）
-
-    //     // 長方形（帯）を描画
-    //     pathData += `M ${x1} ${y0} L ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y0} `;
-    // }
-
-    // return pathData;
-
 	// Plotly で描画 
 	if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
         console.error("Invalid input arrays");
         return;
     }
 
-    // エラーバーの値を全て1.00に設定
-    const errorArr = countArr.map(() => 1.00);
+    // エラーバーの値を各カウント数の平方根に設定
+	const errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
+	console.log("errorArr:", errorArr);
+
+	// エネルギーバンドに応じてマーカーの色を決定
+	let markerColor = "black"; // デフォルトカラー
+	const signalString = nCandidate2[0][1];
+	console.log(nCandidate2[0][1]);
+	
+	if (signalString.includes("L+M")) markerColor = "black";
+	else if (signalString.includes("Low")) markerColor = "red";
+	else if (signalString.includes("Med")) markerColor = "green";
+	else if (signalString.includes("High")) markerColor = "blue";
+
+	console.log("markerColor:", markerColor);
 
     // Plotly のデータ設定
     let trace = {
@@ -1570,8 +1554,8 @@ async function crtLCPath(dptcArr, countArr) {
         y: countArr,
         mode: "markers",
         marker: {
-            color: "black",
-            size: 6  // マーカーサイズを小さくする
+            color: markerColor,
+            size: 4  // マーカーサイズを小さくする
         },
         error_y: {
             type: "data",
@@ -1596,10 +1580,11 @@ async function crtLCPath(dptcArr, countArr) {
 	    yaxis: { 
 	        title: { text: "", font: { size: 8 } }, // Y軸のタイトルを削除
 	        tickfont: { size: 7 },
-	        showticklabels: false // Y軸の目盛りテキストを非表示
+	        showticklabels: true, // Y軸の目盛りテキストを非表示
+	        range: [0, null] // Y軸の最小値を0に設定、最大値は自動
 	    },
 	    showlegend: false,
-	    margin: { l: 5, r: 5, t: 5, b: 5 },  // マージンをさらに縮小
+	    margin: { l: 15, r: 10, t: 10, b: 10 },
 	    autosize: true,
 	    height: 90,  // divの高さに合わせる
 	    width: 180   // divの幅に合わせる
@@ -1717,7 +1702,7 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		}).done((LCdata) => {   //受信が成功した時の処理
 			let recive_LCdata = JSON.parse(LCdata);
 			window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix, maxiTriArray);
-			document.getElementById("popupLC").style.visibility = "hidden"; //popupの画像を非表示に
+			// document.getElementById("popupLC").style.visibility = "hidden"; //popupの画像を非表示に
 		}).fail(() => {
 			console.log('failed');
 		});
