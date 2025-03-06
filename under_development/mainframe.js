@@ -1525,28 +1525,99 @@ function hideUnderFrame() {
 	parent.document.getElementById("mainFrames").setAttribute("rows", "*, 0");
   }
 
+// async function crtLCPath(dptcArr, countArr) {
+// 	// Plotly で描画 
+// 	if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
+//         console.error("Invalid input arrays");
+//         return;
+//     }
+
+//     // エラーバーの値を各カウント数の平方根に設定
+// 	const errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
+// 	console.log("errorArr:", errorArr);
+
+// 	// エネルギーバンドに応じてマーカーの色を決定
+// 	let markerColor = "black"; // デフォルトカラー
+// 	const signalString = nCandidate2[0][1];
+// 	console.log(nCandidate2[0][1]);
+	
+// 	if (signalString.includes("L+M")) markerColor = "black";
+// 	else if (signalString.includes("Low")) markerColor = "red";
+// 	else if (signalString.includes("Med")) markerColor = "green";
+// 	else if (signalString.includes("High")) markerColor = "blue";
+
+// 	console.log("markerColor:", markerColor);
+
+//     // Plotly のデータ設定
+//     let trace = {
+//         x: dptcArr,
+//         y: countArr,
+//         mode: "markers",
+//         marker: {
+//             color: markerColor,
+//             size: 4  // マーカーサイズを小さくする
+//         },
+//         error_y: {
+//             type: "data",
+//             array: errorArr,
+//             visible: true,
+//             thickness: 1,  // エラーバーを細くする
+//             width: 4       // 横バーを小さくする
+//         }
+//     };
+
+//     // レイアウト設定
+// 	let layout = {
+// 	    title: {
+// 	        text: "", // タイトルを削除
+// 	        font: { size: 10 }
+// 	    },
+// 	    xaxis: { 
+// 	        title: { text: "", font: { size: 8 } }, // X軸のタイトルを削除
+// 	        tickfont: { size: 7 },
+// 	        showticklabels: false // X軸の目盛りテキストを非表示
+// 	    },
+// 	    yaxis: { 
+// 	        title: { text: "", font: { size: 8 } }, // Y軸のタイトルを削除
+// 	        tickfont: { size: 7 },
+// 	        showticklabels: true, // Y軸の目盛りテキストを非表示
+// 	        range: [0, null] // Y軸の最小値を0に設定、最大値は自動
+// 	    },
+// 	    showlegend: false,
+// 	    margin: { l: 15, r: 10, t: 10, b: 10 },
+// 	    autosize: true,
+// 	    height: 90,  // divの高さに合わせる
+// 	    width: 180   // divの幅に合わせる
+// 	};
+
+//     // Plotly で描画
+//     let config = { 
+//         responsive: true,
+//         displayModeBar: false,  // モードバーを非表示
+//         staticPlot: true        // インタラクティブ機能を無効化してサイズを節約
+//     };
+    
+//     Plotly.newPlot("popupLC", [trace], layout, config);
+// }
+
 async function crtLCPath(dptcArr, countArr) {
-	// Plotly で描画 
-	if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
+    // Plotly で描画
+    if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
         console.error("Invalid input arrays");
         return;
     }
 
     // エラーバーの値を各カウント数の平方根に設定
-	const errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
-	console.log("errorArr:", errorArr);
+    const errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
 
-	// エネルギーバンドに応じてマーカーの色を決定
-	let markerColor = "black"; // デフォルトカラー
-	const signalString = nCandidate2[0][1];
-	console.log(nCandidate2[0][1]);
-	
-	if (signalString.includes("L+M")) markerColor = "black";
-	else if (signalString.includes("Low")) markerColor = "red";
-	else if (signalString.includes("Med")) markerColor = "green";
-	else if (signalString.includes("High")) markerColor = "blue";
+    // エネルギーバンドに応じてマーカーの色を決定
+    let markerColor = "black"; // デフォルトカラー
+    const signalString = nCandidate2[0][1];
 
-	console.log("markerColor:", markerColor);
+    if (signalString.includes("L+M")) markerColor = "black";
+    else if (signalString.includes("Low")) markerColor = "red";
+    else if (signalString.includes("Med")) markerColor = "green";
+    else if (signalString.includes("High")) markerColor = "blue";
 
     // Plotly のデータ設定
     let trace = {
@@ -1555,48 +1626,83 @@ async function crtLCPath(dptcArr, countArr) {
         mode: "markers",
         marker: {
             color: markerColor,
-            size: 4  // マーカーサイズを小さくする
+            size: 4 // マーカーサイズを小さくする
         },
         error_y: {
             type: "data",
             array: errorArr,
             visible: true,
-            thickness: 1,  // エラーバーを細くする
-            width: 4       // 横バーを小さくする
+            thickness: 1, // エラーバーを細くする
+            width: 4 // 横バーを小さくする
         }
     };
 
-    // レイアウト設定
-	let layout = {
-	    title: {
-	        text: "", // タイトルを削除
-	        font: { size: 10 }
-	    },
-	    xaxis: { 
-	        title: { text: "", font: { size: 8 } }, // X軸のタイトルを削除
-	        tickfont: { size: 7 },
-	        showticklabels: false // X軸の目盛りテキストを非表示
-	    },
-	    yaxis: { 
-	        title: { text: "", font: { size: 8 } }, // Y軸のタイトルを削除
-	        tickfont: { size: 7 },
-	        showticklabels: true, // Y軸の目盛りテキストを非表示
-	        range: [0, null] // Y軸の最小値を0に設定、最大値は自動
-	    },
-	    showlegend: false,
-	    margin: { l: 15, r: 10, t: 10, b: 10 },
-	    autosize: true,
-	    height: 90,  // divの高さに合わせる
-	    width: 180   // divの幅に合わせる
-	};
+    // **X軸の範囲設定**
+    const minTime = Math.min(...dptcArr); // **最小値**
+    const maxTime = Math.max(...dptcArr); // **最大値**
+    const range = maxTime - minTime; // **範囲を取得**
 
-    // Plotly で描画
+    // **範囲に応じて最適な目盛り間隔を選択**
+    let stepCandidates = [1, 10, 100, 1000, 10000, 100000, 1000000];
+    let tickStep = stepCandidates.reduce((prev, curr) => 
+        Math.abs(range / curr - 7) < Math.abs(range / prev - 7) ? curr : prev
+    );
+
+    // **X軸の最小値を `tickStep` の倍数にする**
+    const minX = Math.floor(minTime / tickStep) * tickStep;
+
+    // **X軸の目盛り値とラベルを作成**
+    let tickvals = [];
+    let ticktext = [];
+    for (let t = minX; t <= maxTime; t += tickStep) {
+        tickvals.push(t - minX); // 基準時刻からの相対時間
+        ticktext.push((t - minX).toString());
+    }
+
+    ticktext[0] = minX.toString(); 
+
+    // **レイアウト設定**
+    let layout = {
+        title: "", // タイトル削除
+        xaxis: { 
+            title: "", // X軸のタイトルを空に
+            showticklabels: true, // X軸の目盛りテキストを表示
+            tickfont: { size: 8 }, // フォントサイズを少し大きくする
+            ticks: "inside", // 目盛りを内側に表示して省スペース化
+            type: 'linear',
+            tickmode: 'array',
+            tickvals: tickvals,
+            ticktext: ticktext,
+			rangemode: "tozero",
+            zeroline: true, // X軸の `0` の線を強制表示
+            zerolinewidth: 1.2 // X軸の `0` の線を強調
+        },
+        yaxis: { 
+            title: { text: "", font: { size: 8 } },
+            tickfont: { size: 7 },
+            showticklabels: true,
+            zeroline: true, // Y軸の `0` を強制表示
+            zerolinewidth: 1.2, // Y軸の `0` の線を強調
+            rangemode: "tozero", // Y軸の最小値を0に固定し、最大値のみ自動調整
+            fixedrange: true // Y軸のズーム不可
+        },
+        showlegend: false,
+        margin: { l: 20, r: 10, t: 10, b: 25 }, // 下部マージンを大きく
+        autosize: true,
+        height: 90, // divの高さに合わせる
+        width: 180  // divの幅に合わせる
+    };
+
+    // **X軸を相対時間（秒）に変換**
+    trace.x = dptcArr.map(val => val - minX);
+
+    // **Plotly で描画**
     let config = { 
         responsive: true,
-        displayModeBar: false,  // モードバーを非表示
-        staticPlot: true        // インタラクティブ機能を無効化してサイズを節約
+        displayModeBar: false, // モードバーを非表示
+        staticPlot: true // インタラクティブ機能を無効化してサイズを節約
     };
-    
+
     Plotly.newPlot("popupLC", [trace], layout, config);
 }
 
