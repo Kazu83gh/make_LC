@@ -8787,9 +8787,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  //e.get(r.URLParameterKey.binSize);
 					  return {
 						//ここのbinsizeを変更することでも光度曲線の十字の数を変更することができる
-						binSize: exports.filterBinSize(
-							e.get(r.URLParameterKey.binSize)
-						),
+						// binSize: exports.filterBinSize(
+						// 	e.get(r.URLParameterKey.binSize)
+						// ),
+						binSize: 1,
 						mjdRange: exports.filterMJDRange(
 						  	e.get(r.URLParameterKey.mjdRange)
 						),
@@ -10726,7 +10727,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						O = i.useCache({
 						  keys: F,
 						  getter: function (e) {
-							var t = dict_LCdata; /*_.get(e)とりあえず今は直接入れる。*/
+							var t = dict_LCdata;
 							//console.log(t ? a.getRollingAverage(t, y.binSize) : null);
 		  
 							return t ? a.getRollingAverage(t, y.binSize) : null;
@@ -10734,6 +10735,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						  onError: E,
 						  dependencies: [y.binSize, _],
 						});
+
+
 		  
 					  //plottypeを変更を実行する部分
 					  n.useEffect(
@@ -10811,6 +10814,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									},
 									"Bin size: "
 								  ),
+								//MARK:Bin size
 								//bin sizeの入力
 								  n.createElement("input", {
 									id: o.URLParameterKey.binSize,
@@ -10821,7 +10825,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									onMouseDown: function(e) { //スピンボタンをクリックしたときの処理
 										const input = e.currentTarget;
 										const rect = input.getBoundingClientRect();
-										//const clickSpin = e.clientX > (rect.left + 0.57 * rect.width);
 										const clickSpin = e.clientX > (rect.right - 20);
 										const isSpinUp = e.clientY < (rect.top + rect.height / 2);
 										const currentValue = parseInt(input.value, 10);
@@ -10834,7 +10837,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 											}
 										} else if (clickSpin) {  // 下ボタン
 											const newValue = currentValue / 2 + 1;
-											if (newValue >= 1) {
+											if (newValue >= 2) {
 												input.value = parseInt(newValue, 10);
 												T({ binSize: c.filterBinSize(newValue) });
 											}
