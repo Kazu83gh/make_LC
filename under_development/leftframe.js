@@ -1450,7 +1450,7 @@ function Range(value){ //ラジオボタンのON/OFFが押された際の処理
 
 //ここから画像サイズを合わせる全ての関数
 function full(){
-    window.parent.mainframe.hideUnderFrame(); //underframeを非表示にする
+    //window.parent.mainframe.hideUnderFrame(); //underframeを非表示にする
     parent.mainframe.beforeChange(); //変更前の画像の大きさを記録する
     parent.mainframe.document.getElementById("image1").style.width = orgWidth;
     parent.mainframe.document.getElementById("image1").style.height = orgHeight;
@@ -1475,7 +1475,7 @@ function full(){
 }
 
 function full2(){
-    window.parent.mainframe.hideUnderFrame(); //underframeを非表示にする
+    //window.parent.mainframe.hideUnderFrame(); //underframeを非表示にする
     parent.mainframe.beforeChange(); //変更前の画像の大きさを記録する
 	parent.mainframe.document.getElementById("image1").style.width = 2 * orgWidth;
     parent.mainframe.document.getElementById("image1").style.height = 2 * orgHeight;
@@ -1500,7 +1500,7 @@ function full2(){
 }
 
 function harf(){
-    window.parent.mainframe.hideUnderFrame(); //underframeを非表示にする
+    //window.parent.mainframe.hideUnderFrame(); //underframeを非表示にする
     parent.mainframe.beforeChange(); //変更前の画像の大きさを記録する
     scale = 2;
     sizeChange();
@@ -1511,7 +1511,7 @@ function harf(){
 }
 
 function fit(){
-    window.parent.mainframe.hideUnderFrame(); //underframeを非表示にする
+    //window.parent.mainframe.hideUnderFrame(); //underframeを非表示にする
     parent.mainframe.beforeChange(); //変更前の画像の大きさを記録する
     scale = 1;
     sizeChange();
@@ -1643,6 +1643,17 @@ function cursor(){ // cursorが押された際の処理
 		parent.mainframe.document.getElementById("myCursor").style.visibility="hidden";
 	} else {
 		curButton.value = "Cursor-on";
+		curButton.style.backgroundColor = "gray";
+	}
+}
+
+function popupYaxis(){ // popupYaxis が押された際の処理
+	curButton = document.getElementById("popupYaxis");
+    if(curButton.value == "count"){
+		curButton.value = "count / sec";
+		curButton.style.backgroundColor = "gainsboro";
+	} else {
+		curButton.value = "count";
 		curButton.style.backgroundColor = "gray";
 	}
 }
