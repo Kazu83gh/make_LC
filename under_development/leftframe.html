@@ -1,0 +1,208 @@
+<html>
+
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type" /meta>
+<head>
+<title>Button Window</title>
+<script type="text/javascript" src="leftframe.js">
+</script>
+</head>
+
+<body bgcolor="gray" text="white">
+
+<center>
+<i>GW event</i>
+
+</center>
+<table border="0" frame="void">
+<tr>
+  <form name="list">
+    <SELECT name="dlist" id="dlist"  style="width:100%;" onChange="change_dir(value)">
+    </SELECT>
+  </form> 
+</tr>
+<tr>
+  <td> <INPUT type="button"  ID="change_list" value="more" style="font-size:9pt; width:100%; padding-left:0%;" onClick="changeBox(value)"> </td>
+  <td> <INPUT type="button" id = "eventTest" style="font-size:9pt; width:100%; padding-left: 0%;" value="event" onClick="eventTestJudge()"> </td>
+</tr>
+</table>
+
+<center>
+-<i>Time </i>[<font size="2" color="yellow"><span id="nowTime"></span></font>]-
+<!-- <font size="2"><div id="nowTime"></div></font> -->
+</center>
+
+<INPUT type="button" id = "prev" style="width:40%;" value="" onClick="before()">
+<INPUT type="button" id = "next" style="width:50%;" value="" onClick="next()">  
+
+<br>
+
+<center>
+-<i>size</i>-
+
+<table border="0" frame="void" bgcolor="#AAAAAA">
+<tr align="center">
+ <td > <INPUT type="button" value="Full" onClick="full()"> </td>
+ <td> <INPUT type="button" value="2full" onClick="full2()"> </td>
+</tr>
+<tr align="center">
+ <td> <INPUT type="button" value="Fit" onClick="fit()"> </td>
+ <td> <INPUT type="button" value="2fit" onClick="harf()"> </td>
+</tr>
+</table>
+</center>
+
+
+<center>
+-<i>Energy</i>-
+</center>
+   
+<form name=energy>
+<SELECT name="energy" id="energy" onChange="change_energy(value)">
+  <OPTION value="rgb">Color</OPTION>
+  <OPTION value="all" selected>2-20keV</OPTION> 
+  <OPTION value="low">2-4keV</OPTION> 
+  <OPTION value="med">4-10keV</OPTION>
+  <OPTION value="high">10-20keV</OPTION>
+</SELECT>
+</form>
+
+<center>
+<i>GW Sky Map</i>
+</center>
+
+<table border="0" frame="void">
+<tr align="center">
+<form name="error">
+<SELECT name="error" id="error" onChange="change_error(value)">
+  <OPTION value="None">None</OPTION>
+</SELECT>
+</form>
+</tr>
+<tr>  <!-- エラー領域だけの画像が出来たらエラー領域の画像種類を選ぶものにする-->
+<form name="area">
+<SELECT name="area" id="area" onChange="change_area(value)">
+</SELECT>
+</form> 
+</tr> 
+<table>
+<br>
+
+<table border="1" style="margin-right: auto; font-size: 9pt;">
+  <tr><td colspan="2"><center>Nova-Alert 1</center></td>
+  <tr><td><center>trigger</center></td><td><center>mail</center></td>
+  <tr>
+    <td><form name="an1"><SELECT name="an1" id="an1" onChange="change_asNS1(value)" style="font-size: 8pt;">
+        <OPTION value="None">No</OPTION></SELECT></form></td>
+    <td><form name="mn1"><SELECT name="mn1" id="mn1" onChange="change_mailNS1(value)" style="font-size: 8pt;">
+         <OPTION value="None">No</OPTION></SELECT></form></td>
+  </tr>
+</table>
+
+<table border="1" style="margin-right: auto; font-size: 9pt;">
+  <tr><td colspan="2"><center>Nova-Alert 2</center></td>
+  <tr><td><center>trigger</center></td><td><center>mail</center></td>
+  <tr>
+    <td><form name="an2"><SELECT name="an2" id="an2" onChange="change_asNS2(value)" style="font-size: 8pt;">
+    <OPTION value="None">No</OPTION></SELECT></form></td>
+  <td><form name="mn2"><SELECT name="mn2" id="mn2" onChange="change_mailNS2(value)" style="font-size: 8pt;">
+    <OPTION value="None">No</OPTION></SELECT></form></td>
+  </tr>
+</table>
+<br>
+
+<center>
+<i>Exposure Map</i>
+</center>
+<font size="1">
+  <form name="radio">
+    <INPUT type="radio" name ="range_on-off" id = "range-on" value="on"  onClick="Range(value)">ON
+    <INPUT type="radio" name="range_on-off" id = "range-of" value="off" onClick="Range(value)" checked>OFF<br>
+  </form>
+</font>
+<input type="range" id="bar" name="num" min="0" max="1" step="0.01" value="0.2" style="width:100%; display:none; background-color:gainsboro" onchange="parent.mainframe.changeValue(this.value)">
+<INPUT type="button" value="Exposure-off" style="display:none; "onClick="Exposure(value)" ID="b_exposure"><br>
+
+
+<center>
+<i>Data Selection</i>
+</center>
+
+<form name="imgtype">
+<SELECT name="imgtype" id="imgtype" onChange="change_type(value)">
+  <OPTION value="cln" selected>clean</OPTION>
+  <OPTION value="col">COLPHI Cut</OPTION>
+  <OPTION value="raw">raw</OPTION>
+</SELECT>
+</form>
+
+
+<!-- 11月26日、稲木が追加したもの -->
+<table border="0" width="100">
+  <tr><td><INPUT type="button" value="Marker-off"        onClick="marker()"  style="width:100%; background-color:gainsboro" ID="marker"></td></tr>
+  <tr><td><INPUT type="button" value="Cursor-off"        onClick="cursor()"  style="width:100%; background-color:gainsboro" ID="cursor"></td></tr>
+</table>
+<!--<INPUT type="button" value="mousemove" id="cursorMode" onmousedown="changeCursorMode()"><br>-->
+<!-- ここまで　-->
+
+<form name="zahyo">
+(&alpha;, &delta;)=
+(<input type="text" value="" size="5" ID=resultAlpha>, 
+<input type="text" value="" size="5" ID=resultDelta>)
+<input type="button" value="GO" onClick="sarchPointE()"> 
+<br>
+(<i>l, b</i>)=
+(<input type="text" value="" size="5" ID="resultgk">,
+<input type="text" value="" size="5" ID="resultgi">)
+<input type="button" value="GO" onClick="sarchPointG()">
+</form>
+
+<input type="text" value="" size="8" style="color:white;background-color:black;" ID="jnamesearch">
+<input type="button" value="JSearch" onClick="jnamesearch()">
+<br>
+
+fluxOption<FORM name="SelFlu">
+  <SELECT name="SelectFlux" onchange="reWrite()" id="SelectFlux">
+    <OPTION value="-1" selected>RIKENsrc</OPTION>
+    <OPTION value="1" >1mCrab-</OPTION>
+    <OPTION value="10" >10-</OPTION>
+    <OPTION value="100" >100-</OPTION>
+    <OPTION value="0" >ALL</OPTION>
+  </SELECT>
+ </FORM>
+<div ID="nresult"></div>
+
+<br>
+<center>
+  <i>popup Y-axis</i>
+</center>
+<table border="0" width="100">
+  <tr><td><INPUT type="button" value="count / sec" onClick="popupYaxis()" style="width:100%; background-color:gainsboro" ID="popupYaxis"></td></tr>
+</table>
+<br>
+
+<div name="popupDelay">
+  <center>
+    <i>popup delay</i>
+    <br>
+    <span id="popupDelay-display"></span> [s]
+  </center>
+  <input type="range" id="popupDelay-range" min="0" max="3" value="0.1" step="0.1" style="width: 100%;" />
+</div>
+
+<div id = "team"></div>
+<div id = "datasite"></div>
+<!--<a href="testindex.html" target="_blank" id = "test">test site</a><br>-->
+<a href="HowToUse.html" target="_blank" id = "howtouse">How to use</a><br>
+<!-- 20191214追加-->
+
+<!--ここまで-->
+</body>
+</html>
+
+<!--
+  <center>
+-<i>message</i>-
+</center>
+<div id="message"></div>
+
+-->
