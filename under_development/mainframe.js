@@ -56,6 +56,16 @@ var candidateType;
 var candidateData,candidateData2, candidateData3, candidateData4;
 var nCandidate,nCandidate2;
 
+const priorities = { // timescale の優先順位を定義
+    "1day": 8,
+    "4orb": 7,
+    "1orb": 6,
+    "1scan": 5,
+    "30s": 4,
+    "10s": 3,
+    "3s": 2,
+    "1s": 1
+};
 
 //leftframeからTRIGGER　TIMEを受け取るための関数
 function processDresult(data) {
@@ -705,7 +715,7 @@ function cataPointSarch(i)
 
 //以下、マウスを動かした時（座標とカタログ表示,両方の簡易版を画面に表示したい）
 
-
+// MARK:getMouseMoveXY
 function getMouseMoveXY(evt) //マウスポインタの地点の座標を取得する
 {
 	mouseMove = 1; //マウスを動かした時に呼び出されていることを記憶する
@@ -751,14 +761,19 @@ function getMouseMoveXY(evt) //マウスポインタの地点の座標を取得�
 
 	if(nCandidate2 != undefined){
 		for(i = 0; i < nCandidate2.length; i++){
-			resultCur += nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][7] + '<br>';
-	}
+			resultCur += nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][38] + '<br>';
+		}
 	}
 	//console.log(resultCur);
 
+	// let popupElement = document.getElementById("popupLC");
 	curObj.left = 9 + evt.pageX + "px";
 	//curObj.top  = 17 + evt.pageY + "px";
 	curObj.top  = evt.pageY + "px";
+	// curObj.top = (popupElement && popupElement.style.visibility === "visible") ? 
+    // (evt.pageY + popupElement.clientHeight) + "px" : 
+    // evt.pageY + "px";
+
 	if((pointSta == 1) && (marginSta == 1)){
 	document.getElementById("cursorPoint").innerHTML = resultCur;
 	curObj.visibility="visible";
@@ -1132,13 +1147,6 @@ function parseCandidateCSV(str) { //γ線バースト？の候補の座標など
 		//console.log(cells);
 	
 		csvData[i] = Data1.concat(cells);
-		//console.log('end');
-
-		// testArr = [1422946499,1422946529,1422946556,1422947699,1422947729,
-		// 	1422952079,1422952109,1422952125,1422953279,1422953288,
-		// 	1,0,1,0,4,1,1,1,0,0];
- 
-		// csvData[i].push(testArr);
 	}
 	console.log('start');
 	// console.log(csvData);
@@ -1399,6 +1407,7 @@ window.addEventListener("load", popupConfig); // imgタグに対するconfigを�
 parent.leftframe.document.getElementById("popupDelay-range")
 	.addEventListener("input", popupConfig);
 
+// MARK: LCPopup
 // light curveをpopupさせる関数, 画像上でマウスを数秒止めると実行される
 async function lightCurvePopup(mousePositionObject) {
 	console.log("lightCurvePopup is called");
@@ -1408,10 +1417,9 @@ async function lightCurvePopup(mousePositionObject) {
 	// mouseの座標が地図の内側ではない時return
 	if (!(pointSta == 1 && marginSta == 1)) { return }
 
-	// candidateの近くではない時return
-	if (!nearCandidate(mousePositionObject)) { return }
-
-	console.log("nCandidate2[0]:", nCandidate2[0]);
+	// nCandidate2の長さが0のとき（周辺にイベントがないとき）return
+	nearCandidate(mousePositionObject);
+	if (!nCandidate2.length) { return }
 
 	// 極座標を元にlight curveのpathを作成
 	// var x = alpha2, y = delta2;
@@ -1429,32 +1437,54 @@ async function lightCurvePopup(mousePositionObject) {
 	// popupが画面をはみ出さないように条件分岐
 	styleSvg.left = mousePositionObject.pageX > imgWidth - popWidth - popPadding ?
 		mousePositionObject.pageX - popWidth - popPadding :
-		styleSvg.left = mousePositionObject.pageX + popPadding;
+		mousePositionObject.pageX + popPadding;
 
 	styleSvg.top = mousePositionObject.pageY < popHeight + popPadding ?
 		mousePositionObject.pageY + popPadding :
 		mousePositionObject.pageY - popHeight - popPadding;
 
-	// 極座標を元にlight curveのpathを作成
-	let dptcArr = nCandidate2[0].slice(7, 17);
-	let countArr = nCandidate2[0].slice(17, 27);
-	let expotmArr = nCandidate2[0].slice(27, 37);
-	console.log("dptcArr:", dptcArr);
-	console.log("countArr:", countArr);
-	console.log("expotmArr:", expotmArr);
-
-	// 単位時間あたりのカウント数に変換
-	let countRateArr;
-	if (expotmArr && expotmArr.length === 10) {
-		countRateArr = countArr.map((count, index) => count / (expotmArr[index] || 1));
-	} else {
-		// expotm が無効な場合は生のカウント数を使用
-		console.log("露光時間データがないか無効です。生のカウント数を使用します");
-		countRateArr = [...countArr];
+	// 画像と重ならないようにカーソル表示を移動
+	if (mousePositionObject.pageX <= imgWidth - popWidth - popPadding && 
+		mousePositionObject.pageY < popHeight + popPadding) {
+	    var curObj = parent.mainframe.document.getElementById("myCursor").style;
+	    curObj.top = (mousePositionObject.pageY + popHeight) + "px";
 	}
-	console.log("countRateArr:", countRateArr);
 
-	promiseObject = crtLCPath(dptcArr, countRateArr);
+	// sigmaが最大の要素の番号を取得
+	sigmaMax = findSigmaMax(nCandidate2);
+	// 極座標を元にlight curveのpathを作成
+	let dptcArr = nCandidate2[sigmaMax].slice(7, 17);
+	let countArr = nCandidate2[sigmaMax].slice(17, 27);
+	let expotmArr = nCandidate2[sigmaMax].slice(27, 37);
+	let countAve = nCandidate2[sigmaMax][37];
+
+	// 縦軸の単位を取得
+	let popupY = parent.leftframe.document.getElementById("popupYaxis").value;
+	console.log("popupのY軸:", popupY);
+
+	// countAveをexpotmをもとに補正
+	if (popupY === "count / sec") {
+		let expotmAverage = 0;
+		if (expotmArr && expotmArr.length > 0) {
+		    // 有効な数値のみを対象にする
+		    const validExpotms = expotmArr.filter(value => !isNaN(parseFloat(value)) && isFinite(value));
+		
+		    if (validExpotms.length > 0) {
+		        // 合計を計算
+		        const expotmSum = validExpotms.reduce((sum, value) => sum + parseFloat(value), 0);
+		        // 平均を計算
+		        expotmAverage = expotmSum / validExpotms.length;
+				console.log("expotmAverage:", expotmAverage);
+		    }
+		}
+		// 単位時間あたりのカウント数に変換し、countAveを上書き
+		if (expotmAverage > 0) {
+		    countAve = countAve / expotmAverage;
+		}
+	}
+
+	promiseObject = crtLCPlot(dptcArr, countArr, expotmArr, countAve);
+
 	//let lcPath = "";
 	// console.log("lcPath2:", promiseObject);
 
@@ -1490,6 +1520,7 @@ function mousePosition2polar(mousePositionObject) {
 	alpha2 = Math.round(alpha2 * 10) / 10;
 }
 
+// MARK: nearCand
 // マウスの座標がcandidateの近くにある時trueを返す
 // getImgStatus, figureXY, mollwide2polarの3つを実行するとグローバル変数にマウスの情報が記録される
 // FluxOpは変数Limtを決めている
@@ -1509,10 +1540,9 @@ function nearCandidate(mousePositionObject) {
 	// 	nCandidate2 = [td, td].map((value, index) => { td[7] = value[7] + index * 10; return td });
 	// }
 
-	// console.log("nCandidate2:", nCandidate2);
+	console.log("nCandidate2:", nCandidate2);
 
-	//0 は false、それ以外の数値は true として解釈される
-	return nCandidate2.length;
+	return nCandidate2;
 }
 
 //underframeを表示する関数
@@ -1525,106 +1555,86 @@ function hideUnderFrame() {
 	parent.document.getElementById("mainFrames").setAttribute("rows", "*, 0");
   }
 
-// async function crtLCPath(dptcArr, countArr) {
-// 	// Plotly で描画 
-// 	if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
-//         console.error("Invalid input arrays");
-//         return;
-//     }
-
-//     // エラーバーの値を各カウント数の平方根に設定
-// 	const errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
-// 	console.log("errorArr:", errorArr);
-
-// 	// エネルギーバンドに応じてマーカーの色を決定
-// 	let markerColor = "black"; // デフォルトカラー
-// 	const signalString = nCandidate2[0][1];
-// 	console.log(nCandidate2[0][1]);
-	
-// 	if (signalString.includes("L+M")) markerColor = "black";
-// 	else if (signalString.includes("Low")) markerColor = "red";
-// 	else if (signalString.includes("Med")) markerColor = "green";
-// 	else if (signalString.includes("High")) markerColor = "blue";
-
-// 	console.log("markerColor:", markerColor);
-
-//     // Plotly のデータ設定
-//     let trace = {
-//         x: dptcArr,
-//         y: countArr,
-//         mode: "markers",
-//         marker: {
-//             color: markerColor,
-//             size: 4  // マーカーサイズを小さくする
-//         },
-//         error_y: {
-//             type: "data",
-//             array: errorArr,
-//             visible: true,
-//             thickness: 1,  // エラーバーを細くする
-//             width: 4       // 横バーを小さくする
-//         }
-//     };
-
-//     // レイアウト設定
-// 	let layout = {
-// 	    title: {
-// 	        text: "", // タイトルを削除
-// 	        font: { size: 10 }
-// 	    },
-// 	    xaxis: { 
-// 	        title: { text: "", font: { size: 8 } }, // X軸のタイトルを削除
-// 	        tickfont: { size: 7 },
-// 	        showticklabels: false // X軸の目盛りテキストを非表示
-// 	    },
-// 	    yaxis: { 
-// 	        title: { text: "", font: { size: 8 } }, // Y軸のタイトルを削除
-// 	        tickfont: { size: 7 },
-// 	        showticklabels: true, // Y軸の目盛りテキストを非表示
-// 	        range: [0, null] // Y軸の最小値を0に設定、最大値は自動
-// 	    },
-// 	    showlegend: false,
-// 	    margin: { l: 15, r: 10, t: 10, b: 10 },
-// 	    autosize: true,
-// 	    height: 90,  // divの高さに合わせる
-// 	    width: 180   // divの幅に合わせる
-// 	};
-
-//     // Plotly で描画
-//     let config = { 
-//         responsive: true,
-//         displayModeBar: false,  // モードバーを非表示
-//         staticPlot: true        // インタラクティブ機能を無効化してサイズを節約
-//     };
-    
-//     Plotly.newPlot("popupLC", [trace], layout, config);
-// }
-
-async function crtLCPath(dptcArr, countArr) {
-    // Plotly で描画
+// MARK: crtLCPlot
+// Plotly で描画
+async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
     if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
         console.error("Invalid input arrays");
         return;
     }
 
+	// 縦軸の単位を取得
+	let popupY = parent.leftframe.document.getElementById("popupYaxis").value;
+
+	// 単位時間あたりのカウント数に変換
+	// let countRateArr;
+	// if (expotmArr && expotmArr.length === 10) {
+	// 	countRateArr = countArr.map((count, index) => count / (expotmArr[index] || 1));
+	// } else {
+	// 	// expotm が無効な場合は生のカウント数を使用
+	// 	console.log("露光時間データがないか無効です。生のカウント数を使用します");
+	// 	countRateArr = [...countArr];
+	// }
+
+	let countRateArr;
+	if (expotmArr.length === 10 && popupY === "count / sec") {
+		countRateArr = countArr.map((count, index) => count / (expotmArr[index] || 1));
+	} else {
+		countRateArr = [...countArr];
+	}
+
+	// 扱うデータのオーダーを調べる
+	const minTime = Math.min(...dptcArr); // **最小値**
+	const maxTime = Math.max(...dptcArr); // **最大値**
+	const range = maxTime - minTime; // **範囲を取得**
+	let ordCandidates = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
+	let tickOrder = ordCandidates.reduce((prev, curr) => 
+		Math.abs(range / curr - 5) < Math.abs(range / prev - 5) ? curr : prev
+	);
+
+	// x軸の最小値を決定
+	let minX = Math.floor(minTime / tickOrder) * tickOrder;
+
+	// dptcArr の各要素から minX を引いた配列を作成
+	const adjDptcArr = dptcArr.map(val => val - minX);
+
     // エラーバーの値を各カウント数の平方根に設定
-    const errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
+    // const errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
+	let errorArr; // 変数を条件分岐の前に宣言
+	if (popupY === "count / sec") {
+	    errorArr = countArr.map((count, index) => {
+	        // カウント数の平方根を計算（負の値にならないよう保証）
+	        const countError = Math.sqrt(Math.max(0, count));
+	        // 対応する露光時間で割る（露光時間がゼロまたは無効な場合は1を使用）
+	        const exposureTime = expotmArr && expotmArr[index] ? expotmArr[index] : 1;
+	        // 単位時間あたりのエラー値を返す
+	        return countError / exposureTime;
+	    });
+	} else {
+	    errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
+	}
+
+	// 確認用
+	console.log("dptcArr:", dptcArr);
+	console.log("countArr:", countArr);
+	console.log("expotmArr:", expotmArr);
+	console.log("countAve:", countAve);
+	console.log("countRateArr:", countRateArr);
+	console.log("errorArr:", errorArr);
 
     // エネルギーバンドに応じてマーカーの色を決定
     let markerColor = "black"; // デフォルトカラー
-    const signalString = nCandidate2[0][1];
+    const signalString = nCandidate2[sigmaMax][1];
 
     if (signalString.includes("L+M")) markerColor = "black";
     else if (signalString.includes("Low")) markerColor = "red";
     else if (signalString.includes("Med")) markerColor = "green";
     else if (signalString.includes("High")) markerColor = "blue";
 
-	const scaleFactor = 1000000000;
-
     // Plotly のデータ設定
     let trace = {
-        x: dptcArr.map(val => val / scaleFactor),
-        y: countArr,
+		x : adjDptcArr,
+		y: countRateArr,
         mode: "markers",
         marker: {
             color: markerColor,
@@ -1641,55 +1651,55 @@ async function crtLCPath(dptcArr, countArr) {
 
     // **レイアウト設定**
     let layout = {
-        title: "", // タイトル削除
+        title: "", // タイトルなし
         xaxis: { 
             title: {
-				text: "dptc [×10^9]", 
-				font: { size: 8 }
+				text: "dptc : " + minX + " + t ", 
+				font: { size: 10 }
 			},
             showticklabels: true, // X軸の目盛りテキストを表示
-            tickfont: { size: 8 }, // フォントサイズを少し大きくする
+            tickfont: { size: 10 },
             ticks: "inside", // 目盛りを内側に表示して省スペース化
             type: 'linear',
             tickmode: 'array',
-			range: [null, null]
+			rangemode: "tozero" // X軸の最小値を0に固定
         },
         yaxis: { 
             title: {
-				text: "count / sec", 
-				font: { size: 8 }
+				// text: "count / sec", 
+				text: popupY, 
+				font: { size: 10 }
 			},
-            tickfont: { size: 7 },
+            tickfont: { size: 10 },
             showticklabels: true,
-            zeroline: true, // Y軸の `0` を強制表示
-            zerolinewidth: 1.2, // Y軸の `0` の線を強調
-            rangemode: "tozero", // Y軸の最小値を0に固定し、最大値のみ自動調整
+            zeroline: true,
+            zerolinewidth: 1.2, // Y軸の "0" の線を強調
+            rangemode: "tozero", // Y軸の最小値を "0" に固定
             fixedrange: true // Y軸のズーム不可
         },
         showlegend: false,
-        margin: { l: 25, r: 5, t: 5, b: 20 }, // 下部マージンを大きく
-        autosize: true,
-        height: 90, // divの高さに合わせる
-        width: 180,  // divの幅に合わせる
-		// shapes: [
-		// 	// minXの位置に縦線を追加
-		// 	{
-		// 		type: 'line',
-		// 		x0: minX,
-		// 		x1: minX,
-		// 		y0: 0,
-		// 		y1: 1,
-		// 		yref: 'paper',  // y1をグラフの高さ比率で指定
-		// 		line: {
-		// 			color: 'rgba(0, 0, 0, 0.5)',
-		// 			width: 1.5,
-		// 			dash: 'solid'
-		// 		}
-		// 	}
-		// ]
+        margin: { l: 38, r: 5, t: 5, b: 25 }, 
+		autosize: true,
+		width: document.getElementById("popupLC").clientWidth,
+		height: document.getElementById("popupLC").clientHeight,
+		shapes: [
+            // countAveの位置に横線
+            {
+                type: 'line',
+                x0: 0,
+                x1: 1,
+                xref: 'paper', // x0, x1をグラフの幅比率で指定
+                y0: countAve,
+                y1: countAve,
+                line: {
+                    color: 'yellow',
+                    width: 1.5,
+                    dash: 'solid'
+                }
+            }
+        ]
     };
 
-    // **Plotly で描画**
     let config = { 
         responsive: true,
         displayModeBar: false, // モードバーを非表示
@@ -1699,6 +1709,56 @@ async function crtLCPath(dptcArr, countArr) {
     Plotly.newPlot("popupLC", [trace], layout, config);
 }
 
+// MARK: findSigmaMax
+// 複数イベントがあったときにsigmaが最大のものを選ぶ処理
+function findSigmaMax(candidateData) {
+	let maxSigmaValue = -Infinity;
+	let maxSigmaIndex = -1;
+	let maxTimeScale = "";
+	let maxPriority = -1;
+
+	for (let n = 0; n < nCandidate2.length; n++) {
+	    const str = nCandidate2[n][1];
+	    const sigmaValue = parseFloat(str.split(",")[2]);
+	    const firstString = str.match(/\(([^,]+)/)[1];
+	    const priority = priorities[firstString];
+
+	    if (sigmaValue > maxSigmaValue || (sigmaValue === maxSigmaValue && priority > maxPriority)) {
+	        maxSigmaValue = sigmaValue;
+	        maxSigmaIndex = n;
+	        maxTimeScale = firstString;
+	        maxPriority = priority;
+	    }
+	}
+
+    return maxSigmaIndex;
+}
+
+// MARK: findLongestTimeScale
+// 複数イベントがあったときにtimescaleが最大のものを選ぶ処理
+function findLongestTimeScale(candidateData) {
+	// 初期化
+	let maxTimeScale = "";
+	let maxPriority= 0;
+
+	for (let n = 0; n < nCandidate2.length; n++) {
+		let data = nCandidate2[n][1];
+		// timescaleのデータ部分を抽出
+		let match = data.match(/\((1day|4orb|1orb|1scan|30s|10s|3s|1s),/);
+		if (match) {
+			let currentData = match[1];
+			let currentPriority = priorities[currentData];
+			// 現在のデータが最大優先度かどうかを確認
+			if (currentPriority > maxPriority) {
+				maxPriority= currentPriority;
+				maxTimeScale = currentData;
+			}
+		}
+	}
+	return maxTimeScale;
+}
+
+// MARK: LC表示
 // 画像上の[x, y](クリックした時に出てくる数字)を入力すると, svgタグで使うlight curveのpathが出力される
 async function polar2lightCurvePath(x, y, detail, diff) {
 	console.log("click : polar2lightCurvePath");
@@ -1729,46 +1789,21 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		console.log(nCandidate2[n][0] + " & " + nCandidate2[n][1]);
 	}
 
-	/// timescaleの優先順位を定義
-	const priorities = {
-	    "1day": 8,
-	    "4orb": 7,
-	    "1orb": 6,
-	    "1scan": 5,
-	    "30s": 4,
-	    "10s": 3,
-	    "3s": 2,
-	    "1s": 1
-	};
-
-	// 複数イベントがあったときにsigmaが最大のものを選ぶ処理
-	let maxSigmaValue = -Infinity;
-	let maxSigmaIndex = -1;
-	let maxTimeScale = "";
-	let maxPriority = -1;
-	let maxiTriArray = new Set(); // Setを使用して重複を防ぐ
-
+	// sigmaが最大の要素の番号を取得
+	sigmaMaxIndex = findSigmaMax(nCandidate2);
+	// sigmaが最大の要素を配列の先頭に追加
+	let maxiTriArray = [nCandidate2[sigmaMaxIndex][0]];
+	// 残りの要素を追加（重複を避けるため、すでに追加した要素はフィルタリング）
 	for (let n = 0; n < nCandidate2.length; n++) {
-	    const str = nCandidate2[n][1];
-	    const sigmaValue = parseFloat(str.split(",")[2]);
-	    const firstString = str.match(/\(([^,]+)/)[1];
-	    const priority = priorities[firstString];
-
-	    if (sigmaValue > maxSigmaValue || (sigmaValue === maxSigmaValue && priority > maxPriority)) {
-	        maxSigmaValue = sigmaValue;
-	        maxSigmaIndex = n;
-	        maxTimeScale = firstString;
-	        maxPriority = priority;
-	    }
-	
-	    maxiTriArray.add(nCandidate2[n][0]);
+	  if (n !== sigmaMaxIndex) {
+	    maxiTriArray.push(nCandidate2[n][0]);
+	  }
 	}
 
-	// maxiTriArrayを配列に変換し、sigmaが最大のdptcを先頭に移動
-	maxiTriArray = Array.from(maxiTriArray);
-	maxiTriArray = [nCandidate2[maxSigmaIndex][0], ...maxiTriArray.filter(dptc => dptc !== nCandidate2[maxSigmaIndex][0])];
+	//最大の timescale を取得
+	let maxTimeScale = findLongestTimeScale(nCandidate2);
 
-	console.log("Max sigma dptc: ", nCandidate2[maxSigmaIndex][0]);
+	console.log("Max sigma dptc: ", nCandidate2[sigmaMaxIndex][0]);
 	console.log("Max sigma timescale: ", maxTimeScale);
 	console.log("MaxiTriArray: ", maxiTriArray);
 
@@ -1809,14 +1844,9 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		showUnderFrame();
 
 		// underframeを取得
-		//let underframe = window.parent.document.getElementById('underframe');
-		//if (!underframe) {
-		    // underframeが存在しない場合は新しく作成
-			//console.log("なし");
-		    let underframe = document.createElement('div');
-		    underframe.id = 'underframe';
-		    window.parent.underframe.document.body.appendChild(underframe);
-		//}
+		let underframe = document.createElement('div');
+		underframe.id = 'underframe';
+		window.parent.underframe.document.body.appendChild(underframe);
 
 		// 光度曲線が作成されるまでの間に表示される文字の設定
 		underframe.innerText = 'waiting...'; // テキストを設定
