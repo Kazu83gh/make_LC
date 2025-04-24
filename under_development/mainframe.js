@@ -626,7 +626,7 @@ function resultWrite(){
 		b = Math.round(b * 10) / 10;
 		l = Math.round(l * 10) / 10;
 
-		/* 結果で右フレームの情報を書き換える */
+		/* 結果で左フレームの情報を書き換える */
 		parent.leftframe.document.getElementById("resultDelta").value = delta;
 		parent.leftframe.document.getElementById("resultAlpha").value = alpha;
 		parent.leftframe.document.getElementById("resultgk").value = l;
@@ -643,11 +643,13 @@ function resultWrite(){
 		}
 
 		if(nCandidate != undefined){
+			console.log("nCandidate is defined");
+			console.log(nCandidate);
 			nresult += '<font>Candidate Objects</font><br><br>'
 			for(i = 0; i < nCandidate.length; i++){
 				nresult += '<a href=' + nCandidate[i][4] + ' target="_blank">PR</a>,';
 				nresult += '<font onClick="parent.mainframe.cataPointSarch('+i+')">'+nCandidate[i][1]+'<br>(' + nCandidate[i][2] +' , '+nCandidate[i][3] + ')</font><br>';
-				nresult += 'distance : '+nCandidate[i][7]+'<br>';
+				nresult += 'distance : '+nCandidate[i][38]+'<br>';
 				nresult += 'flux : '+nCandidate[i][6]+'<br><br>';
 			}
 		}
@@ -1457,6 +1459,7 @@ async function lightCurvePopup(mousePositionObject) {
 	let countArr = nCandidate2[sigmaMax].slice(17, 27);
 	let expotmArr = nCandidate2[sigmaMax].slice(27, 37);
 	let countAve = nCandidate2[sigmaMax][37];
+	console.log("countAve(上書き前):", countAve);
 
 	// 縦軸の単位を取得
 	let popupY = parent.leftframe.document.getElementById("popupYaxis").value;
@@ -1468,7 +1471,7 @@ async function lightCurvePopup(mousePositionObject) {
 		if (expotmArr && expotmArr.length > 0) {
 		    // 有効な数値のみを対象にする
 		    const validExpotms = expotmArr.filter(value => !isNaN(parseFloat(value)) && isFinite(value));
-		
+
 		    if (validExpotms.length > 0) {
 		        // 合計を計算
 		        const expotmSum = validExpotms.reduce((sum, value) => sum + parseFloat(value), 0);
@@ -1566,16 +1569,6 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
 	// 縦軸の単位を取得
 	let popupY = parent.leftframe.document.getElementById("popupYaxis").value;
 
-	// 単位時間あたりのカウント数に変換
-	// let countRateArr;
-	// if (expotmArr && expotmArr.length === 10) {
-	// 	countRateArr = countArr.map((count, index) => count / (expotmArr[index] || 1));
-	// } else {
-	// 	// expotm が無効な場合は生のカウント数を使用
-	// 	console.log("露光時間データがないか無効です。生のカウント数を使用します");
-	// 	countRateArr = [...countArr];
-	// }
-
 	let countRateArr;
 	if (expotmArr.length === 10 && popupY === "count / sec") {
 		countRateArr = countArr.map((count, index) => count / (expotmArr[index] || 1));
@@ -1583,23 +1576,11 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
 		countRateArr = [...countArr];
 	}
 
-	// 扱うデータのオーダーを調べる
-	const minTime = Math.min(...dptcArr); // **最小値**
-	const maxTime = Math.max(...dptcArr); // **最大値**
-	const range = maxTime - minTime; // **範囲を取得**
-	let ordCandidates = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000];
-	let tickOrder = ordCandidates.reduce((prev, curr) => 
-		Math.abs(range / curr - 5) < Math.abs(range / prev - 5) ? curr : prev
-	);
+	// triggertimeをグラフの基準とする
+	const trdptc = nCandidate2[sigmaMax][0];
+	const adjDptcArr = dptcArr.map(val => val - trdptc);
 
-	// x軸の最小値を決定
-	let minX = Math.floor(minTime / tickOrder) * tickOrder;
-
-	// dptcArr の各要素から minX を引いた配列を作成
-	const adjDptcArr = dptcArr.map(val => val - minX);
-
-    // エラーバーの値を各カウント数の平方根に設定
-    // const errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
+    // エラーバーの計算
 	let errorArr; // 変数を条件分岐の前に宣言
 	if (popupY === "count / sec") {
 	    errorArr = countArr.map((count, index) => {
@@ -1654,19 +1635,17 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
         title: "", // タイトルなし
         xaxis: { 
             title: {
-				text: "dptc : " + minX + " + t ", 
+				text: "dptc : " + trdptc + " + t ", 
 				font: { size: 10 }
 			},
             showticklabels: true, // X軸の目盛りテキストを表示
             tickfont: { size: 10 },
             ticks: "inside", // 目盛りを内側に表示して省スペース化
             type: 'linear',
-            tickmode: 'array',
-			rangemode: "tozero" // X軸の最小値を0に固定
+            tickmode: 'array'
         },
         yaxis: { 
             title: {
-				// text: "count / sec", 
 				text: popupY, 
 				font: { size: 10 }
 			},
@@ -1834,9 +1813,17 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		type: 'post',				   //どのように
 		data: send,					   //何を渡すのか
 		}).done((LCdata) => {   //受信が成功した時の処理
-			let recive_LCdata = JSON.parse(LCdata);
-			window.parent.underframe.underframe_pro(recive_LCdata, gwTriUnix, maxiTriArray);
-			// document.getElementById("popupLC").style.visibility = "hidden"; //popupの画像を非表示に
+			try {
+				console.log("LCdata:", LCdata);
+				let receive_LCdata = JSON.parse(LCdata);
+				window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+				// document.getElementById("popupLC").style.visibility = "hidden"; //popupの画像を非表示に
+			  } catch (error) {
+				console.error("Failed to load data.", error);
+
+				const underframe = window.parent.underframe.document.getElementById('undermessage'); 
+				underframe.innerText =  'Failed to get data. Please click another event.';
+			  }
 		}).fail(() => {
 			console.log('failed');
 		});
@@ -1845,7 +1832,7 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 
 		// underframeを取得
 		let underframe = document.createElement('div');
-		underframe.id = 'underframe';
+		underframe.id = 'undermessage';
 		window.parent.underframe.document.body.appendChild(underframe);
 
 		// 光度曲線が作成されるまでの間に表示される文字の設定
