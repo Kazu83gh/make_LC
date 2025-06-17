@@ -123,6 +123,25 @@
 <INPUT type="button" value="Exposure-off" style="display:none; "onClick="Exposure(value)" ID="b_exposure"><br>
 
 
+<!-- 2025/6/16 髙木が追加 -->
+<center>
+  <i>Popup Option</i>
+</center>
+<table border="0" width="100">
+  <tr><td><INPUT type="button" value="count / sec" onClick="popupYaxis()" style="width:100%; background-color:gainsboro" ID="popupYaxis"></td></tr>
+</table>
+
+<div name="popupDelay">
+  <center>
+    <i>Popup Delay</i>
+    <br>
+    <span id="popupDelay-display"></span> [s]
+  </center>
+  <input type="range" id="popupDelay-range" min="0" max="3" value="0.1" step="0.1" style="width: 100%;" />
+</div>
+<br>
+
+
 <center>
 <i>Data Selection</i>
 </center>
@@ -137,9 +156,10 @@
 
 
 <!-- 11月26日、稲木が追加したもの -->
+<!-- 2025/6/16 デフォルトを Maker-on、Cursor-on に変更(髙木) -->
 <table border="0" width="100">
-  <tr><td><INPUT type="button" value="Marker-off"        onClick="marker()"  style="width:100%; background-color:gainsboro" ID="marker"></td></tr>
-  <tr><td><INPUT type="button" value="Cursor-off"        onClick="cursor()"  style="width:100%; background-color:gainsboro" ID="cursor"></td></tr>
+  <tr><td><INPUT type="button" value="Marker-on"        onClick="marker()"  style="width:100%; background-color:gainsboro" ID="marker"></td></tr>
+  <tr><td><INPUT type="button" value="Cursor-on"        onClick="cursor()"  style="width:100%; background-color:gainsboro" ID="cursor"></td></tr>
 </table>
 <!--<INPUT type="button" value="mousemove" id="cursorMode" onmousedown="changeCursorMode()"><br>-->
 <!-- ここまで　-->
@@ -170,24 +190,6 @@ fluxOption<FORM name="SelFlu">
   </SELECT>
  </FORM>
 <div ID="nresult"></div>
-
-<br>
-<center>
-  <i>popup Y-axis</i>
-</center>
-<table border="0" width="100">
-  <tr><td><INPUT type="button" value="count / sec" onClick="popupYaxis()" style="width:100%; background-color:gainsboro" ID="popupYaxis"></td></tr>
-</table>
-<br>
-
-<div name="popupDelay">
-  <center>
-    <i>popup delay</i>
-    <br>
-    <span id="popupDelay-display"></span> [s]
-  </center>
-  <input type="range" id="popupDelay-range" min="0" max="3" value="0.1" step="0.1" style="width: 100%;" />
-</div>
 
 <div id = "team"></div>
 <div id = "datasite"></div>
