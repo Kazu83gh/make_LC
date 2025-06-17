@@ -566,11 +566,54 @@ function errorDisplay(){ //初期読込の最終段階でエラー領域を表�
 
 function triggerDisplay(){ //errorDisplayのトリガーマップバージョン
 
-    parent.mainframe.document.getElementById("asNS1").style.visibility = "hidden";
-    document.getElementById("an1").value = "None";
+    // parent.mainframe.document.getElementById("asNS1").style.visibility = "hidden";
+    // document.getElementById("an1").value = "None";
 
-    parent.mainframe.document.getElementById("asNS2").style.visibility = "hidden";
-    document.getElementById("an2").value = "None";
+    // parent.mainframe.document.getElementById("asNS2").style.visibility = "hidden";
+    // document.getElementById("an2").value = "None";
+
+    //デフォルトで asNS1 と asNS2 をに画像を表示（2025/6/17 髙木）
+    //asNS1 の初期設定
+    if(asNS1_1d !== "") {
+        parent.mainframe.document.getElementById("asNS1").style.visibility = "visible";
+        parent.mainframe.document.getElementById("asNS1").src = dirUrl + dirName + "/" + asNS1_1d;
+        var timerAS1_1d = setTimeout("parent.mainframe.changeCList('trigger1', dirUrl + dirName + '/' + asNS1_1d_csv)", 1500);
+        document.getElementById("an1").value = "1d";
+    } else if(asNS1_4o !== "") {
+        parent.mainframe.document.getElementById("asNS1").style.visibility = "visible";
+        parent.mainframe.document.getElementById("asNS1").src = dirUrl + dirName + "/" + asNS1_4o;
+        var timerAS1_4o = setTimeout("parent.mainframe.changeCList('trigger1', dirUrl + dirName + '/' + asNS1_4o_csv)", 1500);
+        document.getElementById("an1").value = "4o";
+    } else if(asNS1_1o !== "") {
+        parent.mainframe.document.getElementById("asNS1").style.visibility = "visible";
+        parent.mainframe.document.getElementById("asNS1").src = dirUrl + dirName + "/" + asNS1_1o;
+        var timerAS1_1o = setTimeout("parent.mainframe.changeCList('trigger1', dirUrl + dirName + '/' + asNS1_1o_csv)", 1500);
+        document.getElementById("an1").value = "1o";
+    } else {
+        parent.mainframe.document.getElementById("asNS1").style.visibility = "hidden";
+        document.getElementById("an1").value = "None";
+    }
+
+    //asNS2 の初期設定
+    if(asNS2_1d !== "") {
+        parent.mainframe.document.getElementById("asNS2").style.visibility = "visible";
+        parent.mainframe.document.getElementById("asNS2").src = dirUrl + dirName + "/" + asNS2_1d;
+        var timerAS2_1d = setTimeout("parent.mainframe.changeCList('trigger2', dirUrl + dirName + '/' + asNS2_1d_csv)", 1500);
+        document.getElementById("an2").value = "1d";
+    } else if(asNS2_4o !== "") {
+        parent.mainframe.document.getElementById("asNS2").style.visibility = "visible";
+        parent.mainframe.document.getElementById("asNS2").src = dirUrl + dirName + "/" + asNS2_4o;
+        var timerAS2_4o = setTimeout("parent.mainframe.changeCList('trigger2', dirUrl + dirName + '/' + asNS2_4o_csv)", 1500);
+        document.getElementById("an2").value = "4o";
+    } else if(asNS2_1o !== "") {
+        parent.mainframe.document.getElementById("asNS2").style.visibility = "visible";
+        parent.mainframe.document.getElementById("asNS2").src = dirUrl + dirName + "/" + asNS2_1o;
+        var timerAS2_1o = setTimeout("parent.mainframe.changeCList('trigger2', dirUrl + dirName + '/' + asNS2_1o_csv)", 1500);
+        document.getElementById("an2").value = "1o";
+    } else {
+        parent.mainframe.document.getElementById("asNS2").style.visibility = "hidden";
+        document.getElementById("an2").value = "None";
+    }
 
     console.log('------' + mailNS1_1d + '--------' + mailNS2_1d ); 
     console.log('======' + mailNS1_1d_csv + '========' + mailNS2_1d_csv ); 
@@ -1622,29 +1665,53 @@ function sizeChange(){
 //ここまで画像サイズ合わせ
 
 //11月26日、稲木が追加したもの
+// function marker(){ // マーカーが押された際の処理
+// 	curButton = document.getElementById("marker");
+//     if(curButton.value == "Marker-on"){
+// 		curButton.value = "Marker-off";
+// 		curButton.style.backgroundColor = "gainsboro";
+// 		parent.mainframe.document.getElementById("myMarker").style.visibility="hidden";
+// 	} else {
+// 		curButton.value = "Marker-on";
+// 		curButton.style.backgroundColor = "gray";
+// 	}
+// }
 
+// function cursor(){ // cursorが押された際の処理
+// 	curButton = document.getElementById("cursor");
+//     if(curButton.value == "Cursor-on"){
+// 		curButton.value = "Cursor-off";
+// 		curButton.style.backgroundColor = "gainsboro";
+// 		parent.mainframe.document.getElementById("myCursor").style.visibility="hidden";
+// 	} else {
+// 		curButton.value = "Cursor-on";
+// 		curButton.style.backgroundColor = "gray";
+// 	}
+// }
+
+// 2025/6/17 デフォルトが"Marker-on"と"Cursor-on"にしたため、処理を変更（髙木）
 function marker(){ // マーカーが押された際の処理
-	curButton = document.getElementById("marker");
-    if(curButton.value == "Marker-on"){
-		curButton.value = "Marker-off";
-		curButton.style.backgroundColor = "gainsboro";
-		parent.mainframe.document.getElementById("myMarker").style.visibility="hidden";
-	} else {
-		curButton.value = "Marker-on";
-		curButton.style.backgroundColor = "gray";
-	}
+    curButton = document.getElementById("marker");
+    if(curButton.value == "Marker-off"){
+        curButton.value = "Marker-on";
+        curButton.style.backgroundColor = "gainsboro";
+    } else {
+        curButton.value = "Marker-off";
+        curButton.style.backgroundColor = "gray";
+        parent.mainframe.document.getElementById("myMarker").style.visibility="hidden";
+    }
 }
 
 function cursor(){ // cursorが押された際の処理
-	curButton = document.getElementById("cursor");
-    if(curButton.value == "Cursor-on"){
-		curButton.value = "Cursor-off";
-		curButton.style.backgroundColor = "gainsboro";
-		parent.mainframe.document.getElementById("myCursor").style.visibility="hidden";
-	} else {
-		curButton.value = "Cursor-on";
-		curButton.style.backgroundColor = "gray";
-	}
+    curButton = document.getElementById("cursor");
+    if(curButton.value == "Cursor-off"){
+        curButton.value = "Cursor-on";
+        curButton.style.backgroundColor = "gainsboro";
+    } else {
+        curButton.value = "Cursor-off";
+        curButton.style.backgroundColor = "gray";
+        parent.mainframe.document.getElementById("myCursor").style.visibility="hidden";
+    }
 }
 
 function popupYaxis(){ // popupYaxis が押された際の処理
