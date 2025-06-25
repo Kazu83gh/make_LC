@@ -649,7 +649,7 @@ function resultWrite(){
 			for(i = 0; i < nCandidate.length; i++){
 				nresult += '<a href=' + nCandidate[i][4] + ' target="_blank">PR</a>,';
 				nresult += '<font onClick="parent.mainframe.cataPointSarch('+i+')">'+nCandidate[i][1]+'<br>(' + nCandidate[i][2] +' , '+nCandidate[i][3] + ')</font><br>';
-				nresult += 'distance : '+nCandidate[i][38]+'<br>';
+				nresult += 'distance : '+nCandidate[i][37]+'<br>';
 				nresult += 'flux : '+nCandidate[i][6]+'<br><br>';
 			}
 		}
@@ -761,9 +761,18 @@ function getMouseMoveXY(evt) //マウスポインタの地点の座標を取得�
 		resultCur += 'distance : '+nStar2[i][7] + '<br>';
 	}
 
+	// if(nCandidate2 != undefined){
+	// 	for(i = 0; i < nCandidate2.length; i++){
+	// 		resultCur += nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][37] + '<br>';
+	// 	}
+	// }
 	if(nCandidate2 != undefined){
 		for(i = 0; i < nCandidate2.length; i++){
-			resultCur += nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][38] + '<br>';
+			if(nCandidate2[i][1].includes("+/-")){ //mailなら
+				resultCur += nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][7] + '<br>';
+			} else { //triggerなら
+				resultCur += nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][37] + '<br>';
+			}
 		}
 	}
 	//console.log(resultCur);
@@ -1097,6 +1106,7 @@ function loadCandidateCSV(path) { //突発天体の候補ファイルをpathに�
 	}
 }
 
+//MARK:handleCandidate
 function handleCandidate(){
 	console.log('--- handleCandidate');
 	console.log('--- candidateType='+candidateType);
@@ -1108,19 +1118,19 @@ function handleCandidate(){
 		console.log('handleCandidate');
 		console.log('candidateType='+candidateType);
 		if(candidateType == 'trigger1'){
-			//console.log('seikou');
+			// console.log('seikou');
 			candidateData = parseCandidateCSV(text);
-			//console.log(candidateData);
+			console.log("candidateData= " + candidateData);
 		}else if(candidateType == 'mail1'){
 			// console.log('handleCandidate/if/mail1');
 			candidateData2 = parseCandidateCSV(text);
-			//console.log(candidateData2);
+			console.log("candidateData2= " + candidateData2);
 		}else if(candidateType == 'trigger2'){
 			candidateData3 = parseCandidateCSV(text);
-			//console.log(candidateData3);
+			console.log("candidateData3= " + candidateData3);
 		}else{ // for mail2
 			candidateData4 = parseCandidateCSV(text);
-			//console.log(candidateData4);
+			console.log("candidateData4= " + candidateData4);
 		}
 	}
 }
@@ -1162,6 +1172,7 @@ function parseCandidateCSV(str) { //γ線バースト？の候補の座標など
 	return csvData;
 }
 
+//MARK:searchCandidate
 function searchCandidate(csvData,flux)
 { //20191206コメント、masivからほとんどそのまま持ってきた関数。計算を完璧には理解していないがおそらくangleが球面にある２点の中心角の差。
     //参考：https://qiita.com/port-development/items/eea3a0a225be47db0fd4　参考：www.sci.kumamoto-u.ac.jp/~hisinoue/pdfdoc/SSH.pdf
@@ -1228,10 +1239,11 @@ function searchCandidate(csvData,flux)
 	xsort(blnStar,7,1);
 	//chArray(blnStar);
 	nCandidate = blnStar;
-	//console.log(nCandidate);
+	// console.log(nCandidate);
 		
 }
 
+//MARK:searchCandidate2
 function searchCandidate2(csvData,flux)
 {
 	//マウスポインタに近い位置にある突発天体の候補を探すために、仮に作った関数です。
@@ -1258,15 +1270,29 @@ function searchCandidate2(csvData,flux)
 		var tarm2 = Math.sin(Delta)*Math.sin(Alpha)*Math.sin(DeltaP)*Math.sin(AlphaP);
 		var tarm3 = Math.cos(Delta)*Math.cos(DeltaP);
 		var angle = Math.acos(tarm1+tarm2+tarm3)*180/Math.PI;
-		
-		if(bnStar[i].length == 8){
-			var dust = bnStar[i].pop();
+
+				
+		// if(bnStar[i].length == 8){
+		// 	var dust = bnStar[i].pop();
+		// }
+
+		// "+/-"を含む場合のフラグ 20250623追加
+        var hasPlusMinus = false;
+        if(bnStar[i][1] && bnStar[i][1].includes("+/-")) {
+            // console.log("Found +/- in: " + bnStar[i][1]);
+			if(bnStar[i].length >= 8){
+				var dust = bnStar[i].pop();
+			}
+        } else {
+			if(bnStar[i].length >= 38){
+				var dust = bnStar[i].pop();
+			}
 		}
 
 		if(angle < 1.5){ //20191206書き換え　angle<2をangle<1に変更, // 20/03/24 changed to 1.5 for FR events negoro
 			angle = Math.round(angle * 100);
 			angle = angle / 100;
-			bnStar[i].push(angle);	
+			bnStar[i].push(angle);
 			bnStar[i][2] = Math.round(bnStar[i][2] * 1000);
 			bnStar[i][2] = bnStar[i][2] / 1000;
 			bnStar[i][3] = Math.round(bnStar[i][3] * 1000);
@@ -1300,10 +1326,10 @@ function searchCandidate2(csvData,flux)
 		}
 	}
 	//parent.leftframe.document.getElementById("check").innerHTML = Limt;
-	xsort(blnStar,7,1);
+	// xsort(blnStar,7,1);
+	xsort(blnStar,37,1);
 	//chArray(blnStar);
 	nCandidate2 = blnStar; //期待通りに動いていれば、マウスポインタに一番近い候補のURLがnCandidate2[0][4]に入るはずです
-	// console.log(nCandidate2);
 }
 }
 
@@ -1416,11 +1442,12 @@ async function lightCurvePopup(mousePositionObject) {
 	// mouseの座標から画像の極座標を取得, そのデータを元にlight curveのpathを作成
 	mousePosition2polar(mousePositionObject);
 
-	// mouseの座標が地図の内側ではない時return
+	// mouseの座標が地図の内側ではない時 return
 	if (!(pointSta == 1 && marginSta == 1)) { return }
 
 	// nCandidate2の長さが0のとき（周辺にイベントがないとき）return
 	nearCandidate(mousePositionObject);
+	// console.log("nCandidate2", nCandidate2);
 	if (!nCandidate2.length) { return }
 
 	// 極座標を元にlight curveのpathを作成
@@ -1454,6 +1481,7 @@ async function lightCurvePopup(mousePositionObject) {
 
 	// sigmaが最大の要素の番号を取得
 	sigmaMax = findSigmaMax(nCandidate2);
+	console.log("sigmaMax:", sigmaMax);
 	// 極座標を元にlight curveのpathを作成
 	let dptcArr = nCandidate2[sigmaMax].slice(7, 17);
 	let countArr = nCandidate2[sigmaMax].slice(17, 27);
@@ -1497,7 +1525,7 @@ async function lightCurvePopup(mousePositionObject) {
 	// loadImgObject.style.width = 400;
 	//lcPathに正しいpathが格納されれば、光度曲線も表示されるはず
 	// pathObject.setAttribute("d", lcPath); 
-	styleSvg.visibility = "visible";	
+	// styleSvg.visibility = "visible";	
 
 	// サーバーからの応答を待ちloadingを非表示にする, その後pathタグのdに反映
 	//lcPath = await promiseObject;
@@ -1558,6 +1586,7 @@ function hideUnderFrame() {
 	parent.document.getElementById("mainFrames").setAttribute("rows", "*, 0");
   }
 
+
 // MARK: crtLCPlot
 // Plotly で描画
 async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
@@ -1566,20 +1595,40 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
         return;
     }
 
+	//GW trigger位置のdptcを取得するための計算
+	let intUNIX2DPTC = window.parent.underframe.intUNIX2DPTC // UNIXとDPTCの差を取得
+	let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); //gPStimeに変換
+	let gwTriDPTC = gwTriGPS + intUNIX2DPTC; // DPTCに変換
+
+	console.log("intUNIX2DPTC:", intUNIX2DPTC);
+	console.log("gwTriUnix: " + gwTriUnix);
+	console.log("gwTriGPS: " + gwTriGPS);
+	console.log("gwTriDPTC: " + gwTriDPTC);
+
 	// 縦軸の単位を取得
+	let popupX = parent.leftframe.document.getElementById("popupXaxis").value;
 	let popupY = parent.leftframe.document.getElementById("popupYaxis").value;
 
-	let countRateArr;
-	if (expotmArr.length === 10 && popupY === "count / sec") {
-		countRateArr = countArr.map((count, index) => count / (expotmArr[index] || 1));
+	// triggertimeをグラフの基準とする
+	// const trdptc = nCandidate2[sigmaMax][0];
+	// const xArr = dptcArr.map(val => val - trdptc);
+	let xArr;
+	if ( popupX === "bin" ) {
+		xlabel = "bin";
+		xArr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; 
 	} else {
-		countRateArr = [...countArr];
+		// xlabel = "dptc : " + gwTriDPTC + " + t ";
+		xlabel = "Time [s] (t=0: GW trigger)";
+		xArr = dptcArr.map(val => val - gwTriDPTC);
 	}
 
-	// triggertimeをグラフの基準とする
-	const trdptc = nCandidate2[sigmaMax][0];
-	const adjDptcArr = dptcArr.map(val => val - trdptc);
-
+	let yArr;
+	if (expotmArr.length === 10 && popupY === "count / sec") {
+		yArr = countArr.map((count, index) => count / (expotmArr[index] || 1));
+	} else {
+		yArr = [...countArr];
+	}
+	
     // エラーバーの計算
 	let errorArr; // 変数を条件分岐の前に宣言
 	if (popupY === "count / sec") {
@@ -1600,7 +1649,7 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
 	console.log("countArr:", countArr);
 	console.log("expotmArr:", expotmArr);
 	console.log("countAve:", countAve);
-	console.log("countRateArr:", countRateArr);
+	console.log("yArr:", yArr);
 	console.log("errorArr:", errorArr);
 
     // エネルギーバンドに応じてマーカーの色を決定
@@ -1614,8 +1663,8 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
 
     // Plotly のデータ設定
     let trace = {
-		x : adjDptcArr,
-		y: countRateArr,
+		x : xArr,
+		y: yArr,
         mode: "markers",
         marker: {
             color: markerColor,
@@ -1635,14 +1684,16 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
         title: "", // タイトルなし
         xaxis: { 
             title: {
-				text: "dptc : " + trdptc + " + t ", 
+				// text: "dptc : " + trdptc + " + t ", 
+				text: xlabel,
 				font: { size: 10 }
 			},
             showticklabels: true, // X軸の目盛りテキストを表示
             tickfont: { size: 10 },
             ticks: "inside", // 目盛りを内側に表示して省スペース化
             type: 'linear',
-            tickmode: 'array'
+            tickmode: 'array',
+    		zeroline: false
         },
         yaxis: { 
             title: {
@@ -1662,7 +1713,7 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
 		width: document.getElementById("popupLC").clientWidth,
 		height: document.getElementById("popupLC").clientHeight,
 		shapes: [
-            // countAveの位置に横線
+            // 平均の位置に横線
             {
                 type: 'line',
                 x0: 0,
@@ -1679,6 +1730,24 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
         ]
     };
 
+	// GW triggerの位置にオレンジ色の線
+	// "bin"の時には無効
+	if (popupX !== "bin") {
+		layout.shapes.push({
+    		type: 'line',
+    		x0: 0,
+    		x1: 0,
+    		y0: 0,
+    		y1: 1,
+    		yref: 'paper',
+    		line: {
+    		    color: 'orange',
+    		    width: 1.5,
+    		    dash: 'solid'
+    		}
+    	});
+	}
+
     let config = { 
         responsive: true,
         displayModeBar: false, // モードバーを非表示
@@ -1686,31 +1755,36 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
     };
 
     Plotly.newPlot("popupLC", [trace], layout, config);
+
+	let popSvg = document.getElementById("popupLC");
+	let styleSvg = popSvg.style;
+	styleSvg.visibility = "visible"; //表示
 }
 
 // MARK: findSigmaMax
 // 複数イベントがあったときにsigmaが最大のものを選ぶ処理
 function findSigmaMax(candidateData) {
-	let maxSigmaValue = -Infinity;
-	let maxSigmaIndex = -1;
-	let maxTimeScale = "";
-	let maxPriority = -1;
+    let maxValue = -Infinity;
+    let maxIndex = -1;
 
-	for (let n = 0; n < nCandidate2.length; n++) {
-	    const str = nCandidate2[n][1];
-	    const sigmaValue = parseFloat(str.split(",")[2]);
-	    const firstString = str.match(/\(([^,]+)/)[1];
-	    const priority = priorities[firstString];
+    for (let i = 0; i < candidateData.length; i++) {
+        // candidateData[i][5]の値を数値として取得
+        const value = parseFloat(candidateData[i][5]);
+        
+        // 値が数値でない場合はスキップ
+        if (isNaN(value)) continue;
 
-	    if (sigmaValue > maxSigmaValue || (sigmaValue === maxSigmaValue && priority > maxPriority)) {
-	        maxSigmaValue = sigmaValue;
-	        maxSigmaIndex = n;
-	        maxTimeScale = firstString;
-	        maxPriority = priority;
-	    }
-	}
+		// "+/-"を含む（mailイベント）場合はスキップ
+		if (candidateData[i][1].includes("+/-")) continue; 
+        
+        // 現在の最大値より大きい場合、最大値とインデックスを更新
+        if (value > maxValue) {
+            maxValue = value;
+            maxIndex = i;
+        }
+    }
 
-    return maxSigmaIndex;
+    return maxIndex;
 }
 
 // MARK: findLongestTimeScale
@@ -1779,11 +1853,15 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 	  }
 	}
 
+	let sigmaMaxEvent = nCandidate2[sigmaMaxIndex][1];
+	let sigmaMaxTimeScale = sigmaMaxEvent.match(/\(([^,]+)/)[1]; // timescaleを取得
+
 	//最大の timescale を取得
 	let maxTimeScale = findLongestTimeScale(nCandidate2);
 
 	console.log("Max sigma dptc: ", nCandidate2[sigmaMaxIndex][0]);
-	console.log("Max sigma timescale: ", maxTimeScale);
+	console.log("Longest timescale: ", maxTimeScale);
+	console.log("Max sigma timescale: ", sigmaMaxTimeScale);
 	console.log("MaxiTriArray: ", maxiTriArray);
 
 	// DBでの検索の基準を「TRIGGER TIME」にするため、gwTriUnixをGPStimeに変換
@@ -1791,7 +1869,8 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 	//console.log(gwTriGPS);
 
 	var send = {"dptc_zero" : gwTriGPS,
-				"timescale" : maxTimeScale,
+				// "timescale" : maxTimeScale,
+				"timescale" : sigmaMaxTimeScale,
 				"energy"    : a[2],
 				"error" 	: a[3],
 				"star"      : a[4],	
