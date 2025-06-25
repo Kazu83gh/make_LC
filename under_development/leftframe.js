@@ -564,7 +564,11 @@ function errorDisplay(){ //初期読込の最終段階でエラー領域を表�
     }
 }
 
+//MARK:triggerDisplay
 function triggerDisplay(){ //errorDisplayのトリガーマップバージョン
+    //changeCListを同じタイミングで呼び出すと、
+    //candidateData, candidateData2, candidateData3, candidateData4の中身が混ざってしまうので、
+    //setTimeoutで時間差をつけて呼び出す
 
     // parent.mainframe.document.getElementById("asNS1").style.visibility = "hidden";
     // document.getElementById("an1").value = "None";
@@ -572,43 +576,24 @@ function triggerDisplay(){ //errorDisplayのトリガーマップバージョン
     // parent.mainframe.document.getElementById("asNS2").style.visibility = "hidden";
     // document.getElementById("an2").value = "None";
 
-    //デフォルトで asNS1 と asNS2 をに画像を表示（2025/6/17 髙木）
-    //asNS1 の初期設定
-    if(asNS1_1d !== "") {
-        parent.mainframe.document.getElementById("asNS1").style.visibility = "visible";
-        parent.mainframe.document.getElementById("asNS1").src = dirUrl + dirName + "/" + asNS1_1d;
-        var timerAS1_1d = setTimeout("parent.mainframe.changeCList('trigger1', dirUrl + dirName + '/' + asNS1_1d_csv)", 1500);
-        document.getElementById("an1").value = "1d";
-    } else if(asNS1_4o !== "") {
-        parent.mainframe.document.getElementById("asNS1").style.visibility = "visible";
-        parent.mainframe.document.getElementById("asNS1").src = dirUrl + dirName + "/" + asNS1_4o;
-        var timerAS1_4o = setTimeout("parent.mainframe.changeCList('trigger1', dirUrl + dirName + '/' + asNS1_4o_csv)", 1500);
-        document.getElementById("an1").value = "4o";
-    } else if(asNS1_1o !== "") {
+    //デフォルトでtrigger, trigger2の画像を表示 20250617 K.Takagi
+    if(asNS1_1o !== "") {
+        console.log('---asNS1_1o');
         parent.mainframe.document.getElementById("asNS1").style.visibility = "visible";
         parent.mainframe.document.getElementById("asNS1").src = dirUrl + dirName + "/" + asNS1_1o;
-        var timerAS1_1o = setTimeout("parent.mainframe.changeCList('trigger1', dirUrl + dirName + '/' + asNS1_1o_csv)", 1500);
+        // var timerAS1_1o = setTimeout("parent.mainframe.changeCList('trigger1', dirUrl + dirName + '/' + asNS1_1o_csv)", 500);
+        parent.mainframe.changeCList('trigger1', dirUrl + dirName + '/' + asNS1_1o_csv);
         document.getElementById("an1").value = "1o";
     } else {
         parent.mainframe.document.getElementById("asNS1").style.visibility = "hidden";
         document.getElementById("an1").value = "None";
     }
 
-    //asNS2 の初期設定
-    if(asNS2_1d !== "") {
-        parent.mainframe.document.getElementById("asNS2").style.visibility = "visible";
-        parent.mainframe.document.getElementById("asNS2").src = dirUrl + dirName + "/" + asNS2_1d;
-        var timerAS2_1d = setTimeout("parent.mainframe.changeCList('trigger2', dirUrl + dirName + '/' + asNS2_1d_csv)", 1500);
-        document.getElementById("an2").value = "1d";
-    } else if(asNS2_4o !== "") {
-        parent.mainframe.document.getElementById("asNS2").style.visibility = "visible";
-        parent.mainframe.document.getElementById("asNS2").src = dirUrl + dirName + "/" + asNS2_4o;
-        var timerAS2_4o = setTimeout("parent.mainframe.changeCList('trigger2', dirUrl + dirName + '/' + asNS2_4o_csv)", 1500);
-        document.getElementById("an2").value = "4o";
-    } else if(asNS2_1o !== "") {
+    if(asNS2_1o !== "") {
+        console.log('---asNS2_1o');
         parent.mainframe.document.getElementById("asNS2").style.visibility = "visible";
         parent.mainframe.document.getElementById("asNS2").src = dirUrl + dirName + "/" + asNS2_1o;
-        var timerAS2_1o = setTimeout("parent.mainframe.changeCList('trigger2', dirUrl + dirName + '/' + asNS2_1o_csv)", 1500);
+        var timerAS2_1o = setTimeout("parent.mainframe.changeCList('trigger2', dirUrl + dirName + '/' + asNS2_1o_csv)", 1000);
         document.getElementById("an2").value = "1o";
     } else {
         parent.mainframe.document.getElementById("asNS2").style.visibility = "hidden";
@@ -621,25 +606,25 @@ function triggerDisplay(){ //errorDisplayのトリガーマップバージョン
     console.log('dirUrl='+ dirUrl + 'dirName=' + dirName);
 
     if(mailNS1_1d_csv !== ""){ // debugged by negoro 20/03/24
-	console.log('now mailNS1_1d_csv');
+	    console.log('now mailNS1_1d_csv');
         parent.mainframe.document.getElementById("mailNS1").style.visibility = "visible";
         parent.mainframe.document.getElementById("mailNS1").src = dirUrl + dirName + "/" + mailNS1_1d;
-	// debugged by negoro 20/03/24 (changed to setTimeout function)
+	    // debugged by negoro 20/03/24 (changed to setTimeout function)
         // parent.mainframe.changeCList('mail1', dirUrl + dirName + "/" + mailNS1_1d_csv);
-	var timerNS1_1d = setTimeout("parent.mainframe.changeCList('mail1', dirUrl + dirName + '/' + mailNS1_1d_csv)", 1500);
+	    var timerNS1_1d = setTimeout("parent.mainframe.changeCList('mail1', dirUrl + dirName + '/' + mailNS1_1d_csv)", 500);
         document.getElementById("mn1").value = "1d";
     }else if(mailNS1_4o_csv !== ""){
-	console.log('now mailNS1_4o_csv');
+	    console.log('now mailNS1_4o_csv');
         parent.mainframe.document.getElementById("mailNS1").style.visibility = "visible";
         parent.mainframe.document.getElementById("mailNS1").src = dirUrl + dirName + "/" + mailNS1_4o;
         // parent.mainframe.changeCList('mail1', dirUrl + dirName + "/" + mailNS1_4o_csv);
         console.log('===> '+ dirUrl + dirName + "/" + mailNS1_4o_csv + ' <====');
-        var timerNS1_4o = setTimeout("parent.mainframe.changeCList('mail1', dirUrl + dirName + '/' + mailNS1_4o_csv)", 1500);
+        var timerNS1_4o = setTimeout("parent.mainframe.changeCList('mail1', dirUrl + dirName + '/' + mailNS1_4o_csv)", 500);
         document.getElementById("mn1").value = "4o";
     }else if(mailNS1_1o_csv !== ""){
         parent.mainframe.document.getElementById("mailNS1").style.visibility = "visible";
         parent.mainframe.document.getElementById("mailNS1").src = dirUrl + dirName + "/" + mailNS1_1o;
-        var timerNS1_1o = setTimeout("parent.mainframe.changeCList('mail1', dirUrl + dirName + '/' + mailNS1_1o_csv)", 1500);
+        var timerNS1_1o = setTimeout("parent.mainframe.changeCList('mail1', dirUrl + dirName + '/' + mailNS1_1o_csv)", 500);
         document.getElementById("mn1").value = "1o";
     }else{
         parent.mainframe.document.getElementById("mailNS1").style.visibility = "hidden";
@@ -651,21 +636,21 @@ function triggerDisplay(){ //errorDisplayのトリガーマップバージョン
     if(mailNS2_1d_csv !== ""){
         parent.mainframe.document.getElementById("mailNS2").style.visibility = "visible";
         parent.mainframe.document.getElementById("mailNS2").src = dirUrl + dirName + "/" + mailNS2_1d;
-	// I do not know why this does not work. Negoro 20/03/24 (no Timer is necessary)
-        // var timerNS2_1d = setTimeout("parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_1d_csv)", 1500);
-        parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_1d_csv);
+	    // I do not know why this does not work. Negoro 20/03/24 (no Timer is necessary)
+        var timerNS2_1d = setTimeout("parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_1d_csv)", 1500);
+        // parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_1d_csv);
         document.getElementById("mn2").value = "1d";
     }else if(mailNS2_4o_csv !== ""){
         parent.mainframe.document.getElementById("mailNS2").style.visibility = "visible";
         parent.mainframe.document.getElementById("mailNS2").src = dirUrl + dirName + "/" + mailNS2_4o;
-        // var timerNS2_4o = setTimeout("parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_4o_csv)", 1500);
-        parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_4o_csv);
+        var timerNS2_4o = setTimeout("parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_4o_csv)", 1500);
+        // parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_4o_csv);
         document.getElementById("mn2").value = "4o";
     }else if(mailNS2_1o_csv !== ""){
         parent.mainframe.document.getElementById("mailNS2").style.visibility = "visible";
         parent.mainframe.document.getElementById("mailNS2").src = dirUrl + dirName + "/" + mailNS2_1o;
-        // var timerNS2_1o = setTimeout("parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_1o_csv)", 1500);
-        parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_1o_csv);
+        var timerNS2_1o = setTimeout("parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_1o_csv)", 1500);
+        // parent.mainframe.changeCList('mail2', dirUrl + dirName + '/' + mailNS2_1o_csv);
         document.getElementById("mn2").value = "1o";
     }else{
         parent.mainframe.document.getElementById("mailNS2").style.visibility = "hidden";
@@ -1712,6 +1697,17 @@ function cursor(){ // cursorが押された際の処理
         curButton.style.backgroundColor = "gray";
         parent.mainframe.document.getElementById("myCursor").style.visibility="hidden";
     }
+}
+
+function popupXaxis(){ // popupXaxis が押された際の処理
+	curButton = document.getElementById("popupXaxis");
+    if(curButton.value == "bin"){
+		curButton.value = "time";
+		curButton.style.backgroundColor = "gainsboro";
+	} else {
+		curButton.value = "bin";
+		curButton.style.backgroundColor = "gray";
+	}
 }
 
 function popupYaxis(){ // popupYaxis が押された際の処理
