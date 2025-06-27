@@ -55,6 +55,7 @@ var alpha2,delta2;
 var candidateType;
 var candidateData,candidateData2, candidateData3, candidateData4;
 var nCandidate,nCandidate2;
+var nCandidate2_tri, nCandidate2_mail;
 
 const priorities = { // timescale の優先順位を定義
     "1day": 8,
@@ -72,8 +73,8 @@ function processDresult(data) {
 	gwTriUnix = data;  
 }
 
+//MARK:getMouseXY
 //以下、座標変換
-
 function getMouseXY(evt) //クリック地点の座標を取得する
 {
 	mouseMove = 0; //クリックしたことを記憶する
@@ -741,7 +742,10 @@ function getMouseMoveXY(evt) //マウスポインタの地点の座標を取得�
 
 	FluxOp();
 	searchstar2(CataData,Limt);
-	searchCandidate2(conbineFourArrays(candidateData, candidateData2, candidateData3, candidateData4), Limt);
+	// searchCandidate2(conbineFourArrays(candidateData, candidateData2, candidateData3, candidateData4), Limt);
+	searchCandidate2_tri(conbineArray(candidateData, candidateData3), Limt);
+	searchCandidate2_mail(conbineArray(candidateData2, candidateData4), Limt);
+	nCandidate2 = conbineArray(nCandidate2_mail, nCandidate2_tri);
 
 	delta2 = Math.round(delta2 * 10) / 10;
 	alpha2 = Math.round(alpha2 * 10) / 10;
@@ -771,7 +775,8 @@ function getMouseMoveXY(evt) //マウスポインタの地点の座標を取得�
 			if(nCandidate2[i][1].includes("+/-")){ //mailなら
 				resultCur += nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][7] + '<br>';
 			} else { //triggerなら
-				resultCur += nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][37] + '<br>';
+				// resultCur += nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][37] + '<br>';
+				resultCur += '<span style="font-size: small">' + nCandidate2[i][1] + '&nbsp;&nbsp;&nbsp;' + 'distance : '+nCandidate2[i][37] + '<br>';
 			}
 		}
 	}
@@ -1244,95 +1249,238 @@ function searchCandidate(csvData,flux)
 }
 
 //MARK:searchCandidate2
-function searchCandidate2(csvData,flux)
-{
-	//マウスポインタに近い位置にある突発天体の候補を探すために、仮に作った関数です。
-	//関数searchstar系と中身はほぼ同じです。ただし、変数名やインデックス番号が少し違います。
-	//引数やグローバル変数などを使い、場合分けすることで一つの関数にまとめられると思いますが、まだやっていません。
-	//この関数が残っているということは、おそらくまだまとめられていないという事なので余裕があれば書き換えてください。
+// function searchCandidate2(csvData,flux)
+// {
+// 	//マウスポインタに近い位置にある突発天体の候補を探すために、仮に作った関数です。
+// 	//関数searchstar系と中身はほぼ同じです。ただし、変数名やインデックス番号が少し違います。
+// 	//引数やグローバル変数などを使い、場合分けすることで一つの関数にまとめられると思いますが、まだやっていません。
+// 	//この関数が残っているということは、おそらくまだまとめられていないという事なので余裕があれば書き換えてください。
+// 	var bnStar = new Array();
+// 	var blnStar = new Array();
+// 	var Delta = (delta2 + 90) * Math.PI / 180;
+// 	var Alpha = alpha2 * Math.PI / 180;
+			
+// 	if(csvData != undefined){
+// 	//console.log(csvData);
+// 	for(var i = 0; i < csvData.length; i++){
+// 		if(Math.abs(csvData[i][3] - delta2) < 2){
+// 			bnStar.push(csvData[i]);
+// 		}
+// 	}
+// 	for(i = 0; i < bnStar.length; i++){
+		
+// 		var DeltaP = (bnStar[i][3] + 90) * Math.PI / 180;
+// 		var AlphaP = bnStar[i][2] * Math.PI / 180;
+// 		var tarm1 = Math.sin(Delta)*Math.cos(Alpha)*Math.sin(DeltaP)*Math.cos(AlphaP);
+// 		var tarm2 = Math.sin(Delta)*Math.sin(Alpha)*Math.sin(DeltaP)*Math.sin(AlphaP);
+// 		var tarm3 = Math.cos(Delta)*Math.cos(DeltaP);
+// 		var angle = Math.acos(tarm1+tarm2+tarm3)*180/Math.PI;
+
+				
+// 		// if(bnStar[i].length == 8){
+// 		// 	var dust = bnStar[i].pop();
+// 		// }
+
+// 		// "+/-"を含む場合のフラグ 20250623追加
+//         var hasPlusMinus = false;
+//         if(bnStar[i][1] && bnStar[i][1].includes("+/-")) {
+//             // console.log("Found +/- in: " + bnStar[i][1]);
+// 			if(bnStar[i].length >= 8){
+// 				var dust = bnStar[i].pop();
+// 			}
+//         } else {
+// 			if(bnStar[i].length >= 38){
+// 				var dust = bnStar[i].pop();
+// 			}
+// 		}
+
+// 		if(angle < 1.5){ //20191206書き換え　angle<2をangle<1に変更, // 20/03/24 changed to 1.5 for FR events negoro
+// 			angle = Math.round(angle * 100);
+// 			angle = angle / 100;
+// 			bnStar[i].push(angle);
+// 			bnStar[i][2] = Math.round(bnStar[i][2] * 1000);
+// 			bnStar[i][2] = bnStar[i][2] / 1000;
+// 			bnStar[i][3] = Math.round(bnStar[i][3] * 1000);
+// 			bnStar[i][3] = bnStar[i][3] / 1000;
+// 			if(flux == 0){
+// 					blnStar.push(bnStar[i]);
+// 			}
+// 			else if(flux == -1){
+// 				if(bnStar[i][5]>-1||bnStar[i][5]<-1){
+// 					blnStar.push(bnStar[i]);
+// 				}
+// 			}
+// 			else if(flux == 1){
+// 				if(bnStar[i][5]>=1){
+// 					blnStar.push(bnStar[i]);
+// 				}
+// 			}
+// 			else if(flux == 10){
+// 				if(bnStar[i][5]>=10){
+// 					blnStar.push(bnStar[i]);
+// 				}
+// 			}
+// 			else if(flux == 100){
+// 				if(bnStar[i][5]>=100){
+// 					blnStar.push(bnStar[i]);
+// 				}
+// 			}
+// 			else{
+// 				blnStar.push(bnStar[i]);
+// 			}
+// 		}
+// 	}
+// 	//parent.leftframe.document.getElementById("check").innerHTML = Limt;
+// 	// xsort(blnStar,7,1);
+// 	xsort(blnStar,37,1);
+// 	//chArray(blnStar);
+// 	nCandidate2 = blnStar; //期待通りに動いていれば、マウスポインタに一番近い候補のURLがnCandidate2[0][4]に入るはずです
+// }
+// }
+
+//MARK:searchCandidate2_tri
+function searchCandidate2_tri(csvData,flux){
+	//20250627 K.Takagi
+	//マウスポインタが動いた時に、呼び出される関数(triggerイベント用)
 	var bnStar = new Array();
 	var blnStar = new Array();
 	var Delta = (delta2 + 90) * Math.PI / 180;
 	var Alpha = alpha2 * Math.PI / 180;
 			
 	if(csvData != undefined){
-	//console.log(csvData);
-	for(var i = 0; i < csvData.length; i++){
-		if(Math.abs(csvData[i][3] - delta2) < 2){
-			bnStar.push(csvData[i]);
-		}
-	}
-	for(i = 0; i < bnStar.length; i++){
-		
-		var DeltaP = (bnStar[i][3] + 90) * Math.PI / 180;
-		var AlphaP = bnStar[i][2] * Math.PI / 180;
-		var tarm1 = Math.sin(Delta)*Math.cos(Alpha)*Math.sin(DeltaP)*Math.cos(AlphaP);
-		var tarm2 = Math.sin(Delta)*Math.sin(Alpha)*Math.sin(DeltaP)*Math.sin(AlphaP);
-		var tarm3 = Math.cos(Delta)*Math.cos(DeltaP);
-		var angle = Math.acos(tarm1+tarm2+tarm3)*180/Math.PI;
-
-				
-		// if(bnStar[i].length == 8){
-		// 	var dust = bnStar[i].pop();
-		// }
-
-		// "+/-"を含む場合のフラグ 20250623追加
-        var hasPlusMinus = false;
-        if(bnStar[i][1] && bnStar[i][1].includes("+/-")) {
-            // console.log("Found +/- in: " + bnStar[i][1]);
-			if(bnStar[i].length >= 8){
-				var dust = bnStar[i].pop();
+		//console.log(csvData);
+		for(var i = 0; i < csvData.length; i++){
+			if(Math.abs(csvData[i][3] - delta2) < 2){
+				bnStar.push(csvData[i]);
 			}
-        } else {
+		}
+		for(i = 0; i < bnStar.length; i++){
+
+			var DeltaP = (bnStar[i][3] + 90) * Math.PI / 180;
+			var AlphaP = bnStar[i][2] * Math.PI / 180;
+			var tarm1 = Math.sin(Delta)*Math.cos(Alpha)*Math.sin(DeltaP)*Math.cos(AlphaP);
+			var tarm2 = Math.sin(Delta)*Math.sin(Alpha)*Math.sin(DeltaP)*Math.sin(AlphaP);
+			var tarm3 = Math.cos(Delta)*Math.cos(DeltaP);
+			var angle = Math.acos(tarm1+tarm2+tarm3)*180/Math.PI;
+
+			//配列の長さが38の場合、最後の要素を削除
 			if(bnStar[i].length >= 38){
 				var dust = bnStar[i].pop();
 			}
-		}
 
-		if(angle < 1.5){ //20191206書き換え　angle<2をangle<1に変更, // 20/03/24 changed to 1.5 for FR events negoro
-			angle = Math.round(angle * 100);
-			angle = angle / 100;
-			bnStar[i].push(angle);
-			bnStar[i][2] = Math.round(bnStar[i][2] * 1000);
-			bnStar[i][2] = bnStar[i][2] / 1000;
-			bnStar[i][3] = Math.round(bnStar[i][3] * 1000);
-			bnStar[i][3] = bnStar[i][3] / 1000;
-			if(flux == 0){
-					blnStar.push(bnStar[i]);
-			}
-			else if(flux == -1){
-				if(bnStar[i][5]>-1||bnStar[i][5]<-1){
+			if(angle < 1.5){ //20191206書き換え　angle<2をangle<1に変更, // 20/03/24 changed to 1.5 for FR events negoro
+				angle = Math.round(angle * 100);
+				angle = angle / 100;
+				bnStar[i].push(angle);
+				bnStar[i][2] = Math.round(bnStar[i][2] * 1000);
+				bnStar[i][2] = bnStar[i][2] / 1000;
+				bnStar[i][3] = Math.round(bnStar[i][3] * 1000);
+				bnStar[i][3] = bnStar[i][3] / 1000;
+				if(flux == 0){
+						blnStar.push(bnStar[i]);
+				}
+				else if(flux == -1){
+					if(bnStar[i][5]>-1||bnStar[i][5]<-1){
+						blnStar.push(bnStar[i]);
+					}
+				}
+				else if(flux == 1){
+					if(bnStar[i][5]>=1){
+						blnStar.push(bnStar[i]);
+					}
+				}
+				else if(flux == 10){
+					if(bnStar[i][5]>=10){
+						blnStar.push(bnStar[i]);
+					}
+				}
+				else if(flux == 100){
+					if(bnStar[i][5]>=100){
+						blnStar.push(bnStar[i]);
+					}
+				}
+				else{
 					blnStar.push(bnStar[i]);
 				}
-			}
-			else if(flux == 1){
-				if(bnStar[i][5]>=1){
-					blnStar.push(bnStar[i]);
-				}
-			}
-			else if(flux == 10){
-				if(bnStar[i][5]>=10){
-					blnStar.push(bnStar[i]);
-				}
-			}
-			else if(flux == 100){
-				if(bnStar[i][5]>=100){
-					blnStar.push(bnStar[i]);
-				}
-			}
-			else{
-				blnStar.push(bnStar[i]);
 			}
 		}
+		xsort(blnStar,37,1);
+		nCandidate2_tri = blnStar;
 	}
-	//parent.leftframe.document.getElementById("check").innerHTML = Limt;
-	// xsort(blnStar,7,1);
-	xsort(blnStar,37,1);
-	//chArray(blnStar);
-	nCandidate2 = blnStar; //期待通りに動いていれば、マウスポインタに一番近い候補のURLがnCandidate2[0][4]に入るはずです
-}
 }
 
+//MARK:searchCandidate2_mail
+function searchCandidate2_mail(csvData,flux){
+	//20250627 K.Takagi
+	//マウスポインタが動いた時に、呼び出される関数(mailイベント用)
+	var bnStar = new Array();
+	var blnStar = new Array();
+	var Delta = (delta2 + 90) * Math.PI / 180;
+	var Alpha = alpha2 * Math.PI / 180;
+			
+	if(csvData != undefined){
+		//console.log(csvData);
+		for(var i = 0; i < csvData.length; i++){
+			if(Math.abs(csvData[i][3] - delta2) < 2){
+				bnStar.push(csvData[i]);
+			}
+		}
+		for(i = 0; i < bnStar.length; i++){
+
+			var DeltaP = (bnStar[i][3] + 90) * Math.PI / 180;
+			var AlphaP = bnStar[i][2] * Math.PI / 180;
+			var tarm1 = Math.sin(Delta)*Math.cos(Alpha)*Math.sin(DeltaP)*Math.cos(AlphaP);
+			var tarm2 = Math.sin(Delta)*Math.sin(Alpha)*Math.sin(DeltaP)*Math.sin(AlphaP);
+			var tarm3 = Math.cos(Delta)*Math.cos(DeltaP);
+			var angle = Math.acos(tarm1+tarm2+tarm3)*180/Math.PI;
+
+			//配列の長さが8の場合、最後の要素を削除
+			if(bnStar[i].length == 8){
+				var dust = bnStar[i].pop();
+			}
+
+			if(angle < 1.5){ //20191206書き換え　angle<2をangle<1に変更, // 20/03/24 changed to 1.5 for FR events negoro
+				angle = Math.round(angle * 100);
+				angle = angle / 100;
+				bnStar[i].push(angle);
+				bnStar[i][2] = Math.round(bnStar[i][2] * 1000);
+				bnStar[i][2] = bnStar[i][2] / 1000;
+				bnStar[i][3] = Math.round(bnStar[i][3] * 1000);
+				bnStar[i][3] = bnStar[i][3] / 1000;
+				if(flux == 0){
+						blnStar.push(bnStar[i]);
+				}
+				else if(flux == -1){
+					if(bnStar[i][5]>-1||bnStar[i][5]<-1){
+						blnStar.push(bnStar[i]);
+					}
+				}
+				else if(flux == 1){
+					if(bnStar[i][5]>=1){
+						blnStar.push(bnStar[i]);
+					}
+				}
+				else if(flux == 10){
+					if(bnStar[i][5]>=10){
+						blnStar.push(bnStar[i]);
+					}
+				}
+				else if(flux == 100){
+					if(bnStar[i][5]>=100){
+						blnStar.push(bnStar[i]);
+					}
+				}
+				else{
+					blnStar.push(bnStar[i]);
+				}
+			}
+		}
+		xsort(blnStar,7,1);
+		nCandidate2_mail = blnStar;
+	}	
+}
+
+//MARK:conbineArray
 function conbineArray(array1, array2){ //2つの配列を結合する
 	if(array1 != undefined || array2 != undefined){
 	var array3 = [];
@@ -1355,6 +1503,7 @@ function conbineArray(array1, array2){ //2つの配列を結合する
 }
 }
 
+//MARK:conbineFourArrays
 function conbineFourArrays(array1, array2, array3, array4){ //4つの配列を結合する
 	var conArray1 = conbineArray(array1, array2);
 	var conArray2 = conbineArray(conArray1, array3);
@@ -1450,6 +1599,12 @@ async function lightCurvePopup(mousePositionObject) {
 	// console.log("nCandidate2", nCandidate2);
 	if (!nCandidate2.length) { return }
 
+	// sigmaが最大の要素の番号を取得
+	sigmaMax = findSigmaMax(nCandidate2);
+	console.log("sigmaMax:", sigmaMax);
+	// sigmaMaxが-1の時（mailイベントだけの時）はreturn
+	if (sigmaMax === -1) { return }
+
 	// 極座標を元にlight curveのpathを作成
 	// var x = alpha2, y = delta2;
 	//var promiseObject = polar2lightCurvePath(x, y, nCandidate2[0][1], nCandidate2[0][0]); //臨時
@@ -1479,9 +1634,6 @@ async function lightCurvePopup(mousePositionObject) {
 	    curObj.top = (mousePositionObject.pageY + popHeight) + "px";
 	}
 
-	// sigmaが最大の要素の番号を取得
-	sigmaMax = findSigmaMax(nCandidate2);
-	console.log("sigmaMax:", sigmaMax);
 	// 極座標を元にlight curveのpathを作成
 	let dptcArr = nCandidate2[sigmaMax].slice(7, 17);
 	let countArr = nCandidate2[sigmaMax].slice(17, 27);
@@ -1494,7 +1646,7 @@ async function lightCurvePopup(mousePositionObject) {
 	console.log("popupのY軸:", popupY);
 
 	// countAveをexpotmをもとに補正
-	if (popupY === "count / sec") {
+	if (popupY === "mCrab") {
 		let expotmAverage = 0;
 		if (expotmArr && expotmArr.length > 0) {
 		    // 有効な数値のみを対象にする
@@ -1562,7 +1714,10 @@ function nearCandidate(mousePositionObject) {
 	figureXY(mousePositionObject);
 	mollwide2polar(); // ハンメルアイトフ座標を極座標に変換
 	FluxOp();
-	searchCandidate2(conbineFourArrays(candidateData, candidateData2, candidateData3, candidateData4), Limt);
+	// searchCandidate2(conbineFourArrays(candidateData, candidateData2, candidateData3, candidateData4), Limt);
+	searchCandidate2_tri(conbineArray(candidateData, candidateData3), Limt);
+	searchCandidate2_mail(conbineArray(candidateData2, candidateData4), Limt);
+	nCandidate2 = conbineArray(nCandidate2_mail, nCandidate2_tri);
 
 	// テスト用, localにはcsvデータがないのでそれっぽいデータを作っている
 	// dptc_zeroにcandidateData[0][0]は入るように変更
@@ -1623,7 +1778,7 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
 	}
 
 	let yArr;
-	if (expotmArr.length === 10 && popupY === "count / sec") {
+	if (expotmArr.length === 10 && popupY === "mCrab") {
 		yArr = countArr.map((count, index) => count / (expotmArr[index] || 1));
 	} else {
 		yArr = [...countArr];
@@ -1631,7 +1786,7 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
 	
     // エラーバーの計算
 	let errorArr; // 変数を条件分岐の前に宣言
-	if (popupY === "count / sec") {
+	if (popupY === "mCrab") {
 	    errorArr = countArr.map((count, index) => {
 	        // カウント数の平方根を計算（負の値にならないよう保証）
 	        const countError = Math.sqrt(Math.max(0, count));
