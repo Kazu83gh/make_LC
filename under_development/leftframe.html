@@ -120,20 +120,77 @@
   </form>
 </font>
 <input type="range" id="bar" name="num" min="0" max="1" step="0.01" value="0.2" style="width:100%; display:none; background-color:gainsboro" onchange="parent.mainframe.changeValue(this.value)">
-<INPUT type="button" value="Exposure-off" style="display:none; "onClick="Exposure(value)" ID="b_exposure"><br>
+<INPUT type="button" value="Exposure-off" style="display:none; "onClick="Exposure(value)" ID="b_exposure">
+  <!-- <br> -->
 
-
-<!-- 2025/6/16 髙木が追加 -->
+<!-- 20250701 髙木が追加 -->
 <center>
-  <i>Popup Option</i>
+  <i>Popup Options</i>
 </center>
-<table border="0" width="100">
-  <tr><td><INPUT type="button" value="count / sec" onClick="popupYaxis()" style="width:100%; background-color:gainsboro" ID="popupYaxis"></td></tr>
+
+<table border="0" style="margin-right: auto; font-size: 9pt;">
+  <tr><td colspan="2"><center>Axis</center></td>
+  <tr>
+    <td>
+      <form name="popXaxis">
+        <!-- <SELECT name="popXaxis" id="popXaxis" onChange="popupXaxis()" style="font-size: 8pt;">
+          <OPTION value="time">No</OPTION>
+        </SELECT> -->
+        <SELECT name="popupXaxis" id="popupXaxis" style="font-size: 8pt;">
+          <OPTION value="auto" selected>auto</OPTION>
+          <OPTION value="time">time</OPTION>
+          <OPTION value="bin">bin</OPTION>
+        </SELECT>
+      </form>
+    </td>
+    <!-- <td><form name="popYaxis"><SELECT name="popYaxis" id="popYaxis" onChange="popupYaxis()" style="font-size: 8pt;">
+         <OPTION value="mCrab">No</OPTION></SELECT></form></td> -->
+    <td>
+      <INPUT type="button" value="mCrab" onClick="popupYaxis()" style="font-size: 8pt; width:100%; background-color:gainsboro; position: relative; top: -6px;" ID="popupYaxis">
+    </td>
+  </tr>
 </table>
+
+<!-- <center>
+  <i>Axis</i>
+</center> -->
+
+<!-- 左右配置パターン -->
+<!-- <table border="0" width="100%">
+  <tr>
+    <td width="50%">
+      <center><i>X</i></center>
+      <INPUT type="button" value="time" onClick="popupXaxis()" style="width:100%; background-color:gainsboro" ID="popupXaxis">
+    </td>
+    <td width="50%">
+      <center><i>Y</i></center>
+      <INPUT type="button" value="mCrab" onClick="popupYaxis()" style="width:100%; background-color:gainsboro; padding-left: 2px; padding-right: 2px;" ID="popupYaxis">
+    </td>
+  </tr>
+</table> -->
+
+<!-- <table border="0" width="100%" style="padding:0; margin:0; border-spacing:0; border-collapse:collapse">
+  <tr>
+    <td width="15%" style="vertical-align:middle; text-align:right; padding-right:5px">
+      <i>X&nbsp;:</i>
+    </td>
+    <td width="85%">
+      <INPUT type="button" value="time" onClick="popupXaxis()" style="width:100%; background-color:gainsboro" ID="popupXaxis">
+    </td>
+  </tr>
+  <tr>
+    <td width="15%" style="vertical-align:middle; text-align:right; padding-right:5px">
+      <i>Y&nbsp;:</i>
+    </td>
+    <td width="85%">
+      <INPUT type="button" value="mCrab" onClick="popupYaxis()" style="width:100%; background-color:gainsboro" ID="popupYaxis">
+    </td>
+  </tr>
+</table> -->
 
 <div name="popupDelay">
   <center>
-    <i>Popup Delay</i>
+    <i>Delay</i>
     <br>
     <span id="popupDelay-display"></span> [s]
   </center>
