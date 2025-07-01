@@ -1635,6 +1635,8 @@ async function lightCurvePopup(mousePositionObject) {
 	}
 
 	// 極座標を元にlight curveのpathを作成
+	let eveInfo = nCandidate2[sigmaMax][1];
+	let eveTimeScale = eveInfo.match(/\(([^,]+)/)[1]
 	let dptcArr = nCandidate2[sigmaMax].slice(7, 17);
 	let countArr = nCandidate2[sigmaMax].slice(17, 27);
 	let expotmArr = nCandidate2[sigmaMax].slice(27, 37);
@@ -1666,7 +1668,11 @@ async function lightCurvePopup(mousePositionObject) {
 		}
 	}
 
-	promiseObject = crtLCPlot(dptcArr, countArr, expotmArr, countAve);
+	promiseObject = crtLCPlot( dptcArr, 
+							   eveTimeScale, 
+							   countArr, 
+							   expotmArr, 
+							   countAve );
 
 	//let lcPath = "";
 	// console.log("lcPath2:", promiseObject);
@@ -1744,7 +1750,7 @@ function hideUnderFrame() {
 
 // MARK: crtLCPlot
 // Plotly で描画
-async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
+async function crtLCPlot(dptcArr, timescale, countArr, expotmArr, countAve) {
     if (dptcArr.length !== countArr.length || dptcArr.length === 0) {
         console.error("Invalid input arrays");
         return;
@@ -1764,6 +1770,16 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
 	let popupX = parent.leftframe.document.getElementById("popupXaxis").value;
 	let popupY = parent.leftframe.document.getElementById("popupYaxis").value;
 
+	// "auto"の場合、
+	// 横軸を1s,3s,10s,30sでは"bin"、1scan,1orb,4orb,1dayでは"time"にする
+	if ( popupX === "auto" ){
+		if (priorities[timescale] < 5) {
+			popupX = "bin";
+		} else {
+			popupX = "time";
+		}
+	}
+
 	// triggertimeをグラフの基準とする
 	// const trdptc = nCandidate2[sigmaMax][0];
 	// const xArr = dptcArr.map(val => val - trdptc);
@@ -1773,7 +1789,7 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
 		xArr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; 
 	} else {
 		// xlabel = "dptc : " + gwTriDPTC + " + t ";
-		xlabel = "Time [s] (t=0: GW trigger)";
+		xlabel = "time [s] (t=0: GW trigger)";
 		xArr = dptcArr.map(val => val - gwTriDPTC);
 	}
 
@@ -1882,7 +1898,22 @@ async function crtLCPlot(dptcArr, countArr, expotmArr, countAve) {
                     dash: 'solid'
                 }
             }
-        ]
+        ],
+		annotations: [
+        {
+            text: "bin size : " + timescale,
+            x: 0.05,
+            y: 0.9,
+            xref: 'paper',  // x座標をグラフ全体の比率で指定
+            yref: 'paper',  // y座標をグラフ全体の比率で指定
+            showarrow: false,  // 矢印を表示しない
+            font: {
+                size: 10,
+                color: 'black'
+            },
+            bgcolor: 'rgba(255, 255, 255, 0.5)'  // 背景色（半透明の白）
+        }
+    ]
     };
 
 	// GW triggerの位置にオレンジ色の線
@@ -1966,7 +1997,7 @@ function findLongestTimeScale(candidateData) {
 	return maxTimeScale;
 }
 
-// MARK: LC表示
+// MARK: underLC表示
 // 画像上の[x, y](クリックした時に出てくる数字)を入力すると, svgタグで使うlight curveのpathが出力される
 async function polar2lightCurvePath(x, y, detail, diff) {
 	console.log("click : polar2lightCurvePath");
