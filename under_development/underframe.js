@@ -11,6 +11,7 @@ async function fetchData() {
     }
     const data = await response.text();
     recentDptcUnixDiff = data;
+	window.intUNIX2DPTC = parseInt(recentDptcUnixDiff); // 取得した差を整数に変換してグローバル変数に格納
     console.log('Data fetched and stored globally:', recentDptcUnixDiff);
   } catch (error) {
     console.error('There has been a problem with your fetch operation:', error);
@@ -106,6 +107,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		loopCount = 0, //3色同時表示用
 		changeEBArray = [], //3色同時表示用
 		dptcUnixDiff = 0; //dptcとunixtimeの差
+		useBG = 0; //BG情報を使用するかどうかのフラグ
+
+	const energyBandIndex = {
+		"All": 0,
+		"High": 1,
+		"Med": 2,
+		"Low": 3
+	};
 
     // データの格納
 	const all_LCdata = LCdata.All,
@@ -113,7 +122,17 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	      med_LCdata = LCdata.Med,
 		  low_LCdata = LCdata.Low,
 		  comb_LCdata = [...LCdata.High, ...LCdata.Med, ...LCdata.Low];
-	let convUTC_LCdata = LCdata.UTC;
+	let convUTC_LCdata = LCdata.UTC,
+		bgArr = [],
+		bgErrArr = [];
+	
+	if (LCdata.BG && LCdata.BGErr) { //BG情報がある時だけ更新
+		useBG = 1; //BG情報を使用するフラグを立てる
+    	bgArr = LCdata.BG;
+		bgErrArr = LCdata.BGErr;
+		console.log("bgArr: ", bgArr);
+		console.log("bgErrArr: ", bgErrArr);
+	}
 
     // コンソールへの表示
 	console.log('----  LCdata ----')
@@ -164,17 +183,53 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	// [dptc, count, dptc, count, ...]の形から
 	// [[UNIX, count, √count], [UNIX, count, √count], ...]の形に変換する関数
 	// 十字の中心は0.5秒だけズレるので、0.5を足している 
+	// let Tolist = function (data) {
+	// 	let array = [];
+	// 	let array1 = [];
+
+	// 	for (let i = 1; i < data.length + 1; i++) {
+	// 		if (i % 2 != 0) {
+	// 			// let convertedValue = gps2unix(data[i - 1] - parseInt(dptcUnixDiff)) + 0.5;
+	// 			let convertedValue = gps2unix(data[i - 1] - dptcUnixDiff) + 0.5;
+	// 			array1.push(convertedValue);
+	// 			array1.push(data[i]);
+	// 			array1.push(Math.sqrt(data[i]));
+	// 		} else {
+	// 			array.push(array1);
+	// 			array1 = [];
+	// 		}
+	// 	}
+	// 	return array;
+	// };
+
 	let Tolist = function (data) {
 		let array = [];
 		let array1 = [];
+		let gapcnt = 0;
 
 		for (let i = 1; i < data.length + 1; i++) {
 			if (i % 2 != 0) {
 				// let convertedValue = gps2unix(data[i - 1] - parseInt(dptcUnixDiff)) + 0.5;
 				let convertedValue = gps2unix(data[i - 1] - dptcUnixDiff) + 0.5;
+				let cnt = data[i];
+				let err = Math.sqrt(data[i]);
+
+				if (useBG) { // BGを考慮する場合
+					if (i > 1) {
+    				    let gap = data[i - 1] - data[i - 3];
+    				    if (gap > 800) { 
+							gapcnt += 1;
+						}
+    				}
+
+					let ebIndex = energyBandIndex[selectedEnergyBand]; // 選択されているエネルギーバンド
+					cnt = data[i] - bgArr[ebIndex][gapcnt];
+					err = Math.sqrt(data[i] + bgErrArr[ebIndex][gapcnt]);
+				}
+
 				array1.push(convertedValue);
-				array1.push(data[i]);
-				array1.push(Math.sqrt(data[i]));
+				array1.push(cnt);
+				array1.push(err);
 			} else {
 				array.push(array1);
 				array1 = [];
@@ -276,9 +331,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     function createLC(dptc_count_data) {
     	//console.log(dptc_count_data); 
 		dict_LCdata = Tolist(dptc_count_data); 
-		//console.log(Tolist(dptc_count_data));
+		console.log(Tolist(dptc_count_data));
     	graph_data = graph_Summarize(dict_LCdata);
-		//console.log(graph_Summarize(dict_LCdata));
+		// console.log(graph_Summarize(dict_LCdata));
 		//console.log("GPSとdptcの差:" + dptcUnixDiff);
 
 		//dict_LCdataをもとに光度曲線の描画
@@ -8550,17 +8605,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						loopCount = 0;
 						changeEBArray = [];
 					  return e(this, function (e) {
+						// MARK:光度曲線のデータを作成
 						while (dataNum !== r.length) {
 							for (let i = 0; i < zoomAlldata.length - 1; i += 2) {
 								let startBin = zoomAlldata[i] - 0.5;
 								let endBin = zoomAlldata[i + 1] + 0.5;
 
 								let sumCount = 0;
+								let sumErr = 0;
 								for (; startBin <= endBin; startBin += o) {
 									///////////////////////////////////////////////////////////////////////////////////////////
 									//for(; dataNum < r.length && startBin + o >= r[dataNum][0]; dataNum++) {	
 									for(; dataNum < r.length && startBin <= r[dataNum][0] && startBin + o >= r[dataNum][0]; dataNum++) {	
 										sumCount += r[dataNum][1];
+										sumErr += r[dataNum][2] * r[dataNum][2]; //誤差の二乗を足し合わせる
 									};
 
 									if (sumCount != 0) {
@@ -8568,8 +8626,15 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 										let startErr = centUNIX - o / 2; //エラーバーの左端
 										let endErr = centUNIX + o / 2; //エラーバーの右端
 										let countSec = sumCount / o; //1秒あたりのカウント数
-										let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
+										// let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
+										// let countErr = rSumCount / o; //1秒あたりのカウント数の誤差
+										let rSumCount = Math.sqrt(sumErr); //カウント数の平方根
 										let countErr = rSumCount / o; //1秒あたりのカウント数の誤差	
+
+										//MARK:popupLCとの整合性確認用
+										// let countSec = sumCount; //1秒あたりのカウント数
+										// let rSumCount = Math.sqrt(sumErr); //カウント数の平方根
+										// let countErr = rSumCount; //1秒あたりのカウント数の誤差	
 
 										let plotData = [centUNIX, //十字の中心
 														startErr, //エラーバーの左端
@@ -8580,12 +8645,15 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
 										t.push(plotData);
 
+										let countMinusErr = countSec - countErr; 
 										let countPlusErr = countSec + countErr;
 										
+										n[0] = Math.min(n[0], countMinusErr); //縦軸の最小値を見つける
 										a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
 									}
 
 									sumCount = 0; //初期化
+									sumErr = 0
 									///////////////////////////////////////////////////////////////////////////////////////////
 									// let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
 								
@@ -8625,6 +8693,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							}
 							changeEBArray.push(t.length);
 							loopCount++;
+						}
+
+						if (n[0] >= 0.0) {
+							n[0] = 0.0
+						} else {
+							n[0] = Math.min(n[0], -1.0);
 						}
 
 						a[0] = a[0] * 1.2; //十字が見切れないように縦軸の最大値を調整(1.2倍に)
@@ -8751,6 +8825,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					r = require("./constants"),
 					i = require("./isAvailablePlotType"),
 					n = require("@maxi-js/date-tools");
+				  //MARK:default_binsize
 				  //引数eを受け取りそれを数値に変換（1〜128の範囲、デフォルトは1）
 				  exports.default_binsize = changeBinsize; //binsizeの初期設定
 				  (exports.filterBinSize = function (e) {
@@ -8790,7 +8865,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						// binSize: exports.filterBinSize(
 						// 	e.get(r.URLParameterKey.binSize)
 						// ),
-						binSize: 1,
+						// binSize: 1,
+						binSize: changeBinsize,
 						mjdRange: exports.filterMJDRange(
 						  	e.get(r.URLParameterKey.mjdRange)
 						),
@@ -9962,7 +10038,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						C = x.minY[o],
 						q = x.maxY[o],
 						B = u / (q - C),
-						P = function (e) {
+						P = function (e) { //MARK:P関数
 						  return m - B * (e - C);
 						},
 						S = function (e) {
@@ -10051,13 +10127,15 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									  	.map(function (e) {
 											//if (e[1] < _) return "";
 											//_ = e[2];
+											//MARK:十字のパス設定
 											var t = z(e[0]), //十字の中心のx座標
 											  	i = z(e[1]), //dptcのエラーバーの左端
 											  	n = z(e[2]), //dptcのエラーバーの右端
 											  	r = P(e[w]), //十字の中心のy座標
 											  	a = e[A] * B, //カウント数のエラーバーの長さ
 											  	o = [];
-											//console.log("r:" + r);
+											// console.log("r:" + r);
+											// console.log("e[w]:" + e[w]);
 											if (l < n && i < s) {
 											  	o.push(
 													"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
@@ -10074,12 +10152,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									stroke: E,
 							  	})
 							);	
-					    } else if (loopCount === 3) { //3色同時表示の処理
+					    // } else if (loopCount === 3) { //3色同時表示の処理
+						} else { //3色同時表示の処理
 							M.push( //Highの表示
 								e.createElement("path", {
 								  	key: t.PlotType.Point,
 								  	id: "can_zoom",
-								  	d: x.bins
+								  	d: x.bins //MARK:十字のパス設定
 										.slice(0, changeEBArray[0])
 										.map(function (e) {
 										  	var t = z(e[0]), //十字の中心のx座標
@@ -10814,7 +10893,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 									},
 									"Bin size: "
 								  ),
-								//MARK:Bin size
+								//MARK:Bin sizeの入力
 								//bin sizeの入力
 								  n.createElement("input", {
 									id: o.URLParameterKey.binSize,
@@ -10904,7 +10983,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                           value: e,
                                           defaultChecked: selectedEnergyBand === e, 
                                           onChange: function (e) {
-                                            ////////////// 選択肢ごとの処理 //////////////
+                                            ////////////// MARK:選択肢ごとの処理 //////////////
                                             selectedEnergyBand = e.currentTarget.value;
                                             switch (selectedEnergyBand) {
                                               case "All":
