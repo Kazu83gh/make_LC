@@ -202,31 +202,86 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	// 	return array;
 	// };
 
+	//MARK: Tolist関数
 	let Tolist = function (data) {
 		let array = [];
 		let array1 = [];
 		let gapcnt = 0;
+		let ebIndex = energyBandIndex[selectedEnergyBand];
 
+		// for (let i = 1; i < data.length + 1; i++) {
+		// 	if (i % 2 != 0) {
+		// 		// let convertedValue = gps2unix(data[i - 1] - parseInt(dptcUnixDiff)) + 0.5;
+		// 		let convertedValue = gps2unix(data[i - 1] - dptcUnixDiff) + 0.5;
+		// 		let cnt = data[i];
+		// 		let err = Math.sqrt(data[i]);
+
+		// 		if (i > 1) {
+    	// 			let gap = data[i - 1] - data[i - 3];
+    	// 			if (gap > 800) { 
+    	// 			    gapcnt += 1;
+    	// 			}
+				
+    	// 			if (useBG) { //BG処理
+    	// 			    let ebIndex = energyBandIndex[selectedEnergyBand];
+					
+    	// 			    if (gap > 1 && gap <= 800) {
+    	// 			        // 0カウントの部分のデータを追加
+    	// 			        for (let missingDptc = data[i - 3] + 1; missingDptc < data[i - 1]; missingDptc++) {
+    	// 			            let missingConvertedValue = gps2unix(missingDptc - dptcUnixDiff) + 0.5;
+    	// 			            let missingArray = [missingConvertedValue, -bgArr[ebIndex][gapcnt], 1 + bgErrArr[ebIndex][gapcnt]];
+    	// 			            array.push(missingArray);
+    	// 			        }
+    	// 			    }
+					
+    	// 			    cnt = data[i] - bgArr[ebIndex][gapcnt];
+    	// 			    err = Math.sqrt(data[i] + bgErrArr[ebIndex][gapcnt]);
+    	// 			}
+		// 		}				
+
+		// 		array1.push(convertedValue);
+		// 		array1.push(cnt);
+		// 		array1.push(err);
+		// 	} else {
+		// 		array.push(array1);
+		// 		array1 = [];
+		// 	}
+		// }
 		for (let i = 1; i < data.length + 1; i++) {
 			if (i % 2 != 0) {
-				// let convertedValue = gps2unix(data[i - 1] - parseInt(dptcUnixDiff)) + 0.5;
+				if (i > 1) {
+    				let gap = data[i - 1] - data[i - 3];
+    				if (gap > 800) { 
+    				    gapcnt += 1;
+    				}
+
+					if (gap > 1 && gap <= 800) { // 0カウントの部分のデータを追加
+						if (useBG) { //BG処理
+    				    	for (let missingDptc = data[i - 3] + 1; missingDptc < data[i - 1]; missingDptc++) {
+    				    	    let missingConvertedValue = gps2unix(missingDptc - dptcUnixDiff) + 0.5;
+    				    	    let missingArray = [missingConvertedValue, -bgArr[ebIndex][gapcnt], 1 + bgErrArr[ebIndex][gapcnt]];
+    				    	    array.push(missingArray);
+    				    	}
+						} else { //通常処理
+							for (let missingDptc = data[i - 3] + 1; missingDptc < data[i - 1]; missingDptc++) {
+								let missingConvertedValue = gps2unix(missingDptc - dptcUnixDiff) + 0.5;
+    				    		let missingArray = [missingConvertedValue, 0, 1];
+    				    		array.push(missingArray);
+							}
+    					}
+					}
+				}
+
 				let convertedValue = gps2unix(data[i - 1] - dptcUnixDiff) + 0.5;
 				let cnt = data[i];
 				let err = Math.sqrt(data[i]);
 
-				if (useBG) { // BGを考慮する場合
-					if (i > 1) {
-    				    let gap = data[i - 1] - data[i - 3];
-    				    if (gap > 800) { 
-							gapcnt += 1;
-						}
-    				}
-
-					let ebIndex = energyBandIndex[selectedEnergyBand]; // 選択されているエネルギーバンド
-					cnt = data[i] - bgArr[ebIndex][gapcnt];
-					err = Math.sqrt(data[i] + bgErrArr[ebIndex][gapcnt]);
-				}
-
+    			if (useBG) { //BG処理					
+					//cnt, errの値をBG情報を用いて更新
+    			    cnt = data[i] - bgArr[ebIndex][gapcnt];
+    			    err = Math.sqrt(data[i] + bgErrArr[ebIndex][gapcnt]);
+    			}
+							
 				array1.push(convertedValue);
 				array1.push(cnt);
 				array1.push(err);
@@ -324,6 +379,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
 	let maxiTriUnixOther = [...maxiTriArray.slice(1).map(dptc2unix)];
 
+	// MARK:createLC 
 	// ここから光度曲線の描画
 	createLC(pre_LCdata);
 
@@ -8621,7 +8677,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 										sumErr += r[dataNum][2] * r[dataNum][2]; //誤差の二乗を足し合わせる
 									};
 
-									if (sumCount != 0) {
+									if (sumErr != 0) {
 										let centUNIX = startBin + o / 2; //十字の中心
 										let startErr = centUNIX - o / 2; //エラーバーの左端
 										let endErr = centUNIX + o / 2; //エラーバーの右端
@@ -8629,7 +8685,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 										// let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
 										// let countErr = rSumCount / o; //1秒あたりのカウント数の誤差
 										let rSumCount = Math.sqrt(sumErr); //カウント数の平方根
-										let countErr = rSumCount / o; //1秒あたりのカウント数の誤差	
+										let countErr = rSumCount / o; //1秒あたりのカウント数の誤差
 
 										//MARK:popupLCとの整合性確認用
 										// let countSec = sumCount; //1秒あたりのカウント数
@@ -8641,13 +8697,11 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 														endErr, //エラーバーの右端
 														countSec, //1秒あたりのカウント数
 														countErr, //カウント数のエラーの長さ
-														NaN, NaN, NaN, NaN, NaN, NaN];
-
-										t.push(plotData);
+														NaN, NaN, NaN, NaN, NaN, NaN]	
+										t.push(plotData)
 
 										let countMinusErr = countSec - countErr; 
 										let countPlusErr = countSec + countErr;
-										
 										n[0] = Math.min(n[0], countMinusErr); //縦軸の最小値を見つける
 										a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
 									}
@@ -8695,10 +8749,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							loopCount++;
 						}
 
-						if (n[0] >= 0.0) {
-							n[0] = 0.0
-						} else {
+						if (useBG) {
 							n[0] = Math.min(n[0], -1.0);
+						} else { //BGを考慮しない時にはグラフの最小値を0に
+							n[0] = 0.0				
 						}
 
 						a[0] = a[0] * 1.2; //十字が見切れないように縦軸の最大値を調整(1.2倍に)
@@ -10957,8 +11011,25 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                       style: {color: "white"}
                                     },
                                     "s"),
-								),
-							  // エネルギーバンドの選択するラジオボタンの表示
+								  // MARK:BGボタン
+  								  n.createElement("button", {
+  								    	type: "button",
+  								    	style: {
+  								    		marginLeft: "20px",
+  								    	  	padding: "2px 12px",
+										  	backgroundColor: useBG ? "gray" : "gainsboro",
+  								    	  	color: "black",
+  								    	  	border: "none",
+  								    	  	borderRadius: "3px",
+  								    	  	cursor: "pointer",
+  								    	  	fontSize: "14px"
+  								    	},
+  								    	onClick: function() { 
+								         	//処理内容はここに、別のところに書くのもあり
+  								    	}
+  								  }, "BG"),	
+								),						
+							  	// エネルギーバンドの選択するラジオボタンの表示
 							    n.createElement.apply(
                                   void 0,
                                   [
