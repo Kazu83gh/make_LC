@@ -11025,7 +11025,25 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
   								    	  	fontSize: "14px"
   								    	},
   								    	onClick: function() { 
-								         	//処理内容はここに、別のところに書くのもあり
+											let send = window.parent.mainframe.currentSend;
+								         	if (useBG) { //BG→通常
+												window.parent.mainframe.sendLightCurveRequest(
+													'/cgi-bin/make_LCdata2.py',
+													send,
+													(receive_LCdata) => {
+    												    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+    												}
+												);
+											} else { //通常→BG
+												window.parent.mainframe.sendLightCurveRequest(
+													'/cgi-bin/make_LCdataBG.py',
+													send,
+													(receive_LCdata) => {
+    												    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+    												}
+												);
+											}
+
   								    	}
   								  }, "BG"),	
 								),						
