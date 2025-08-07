@@ -8667,15 +8667,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								let startBin = zoomAlldata[i] - 0.5;
 								let endBin = zoomAlldata[i + 1] + 0.5;
 
-								let sumCount = 0;
-								let sumErr = 0;
+								// startBin ~ endBinの範囲外のデータはスキップ
+    							while (dataNum < r.length && r[dataNum][0] < startBin) {
+									console.error("skip::dataNum", dataNum, "r.length", r.length);
+    							    dataNum++;
+    							}
+								
 								for (; startBin <= endBin; startBin += o) {
-									///////////////////////////////////////////////////////////////////////////////////////////
-									//for(; dataNum < r.length && startBin + o >= r[dataNum][0]; dataNum++) {	
+									let sumCount = 0;
+									let sumErr = 0;
+									// for(; dataNum < r.length && startBin + o >= r[dataNum][0]; dataNum++) {	
 									for(; dataNum < r.length && startBin <= r[dataNum][0] && startBin + o >= r[dataNum][0]; dataNum++) {	
 										sumCount += r[dataNum][1];
 										sumErr += r[dataNum][2] * r[dataNum][2]; //誤差の二乗を足し合わせる
-									};
+									}
 
 									if (sumErr != 0) {
 										let centUNIX = startBin + o / 2; //十字の中心
@@ -8708,40 +8713,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
 									sumCount = 0; //初期化
 									sumErr = 0
-									///////////////////////////////////////////////////////////////////////////////////////////
-									// let dataInRange = r.filter(item => item[0] >= startBin && item[0] <= startBin + o);
-								
-									// if (dataInRange.length != 0){
-									// 	let sumCount = 0;
-
-    								// 	for (let i = 0; i < dataInRange.length; i++) {
-    								// 	    sumCount += dataInRange[i][1]; //count数を足しあげる
-    								// 	}
-
-									// 	console.log("sumCount :" + sumCount);
-
-									// 	let centUNIX = startBin + o / 2;
-									// 	let startErr = centUNIX - o / 2;
-									// 	let countSec = sumCount / o; //1秒あたりのカウント数
-									// 	let rSumCount = Math.sqrt(sumCount); //カウント数の平方根
-									// 	let countErr = rSumCount / o; //1秒あたりのカウント数の誤差	
-
-									// 	//一つ前のendErrと比較して、startErrが小さい場合は前のendErrをstartErrに代入
-									// 	if ( bfendErr > startErr ) {
-									// 		startErr = bfendErr;
-									// 	} 
-
-									// 	let endErr = centUNIX + o / 2;
-									// 	let plotData = [centUNIX, startErr, endErr, countSec, countErr, NaN, NaN, NaN, NaN, NaN, NaN];
-									// 	let countPlusErr = countSec + countErr;
-
-									// 	a[0] = Math.max(a[0], countPlusErr); //縦軸の最大値を見つける
-
-									// 	t.push(plotData);
-
-									// 	bfendErr = endErr; //endErrを記録
-									//  };
-									///////////////////////////////////////////////////////////////////////////////////////////
 
 								}
 							}
