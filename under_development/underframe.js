@@ -11013,39 +11013,50 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                     "s"),
 								  // MARK:BGボタン
   								  n.createElement("button", {
-  								    	type: "button",
-  								    	style: {
-  								    		marginLeft: "20px",
-  								    	  	padding: "2px 12px",
-										  	backgroundColor: useBG ? "gray" : "gainsboro",
-  								    	  	color: "black",
-  								    	  	border: "none",
-  								    	  	borderRadius: "3px",
-  								    	  	cursor: "pointer",
-  								    	  	fontSize: "14px"
-  								    	},
-  								    	onClick: function() { 
-											let send = window.parent.mainframe.currentSend;
-								         	if (useBG) { //BG→通常
-												window.parent.mainframe.sendLightCurveRequest(
-													'/cgi-bin/make_LCdata2.py',
-													send,
-													(receive_LCdata) => {
-    												    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
-    												}
-												);
-											} else { //通常→BG
-												window.parent.mainframe.sendLightCurveRequest(
-													'/cgi-bin/make_LCdataBG.py',
-													send,
-													(receive_LCdata) => {
-    												    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
-    												}
-												);
-											}
+  								    type: "button",
+  								    style: {
+										position: "absolute",
+    									right: "50px", 
+    									top: "34px",
+    									padding: "2px 10px",
+    									backgroundColor: useBG ? "gainsboro" : "gray",
+    									color: "black",
+    									border: "none",
+    									borderRadius: "3px",
+    									cursor: "pointer",
+    									fontSize: "14px"
+  								    },
+  								    onClick: function() {
+										// underframeのdivを消去
+										let divs = window.parent.underframe.document.getElementsByTagName('div');
+    									while (divs.length > 0) {
+    									    divs[0].remove();
+    									} 
 
-  								    	}
-  								  }, "BG"),	
+										// CGIに送るデータを取得
+										let send = window.parent.mainframe.currentSend; 
+
+								     	if (useBG) { //BG→通常
+											window.parent.mainframe.sendLightCurveRequest(
+												'/cgi-bin/make_LCdata2.py',
+												send,
+												(receive_LCdata) => {
+    											    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+    											}
+											);
+											window.parent.mainframe.showLoadingMessage('waiting...');
+										} else { //通常→BG
+											window.parent.mainframe.sendLightCurveRequest(
+												'/cgi-bin/make_LCdataBG.py',
+												send,
+												(receive_LCdata) => {
+    											    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+    											}
+											);
+											window.parent.mainframe.showLoadingMessage('waiting...');
+										} 
+  								    }
+  								  }, useBG ? "BG on" : "BG off")
 								),						
 							  	// エネルギーバンドの選択するラジオボタンの表示
 							    n.createElement.apply(
