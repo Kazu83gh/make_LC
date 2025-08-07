@@ -56,6 +56,7 @@ var candidateType;
 var candidateData,candidateData2, candidateData3, candidateData4;
 var nCandidate,nCandidate2;
 var nCandidate2_tri, nCandidate2_mail;
+window.currentSend = null;
 
 const priorities = { // timescale の優先順位を定義
     "1day": 8,
@@ -1784,13 +1785,24 @@ async function crtLCPlot(dptcArr, timescale, countArr, expotmArr, countAve) {
 	// const trdptc = nCandidate2[sigmaMax][0];
 	// const xArr = dptcArr.map(val => val - trdptc);
 	let xArr;
-	if ( popupX === "bin" ) {
+	let gwline = 0.5;
+	if (popupX === "bin") {
 		xlabel = "bin";
 		xArr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; 
-	} else {
+		console.log("dptcArr:", dptcArr);
+		console.log("gwTriDPTC:", gwTriDPTC);
+		for (let i = 0; i < xArr.length; i++) {
+			if (dptcArr[i] > gwTriDPTC) {
+				gwline = i + 0.5; // DPTCからGW triggerのDPTCを引く
+				break;
+			}
+			gwline = 10.5
+		}
+	} else if (popupX === "time") {
 		// xlabel = "dptc : " + gwTriDPTC + " + t ";
 		xlabel = "time [s] (t=0: GW trigger)";
 		xArr = dptcArr.map(val => val - gwTriDPTC);
+		gwline = 0;
 	}
 
 	let yArr;
@@ -1801,18 +1813,30 @@ async function crtLCPlot(dptcArr, timescale, countArr, expotmArr, countAve) {
 	}
 	
     // エラーバーの計算
-	let errorArr; // 変数を条件分岐の前に宣言
+	let errorArr; 
 	if (popupY === "mCrab") {
 	    errorArr = countArr.map((count, index) => {
-	        // カウント数の平方根を計算（負の値にならないよう保証）
-	        const countError = Math.sqrt(Math.max(0, count));
-	        // 対応する露光時間で割る（露光時間がゼロまたは無効な場合は1を使用）
-	        const exposureTime = expotmArr && expotmArr[index] ? expotmArr[index] : 1;
-	        // 単位時間あたりのエラー値を返す
-	        return countError / exposureTime;
+			// カウント数の平方根を計算（負の値にならないよう保証）
+    		const countError = Math.sqrt(Math.max(0, count));
+    		// expotm がゼロまたは無効な場合は1を使用
+    		const exposureTime = expotmArr && expotmArr[index] ? expotmArr[index] : 1;
+    		// 対応する expotm で割って、mCrab に
+    		const fluxError = countError / exposureTime;
+
+    		// カウント数が0の場合、expotm の逆数を使用
+    		if (count == 0) {
+    		    const zeroCntErr = 1 / exposureTime;
+				return zeroCntErr 
+    		}
+			
+    		return fluxError;
 	    });
 	} else {
-	    errorArr = countArr.map(count => Math.sqrt(Math.max(0, count)));
+	    // カウント数が0の場合、エラーバーの大きさを1に
+		errorArr = countArr.map(count => {
+        	const error = Math.sqrt(Math.max(0, count));
+        	return error == 0 ? 1 : error;
+    	});
 	}
 
 	// 確認用
@@ -1875,7 +1899,8 @@ async function crtLCPlot(dptcArr, timescale, countArr, expotmArr, countAve) {
             showticklabels: true,
             zeroline: true,
             zerolinewidth: 1.2, // Y軸の "0" の線を強調
-            rangemode: "tozero", // Y軸の最小値を "0" に固定
+            rangemode:  "nonnegative", // Y軸の最小値を "0" に固定
+			range: [0, null],
             fixedrange: true // Y軸のズーム不可
         },
         showlegend: false,
@@ -1897,7 +1922,21 @@ async function crtLCPlot(dptcArr, timescale, countArr, expotmArr, countAve) {
                     width: 1.5,
                     dash: 'solid'
                 }
-            }
+            },
+			// GW triggerの位置に縦線
+			{
+    			type: 'line',
+    			x0: gwline,
+    			x1: gwline,
+    			y0: 0,
+    			y1: 1,
+    			yref: 'paper',
+    			line: {
+    			    color: 'orange',
+    			    width: 1.5,
+    			    dash: 'solid'
+    			}
+    		}	
         ],
 		annotations: [
         {
@@ -1915,24 +1954,6 @@ async function crtLCPlot(dptcArr, timescale, countArr, expotmArr, countAve) {
         }
     ]
     };
-
-	// GW triggerの位置にオレンジ色の線
-	// "bin"の時には無効
-	if (popupX !== "bin") {
-		layout.shapes.push({
-    		type: 'line',
-    		x0: 0,
-    		x1: 0,
-    		y0: 0,
-    		y1: 1,
-    		yref: 'paper',
-    		line: {
-    		    color: 'orange',
-    		    width: 1.5,
-    		    dash: 'solid'
-    		}
-    	});
-	}
 
     let config = { 
         responsive: true,
@@ -1997,6 +2018,52 @@ function findLongestTimeScale(candidateData) {
 	return maxTimeScale;
 }
 
+// ローディング表示を作成・表示する関数
+function showLoadingMessage(message) {
+    // underframeを取得
+    let underframe = document.createElement('div');
+    underframe.id = 'undermessage';
+    window.parent.underframe.document.body.appendChild(underframe);
+
+	let messageStr = String(message);
+    
+    // 光度曲線が作成されるまでの間に表示される文字の設定
+    underframe.innerText = messageStr; // テキストを設定
+    underframe.style.color = 'white'; // 文字色を白に設定
+    underframe.style.fontSize = '24px'; // フォントサイズを大きく設定
+    underframe.style.display = 'flex'; // フレックスボックスを使用
+    underframe.style.justifyContent = 'center'; // 水平方向に中央揃え
+    underframe.style.alignItems = 'center'; // 垂直方向に中央揃え
+    underframe.style.height = '100%'; // 高さを100%に設定
+    underframe.style.width = '100%'; // 幅を100%に設定
+}
+
+// Ajax通信を処理する汎用関数
+function sendLightCurveRequest(url, data, successCallback) {
+    return $.ajax({
+        url: url,
+        type: 'post',
+        data: data
+    }).done((LCdata) => {
+        try {
+            console.log("LCdata:", LCdata);
+            let receive_LCdata = JSON.parse(LCdata);
+            
+            // 成功時のコールバック関数を実行
+            if (successCallback) {
+                successCallback(receive_LCdata);
+            }
+        } catch (error) {
+            console.error("Failed to load data.", error);
+
+			const underframe = window.parent.underframe.document.getElementById('undermessage'); 
+			underframe.innerText =  'Failed to get data. Please click another event.';
+        }
+    }).fail(() => {
+        console.log('failed');
+    });
+}
+
 // MARK: underLC表示
 // 画像上の[x, y](クリックした時に出てくる数字)を入力すると, svgタグで使うlight curveのpathが出力される
 async function polar2lightCurvePath(x, y, detail, diff) {
@@ -2041,6 +2108,8 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 
 	let sigmaMaxEvent = nCandidate2[sigmaMaxIndex][1];
 	let sigmaMaxTimeScale = sigmaMaxEvent.match(/\(([^,]+)/)[1]; // timescaleを取得
+	let sigMaxRa = nCandidate2[sigmaMaxIndex][2];
+	let sigMaxDec = nCandidate2[sigmaMaxIndex][3];
 
 	//最大の timescale を取得
 	let maxTimeScale = findLongestTimeScale(nCandidate2);
@@ -2060,9 +2129,15 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 				"energy"    : a[2],
 				"error" 	: a[3],
 				"star"      : a[4],	
-				"ra" 	   	: x,
-				"dec" 	    : y
+				// "ra" 	   	: x,
+				// "dec" 	    : y
+				"ra" 	   	: sigMaxRa,
+				"dec" 	    : sigMaxDec
 			   };
+
+	// グローバル変数に保存
+    window.currentSend = send;
+
 	console.log(send);
 
 	// mousePosition2polar(mousePositionObject);
@@ -2072,43 +2147,38 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 				'\nalpha2, delta2:', alpha2, ',', delta2,
 				'\nra, dec:', send.ra, ',', send.dec, 'PI:', send.energy);
 	
-	// サーバーとのajax通信(非同期通信)
-	$.ajax({
-		url: '/cgi-bin/make_LCdata2.py', //どこへ
-		type: 'post',				   //どのように
-		data: send,					   //何を渡すのか
-		}).done((LCdata) => {   //受信が成功した時の処理
-			try {
-				console.log("LCdata:", LCdata);
-				let receive_LCdata = JSON.parse(LCdata);
-				window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
-				// document.getElementById("popupLC").style.visibility = "hidden"; //popupの画像を非表示に
-			  } catch (error) {
-				console.error("Failed to load data.", error);
+	//MARK:サーバーとのajax通信(非同期通信)
+	// $.ajax({
+	// 	url: '/cgi-bin/make_LCdata2.py', //どこへ
+	// 	// url: '/cgi-bin/make_LCdata2v6tmp.py', //popuuLCとunderLCの比較用
+	// 	type: 'post',				   //どのように
+	// 	data: send,					   //何を渡すのか
+	// 	}).done((LCdata) => {   //受信が成功した時の処理
+	// 		try {
+	// 			console.log("LCdata:", LCdata);
+	// 			let receive_LCdata = JSON.parse(LCdata);
+	// 			window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+	// 			// document.getElementById("popupLC").style.visibility = "hidden"; //popupの画像を非表示に
+	// 		  } catch (error) {
+	// 			console.error("Failed to load data.", error);
 
-				const underframe = window.parent.underframe.document.getElementById('undermessage'); 
-				underframe.innerText =  'Failed to get data. Please click another event.';
-			  }
-		}).fail(() => {
-			console.log('failed');
-		});
+	// 			const underframe = window.parent.underframe.document.getElementById('undermessage'); 
+	// 			underframe.innerText =  'Failed to get data. Please click another event.';
+	// 		  }
+	// 	}).fail(() => {
+	// 		console.log('failed');
+	// 	});
+	// データを送信し、成功したら光度曲線を表示する
+	sendLightCurveRequest(
+    	'/cgi-bin/make_LCdata2.py',
+    	send,
+    	(receive_LCdata) => { 
+    	    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+    	}
+	);
 
-		showUnderFrame();
-
-		// underframeを取得
-		let underframe = document.createElement('div');
-		underframe.id = 'undermessage';
-		window.parent.underframe.document.body.appendChild(underframe);
-
-		// 光度曲線が作成されるまでの間に表示される文字の設定
-		underframe.innerText = 'waiting...'; // テキストを設定
-		underframe.style.color = 'white'; // 文字色を白に設定
-		underframe.style.fontSize = '24px'; // フォントサイズを大きく設定
-		underframe.style.display = 'flex'; // フレックスボックスを使用
-		underframe.style.justifyContent = 'center'; // 水平方向に中央揃え
-		underframe.style.alignItems = 'center'; // 垂直方向に中央揃え
-		underframe.style.height = '100%'; // 高さを100%に設定
-		underframe.style.width = '100%'; // 幅を100%に設定
+	showUnderFrame(); // underframeを表示
+	showLoadingMessage('waiting...'); // ローディングメッセージを表示
 }
 
 //↑polar2~~を更に関数化させたい
@@ -2117,6 +2187,71 @@ async function makeLCpath()
 {
 	console.log(LC_array);
 }
+
+// MARK: 右クリックした時に表示される LightCurve (BG) を押した時に実行される関数
+async function mainPopLightCurveBG(){
+	// underframeのドキュメントを取得
+	const underframe = window.parent.underframe.document;
+	
+	// 既存のコンテンツをクリア
+	let divs = underframe.getElementsByTagName('div');
+	while (divs.length > 0) {
+		divs[0].remove();
+	}
+
+	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
+	// var test = getMouseXY(evt); // マウスの座標を取得
+	// console.log("tetst:", test);
+
+	var sendbg = { "dptc_zero" : gwTriGPS,
+				   "timescale" : "4orb",
+				   "energy"    : "High",
+				   "error"     : "",
+				   "star"      : "",
+				//    "ra"        : 180.0,
+				//    "dec"       : 0.0
+				//    "ra"        : 83.6, //crab位置
+    			//    "dec"       : 22
+				   "ra"        : 194.7, //イベントのない適当な位置
+    			   "dec"       : 19.6
+			   	};
+
+	// //MARK:サーバーとのajax通信(非同期通信)
+	// $.ajax({
+	// 	// url: '/cgi-bin/make_LCdata2.py', //どこへ
+	// 	// url: '/cgi-bin/make_LCdata2v6tmp.py', //popuuLCとunderLCの比較用
+	// 	url: '/cgi-bin/make_LCdataBG.py', //BGを考慮したcgi
+	// 	type: 'post',				   //どのように
+	// 	data: sendbg,					   //何を渡すのか
+	// 	}).done((LCdata) => {   //受信が成功した時の処理
+	// 		try {
+	// 			console.log("LCdata:", LCdata);
+	// 			let receive_LCdata = JSON.parse(LCdata);
+	// 			window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, testarr);
+	// 			// document.getElementById("popupLC").style.visibility = "hidden"; //popupの画像を非表示に
+	// 		  } catch (error) {
+	// 			console.error("Failed to load data.", error);
+
+	// 			const underframe = window.parent.underframe.document.getElementById('undermessage'); 
+	// 			underframe.innerText =  'Failed to get data. Please click another event.';
+	// 		  }
+	// 	}).fail(() => {
+	// 		console.log('failed');
+	// 	});
+
+	// データを送信し、成功したら光度曲線を表示する
+	sendLightCurveRequest(
+	    '/cgi-bin/make_LCdataBG.py',
+	    sendbg,
+	    (receive_LCdata) => {
+	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, []);
+	    }
+	);
+
+	showUnderFrame();
+	showLoadingMessage('waiting...')	
+}
+
 
 // var send_data 	={aaaa : a};
 
