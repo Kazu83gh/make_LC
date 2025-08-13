@@ -9140,6 +9140,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						return c + (e / n) * s;
 					  };
 
+				//MARK:拡大機能
 				//光度曲線を削除した後、拡大した光度曲線を表示する関数
 				function child_remove() {
 					setTimeout(function () {
@@ -11004,27 +11005,28 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     									    divs[0].remove();
     									} 
 
-										// CGIに送るデータを取得
-										let send = window.parent.mainframe.currentSend; 
-
 								     	if (useBG) { //BG→通常
-											window.parent.mainframe.sendLightCurveRequest(
-												'/cgi-bin/make_LCdata2.py',
-												send,
-												(receive_LCdata) => {
-    											    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
-    											}
-											);
-											window.parent.mainframe.showLoadingMessage('waiting...');
+											useBG = 0;
+											createLC(pre_LCdata);
 										} else { //通常→BG
-											window.parent.mainframe.sendLightCurveRequest(
-												'/cgi-bin/make_LCdataBG.py',
-												send,
-												(receive_LCdata) => {
-    											    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
-    											}
-											);
-											window.parent.mainframe.showLoadingMessage('waiting...');
+											// BGデータが既に取得済みかチェック
+    										if (LCdata.BG && LCdata.BGErr) { // BGデータが存在する場合
+    										    useBG = 1;
+    										    createLC(pre_LCdata);
+											} else { // BGデータが存在しない場合
+												// CGIに送るデータを取得
+												let send = window.parent.mainframe.currentSend; 
+
+												window.parent.mainframe.sendLightCurveRequest(
+													'/cgi-bin/make_LCdataBG.py',
+													send,
+													(receive_LCdata) => {
+    												    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+    												}
+												);
+												
+												window.parent.mainframe.showLoadingMessage('waiting...');
+											}
 										} 
   								    }
   								  }, useBG ? "BG on" : "BG off")
