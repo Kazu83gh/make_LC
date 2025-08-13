@@ -120,8 +120,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	const all_LCdata = LCdata.All,
 		  high_LCdata = LCdata.High,
 	      med_LCdata = LCdata.Med,
-		  low_LCdata = LCdata.Low,
-		  comb_LCdata = [...LCdata.High, ...LCdata.Med, ...LCdata.Low];
+		  low_LCdata = LCdata.Low;
+	// const comb_LCdata = [...LCdata.High, ...LCdata.Med, ...LCdata.Low];
 	let convUTC_LCdata = LCdata.UTC,
 		bgArr = [],
 		bgErrArr = [];
@@ -140,7 +140,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 	console.log("High", high_LCdata);
     console.log("Med", med_LCdata);
 	console.log("Low", low_LCdata);
-	console.log("Comb", comb_LCdata);
+	// console.log("Comb", comb_LCdata);
 	console.log("UTC: ", convUTC_LCdata);
   
     // jsonデータの受け取り、変数に格納
@@ -180,73 +180,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		return dptc;
 	}
 
-	// [dptc, count, dptc, count, ...]の形から
-	// [[UNIX, count, √count], [UNIX, count, √count], ...]の形に変換する関数
-	// 十字の中心は0.5秒だけズレるので、0.5を足している 
-	// let Tolist = function (data) {
-	// 	let array = [];
-	// 	let array1 = [];
-
-	// 	for (let i = 1; i < data.length + 1; i++) {
-	// 		if (i % 2 != 0) {
-	// 			// let convertedValue = gps2unix(data[i - 1] - parseInt(dptcUnixDiff)) + 0.5;
-	// 			let convertedValue = gps2unix(data[i - 1] - dptcUnixDiff) + 0.5;
-	// 			array1.push(convertedValue);
-	// 			array1.push(data[i]);
-	// 			array1.push(Math.sqrt(data[i]));
-	// 		} else {
-	// 			array.push(array1);
-	// 			array1 = [];
-	// 		}
-	// 	}
-	// 	return array;
-	// };
-
 	//MARK: Tolist関数
-	let Tolist = function (data) {
+	function Tolist(data){
 		let array = [];
 		let array1 = [];
 		let gapcnt = 0;
 		let ebIndex = energyBandIndex[selectedEnergyBand];
 
-		// for (let i = 1; i < data.length + 1; i++) {
-		// 	if (i % 2 != 0) {
-		// 		// let convertedValue = gps2unix(data[i - 1] - parseInt(dptcUnixDiff)) + 0.5;
-		// 		let convertedValue = gps2unix(data[i - 1] - dptcUnixDiff) + 0.5;
-		// 		let cnt = data[i];
-		// 		let err = Math.sqrt(data[i]);
-
-		// 		if (i > 1) {
-    	// 			let gap = data[i - 1] - data[i - 3];
-    	// 			if (gap > 800) { 
-    	// 			    gapcnt += 1;
-    	// 			}
-				
-    	// 			if (useBG) { //BG処理
-    	// 			    let ebIndex = energyBandIndex[selectedEnergyBand];
-					
-    	// 			    if (gap > 1 && gap <= 800) {
-    	// 			        // 0カウントの部分のデータを追加
-    	// 			        for (let missingDptc = data[i - 3] + 1; missingDptc < data[i - 1]; missingDptc++) {
-    	// 			            let missingConvertedValue = gps2unix(missingDptc - dptcUnixDiff) + 0.5;
-    	// 			            let missingArray = [missingConvertedValue, -bgArr[ebIndex][gapcnt], 1 + bgErrArr[ebIndex][gapcnt]];
-    	// 			            array.push(missingArray);
-    	// 			        }
-    	// 			    }
-					
-    	// 			    cnt = data[i] - bgArr[ebIndex][gapcnt];
-    	// 			    err = Math.sqrt(data[i] + bgErrArr[ebIndex][gapcnt]);
-    	// 			}
-		// 		}				
-
-		// 		array1.push(convertedValue);
-		// 		array1.push(cnt);
-		// 		array1.push(err);
-		// 	} else {
-		// 		array.push(array1);
-		// 		array1 = [];
-		// 	}
-		// }
 		for (let i = 1; i < data.length + 1; i++) {
 			if (i % 2 != 0) {
 				if (i > 1) {
@@ -254,19 +194,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     				if (gap > 800) { 
     				    gapcnt += 1;
     				}
-
 					if (gap > 1 && gap <= 800) { // 0カウントの部分のデータを追加
 						if (useBG) { //BG処理
     				    	for (let missingDptc = data[i - 3] + 1; missingDptc < data[i - 1]; missingDptc++) {
     				    	    let missingConvertedValue = gps2unix(missingDptc - dptcUnixDiff) + 0.5;
     				    	    let missingArray = [missingConvertedValue, -bgArr[ebIndex][gapcnt], 1 + bgErrArr[ebIndex][gapcnt]];
-    				    	    array.push(missingArray);
+    				    	    
+								array.push(missingArray);
     				    	}
 						} else { //通常処理
 							for (let missingDptc = data[i - 3] + 1; missingDptc < data[i - 1]; missingDptc++) {
 								let missingConvertedValue = gps2unix(missingDptc - dptcUnixDiff) + 0.5;
     				    		let missingArray = [missingConvertedValue, 0, 1];
-    				    		array.push(missingArray);
+    				    		
+								array.push(missingArray);
 							}
     					}
 					}
@@ -281,7 +222,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     			    cnt = data[i] - bgArr[ebIndex][gapcnt];
     			    err = Math.sqrt(data[i] + bgErrArr[ebIndex][gapcnt]);
     			}
-							
+
 				array1.push(convertedValue);
 				array1.push(cnt);
 				array1.push(err);
@@ -386,8 +327,24 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     // dict_LCdataをもとに光度曲線の描画
     function createLC(dptc_count_data) {
     	//console.log(dptc_count_data); 
-		dict_LCdata = Tolist(dptc_count_data); 
-		console.log(Tolist(dptc_count_data));
+		// dict_LCdata = Tolist(dptc_count_data); 
+		// "ALL" を選択肢した時だけ違う処理
+		if (selectedEnergyBand === "multiColor") {
+			selectedEnergyBand = "High";
+			let highDict = Tolist(high_LCdata);
+
+			selectedEnergyBand = "Med";
+			let medDict = Tolist(med_LCdata);
+
+			selectedEnergyBand = "Low";
+			let lowDict = Tolist(low_LCdata);
+
+			selectedEnergyBand = "multiColor";
+			dict_LCdata = [...highDict, ...medDict, ...lowDict];
+		} else {
+			dict_LCdata = Tolist(dptc_count_data); 
+		}
+		// console.log(Tolist(dptc_count_data));
     	graph_data = graph_Summarize(dict_LCdata);
 		// console.log(graph_Summarize(dict_LCdata));
 		//console.log("GPSとdptcの差:" + dptcUnixDiff);
@@ -11024,7 +10981,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
     												    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
     												}
 												);
-												
+
 												window.parent.mainframe.showLoadingMessage('waiting...');
 											}
 										} 
@@ -11072,7 +11029,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                                 pre_LCdata = low_LCdata;
                                                 break;
 											  case "multiColor":
-											  	pre_LCdata = comb_LCdata;
+											  	// pre_LCdata = comb_LCdata;
+												pre_LCdata = [];
 											  	break;
                                               default:
                                                 // デフォルトの処理
