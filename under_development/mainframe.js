@@ -53,9 +53,11 @@ var showPopStates = 1; //0:右クリックでpopを出している時  1:出し�
 //gwiv_0.9
 var alpha2,delta2;
 var candidateType;
+
 var candidateData,candidateData2, candidateData3, candidateData4;
 var nCandidate,nCandidate2;
 var nCandidate2_tri, nCandidate2_mail;
+var migiClickRa, migiClickDec; //右クリックした時の位置(ra,dec)を格納する変数
 window.currentSend = null;
 
 const priorities = { // timescale の優先順位を定義
@@ -2188,8 +2190,8 @@ async function makeLCpath()
 	console.log(LC_array);
 }
 
-// MARK: 右クリックした時に表示される LightCurve (BG) を押した時に実行される関数
-async function mainPopLightCurveBG(){
+// MARK: 右クリックした時に表示される LightCurve を押した時に実行される関数
+async function mainPopLightCurve(){
 	// underframeのドキュメントを取得
 	const underframe = window.parent.underframe.document;
 	
@@ -2200,49 +2202,31 @@ async function mainPopLightCurveBG(){
 	}
 
 	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
-	// var test = getMouseXY(evt); // マウスの座標を取得
-	// console.log("tetst:", test);
+	// console.log("migiClickRa:", migiClickRa);
+	// console.log("migiClickDec:", migiClickDec);
 
-	var sendbg = { "dptc_zero" : gwTriGPS,
+	var send2 = { "dptc_zero" : gwTriGPS,
 				   "timescale" : "4orb",
 				   "energy"    : "High",
 				   "error"     : "",
 				   "star"      : "",
+				   "ra"        : migiClickRa, //イベントのない適当な位置
+    			   "dec"       : migiClickDec
 				//    "ra"        : 180.0,
 				//    "dec"       : 0.0
 				//    "ra"        : 83.6, //crab位置
     			//    "dec"       : 22
-				   "ra"        : 194.7, //イベントのない適当な位置
-    			   "dec"       : 19.6
+				//    "ra"        : 194.7, //イベントのない適当な位置
+    			//    "dec"       : 19.6
 			   	};
 
-	// //MARK:サーバーとのajax通信(非同期通信)
-	// $.ajax({
-	// 	// url: '/cgi-bin/make_LCdata2.py', //どこへ
-	// 	// url: '/cgi-bin/make_LCdata2v6tmp.py', //popuuLCとunderLCの比較用
-	// 	url: '/cgi-bin/make_LCdataBG.py', //BGを考慮したcgi
-	// 	type: 'post',				   //どのように
-	// 	data: sendbg,					   //何を渡すのか
-	// 	}).done((LCdata) => {   //受信が成功した時の処理
-	// 		try {
-	// 			console.log("LCdata:", LCdata);
-	// 			let receive_LCdata = JSON.parse(LCdata);
-	// 			window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, testarr);
-	// 			// document.getElementById("popupLC").style.visibility = "hidden"; //popupの画像を非表示に
-	// 		  } catch (error) {
-	// 			console.error("Failed to load data.", error);
-
-	// 			const underframe = window.parent.underframe.document.getElementById('undermessage'); 
-	// 			underframe.innerText =  'Failed to get data. Please click another event.';
-	// 		  }
-	// 	}).fail(() => {
-	// 		console.log('failed');
-	// 	});
+	console.log(send2);
 
 	// データを送信し、成功したら光度曲線を表示する
 	sendLightCurveRequest(
-	    '/cgi-bin/make_LCdataBG.py',
-	    sendbg,
+		'/cgi-bin/make_LCdata2.py',
+	    // '/cgi-bin/make_LCdataBG.py',
+	    send2,
 	    (receive_LCdata) => {
 	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, []);
 	    }
