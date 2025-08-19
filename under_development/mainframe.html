@@ -82,8 +82,10 @@
         position: absolute;
         top: 0;
         left: 0;
-        width: 180;
-        height: 90;
+        /* width: 200;
+        height: 150; */
+        width: 200;
+        height: 175;
         z-index: 5;
         background-color: snow;
         visibility: hidden;
@@ -120,16 +122,20 @@
 <div id="mainPop" class="contextMenu" style="position:absolute; visibility:hidden; cursor:pointer; z-index:6;">
     <table border=1 cellspacing=0 cellpadding=3 valign="center" bordercolor="green" bgcolor="gray" width=150>
         <tr><td>Team members only</td></tr>
-        <tr><td onClick="makeFlashReport('./f_report.html', 'Flash Menu', 400, 300); return false; " onMouseOver="setColor(this, true)" onMouseOut="setColor(this, false)">
-            <font size="-1" >Flash Report</font>
-        </td></tr>
-          
         <tr><td onClick="makeFlashReport('./db_access.html', 'DBmenu', 550, 580); return false;" onMouseOver="setColor(this, true)" onMouseOut="setColor(this, false)" >
             <font size="-1" >Photon Image</font>
         </td></tr>
 
+        <tr><td onClick="mainPopLightCurve()" onMouseOver="setColor(this, true)" onMouseOut="setColor(this, false)" >
+            <font size="-1" >Light Curve</font>
+        </td></tr>
+
         <tr><td onClick="makeFlashReport(nCandidate2[0][4], 'DBmenu', 1000, 800); return false;" onMouseOver="setColor(this, true)" onMouseOut="setColor(this, false)" >
             <font size="-1" >Triggered Event (FR)</font>
+        </td></tr>
+
+        <tr><td onClick="makeFlashReport('./f_report.html', 'Flash Menu', 400, 300); return false; " onMouseOver="setColor(this, true)" onMouseOut="setColor(this, false)">
+            <font size="-1" >Flash Report</font>
         </td></tr>
           
         <tr><td onClick="hidariClick()" onMouseOver="setColor(this, true)" onMouseOut="setColor(this, false)">
