@@ -99,7 +99,7 @@ var scale = 1;
 var orgWidth = 1920; //全天画像の横幅(ここで設定するのではなく、自動で取得できるようになるとベスト)
 var orgHeight = 1015; //image1のオリジナルの高さ
 var imagesize = "fit";
-var gapImgHeight = 18; //image1とerrorImageの高さの差(9は初期値)
+var gapImgHeight = 18; //image1とerrorImageの高さの差(18は初期値)
 const gapOrgHeight = 18; //image1とerrorImageの高さの差
 
 
@@ -117,11 +117,12 @@ var asNS2_1o_csv, asNS2_4o_csv, asNS2_1d_csv;
 var mailNS1_1o_csv, mailNS1_4o_csv, mailNS1_1d_csv;
 var mailNS2_1o_csv, mailNS2_4o_csv, mailNS2_1d_csv;
 
-
+//K.Takagi 20250901
+var probanaArray = [];
 
 /*****************************************************/
 /* 関数の定義 */
-
+//MARK: firstLoad()
 function firstLoad(){ //サイトが開かれた際の処理
 
     dirListGet();
@@ -140,6 +141,11 @@ function firstLoad(){ //サイトが開かれた際の処理
     timer4 = setTimeout("loadFinish('i')",2500); //準備が完了したことを画面に反映する関数を呼び出す
 
     setTimeout(detailsmap, 2500);
+
+    // K.Takagi 20250901
+    setTimeout("highprob()", 2500);
+    setTimeout("parent.mainframe.firstLC(probanaArray[5][0], probanaArray[5][1])", 3000);
+    setTimeout("parent.mainframe.moveMarkerToRaDec(probanaArray[5][0], probanaArray[5][1])", 3000);
 }
 
 function secondLoad(){ //画像タイプ、エネルギー、エラー領域を変更したときに、それぞれの関数から呼び出される
@@ -171,6 +177,10 @@ function thirdLoad(){  //追加,event/test切替時呼び出し
     setTimeout("create_triggerbox('i')",1200);
     setTimeout("loadFinish('i')",2500);
 
+    // K.Takagi 20250901
+    setTimeout("highprob()", 2500);
+    setTimeout("parent.mainframe.firstLC(probanaArray[5][0], probanaArray[5][1])", 3000);
+    setTimeout("parent.mainframe.moveMarkerToRaDec(probanaArray[5][0], probanaArray[5][1])", 3000);
 }
 
 function dirListGet(){ //ajaxでディレクトリ名のテキストファイルを取得する
@@ -1131,7 +1141,7 @@ function create_triggerbox(init){ //トリガーマップのセレクトボッ�
     document.getElementById("error").value = useArea;
 }
 
-
+//MARK:change_dir
 function change_dir(value){ //イベントが切り替えられた際の処理
 
     delArray();
@@ -1163,10 +1173,59 @@ function change_dir(value){ //イベントが切り替えられた際の処理
     setTimeout(detailsmap, 1500);
     setTimeout(parent.detailsframe.fit, 1600);
     setTimeout("get_csvfile('i')",500);
+    // K.Takagi 20250901
+    setTimeout("highprob()", 2500);
+    setTimeout("parent.mainframe.firstLC(probanaArray[5][0], probanaArray[5][1])", 3000);
+    setTimeout("parent.mainframe.moveMarkerToRaDec(probanaArray[5][0], probanaArray[5][1])", 3000);
+}
+
+//追加　K.Takagi 20250901
+//MARK:highprob()
+function highprob(){
+    console.log("csvfile:" + dirUrl + dirName + '/' + dirName + '_probana.csv');
+    
+    // CSVファイルの中身を取得する処理
+    var probanaAjax = new XMLHttpRequest();
+    var csvUrl = dirUrl + dirName + '/' + dirName + '_probana.csv';
+    
+    probanaAjax.onreadystatechange = function() {
+        if (probanaAjax.readyState == 4) {
+            if (probanaAjax.status == 200) {
+                // CSVファイルの取得に成功
+                var csvData = probanaAjax.responseText;
+                probanaArray = [];
+                var csvLines = csvData.split('\n');
+
+                for (var i = 0; i < csvLines.length; i++) {
+                    if (csvLines[i].trim() !== '') { // 空行を除く
+                        var columns = csvLines[i].split(',');
+                        // 各カラムの前後の空白を除去
+                        for (var j = 0; j < columns.length; j++) {
+                            columns[j] = columns[j].trim();
+                        }
+                        probanaArray.push(columns);
+                    }
+                }
+
+                console.log(probanaArray);
+            }
+
+        } else {
+            // CSVファイルの取得に失敗
+            console.log('Failed to load probana.csv: ' + probanaAjax.status);
+            console.log('URL: ' + csvUrl);
+            probanaArray = [];
+            parent.mainframe.hideUnderFrame();
+        }
+    }
+    
+    probanaAjax.open("GET", csvUrl, true);
+    probanaAjax.send(null);
+
 
 }
 
-function change_energy(value){ //エネルギーバンドが切り替えられた際の処理
+function change_energy(value){ //エネルギーバンドが切り替えられたの処理
 
     delArray();
     energy = value;
@@ -1567,13 +1626,13 @@ function widthSet(){
 function heightSet(){
     // heightに合わせてリサイズする
     if(scale == 1){
-	parent.mainframe.document.getElementById("image1").style.width = Math.floor(imgWidth / heightRate);
-	parent.mainframe.document.getElementById("image1").style.height = winHeight;
-    gapImgHeight = Math.round(gapImgHeight / heightRate);
+	    parent.mainframe.document.getElementById("image1").style.width = Math.floor(imgWidth / heightRate);
+	    parent.mainframe.document.getElementById("image1").style.height = winHeight;
+        gapImgHeight = Math.round(gapImgHeight / heightRate);
     } else if(scale == 2){
-	parent.mainframe.document.getElementById("image1").style.width = 2 * Math.floor(imgWidth / heightRate);
-	parent.mainframe.document.getElementById("image1").style.height = 2 * winHeight;
-    gapImgHeight = 2 * Math.round(gapImgHeight / heightRate);
+	    parent.mainframe.document.getElementById("image1").style.width = 2 * Math.floor(imgWidth / heightRate);
+	    parent.mainframe.document.getElementById("image1").style.height = 2 * winHeight;
+        gapImgHeight = 2 * Math.round(gapImgHeight / heightRate);
     }
   
 }
@@ -1713,7 +1772,7 @@ function popupXaxis(){ // popupXaxis が押された際の処理
 function popupYaxis(){ // popupYaxis が押された際の処理
 	curButton = document.getElementById("popupYaxis");
     if(curButton.value == "count"){
-		curButton.value = "count / sec";
+		curButton.value = "mCrab";
 		curButton.style.backgroundColor = "gainsboro";
 	} else {
 		curButton.value = "count";
@@ -1754,6 +1813,37 @@ function sarchPointG()
 	}else{
 		parent.mainframe.alert("InputError\nl : 0.0 ~ 359.9\nb : -90.0 ~ 90.0");
 	}
+}
+
+// 20250718 K.Takagi
+function sarchPointAuto()
+{
+    // 赤道座標系の値を取得
+    var alphaValue = parent.leftframe.document.getElementById("resultAlpha").value;
+    var deltaValue = parent.leftframe.document.getElementById("resultDelta").value;
+    
+    // 銀河座標系の値を取得
+    var gkValue = parent.leftframe.document.getElementById("resultgk").value;
+    var giValue = parent.leftframe.document.getElementById("resultgi").value;
+    
+    // 値が入力されているかチェック（空文字列、undefined、null、×でない）
+    // var hasEquatorial = alphaValue && alphaValue.trim() !== "" && deltaValue && deltaValue.trim() !== "";
+    // var hasGalactic = gkValue && gkValue.trim() !== "" && giValue && giValue.trim() !== "";
+    var hasEquatorial = alphaValue && alphaValue.trim() !== "" && alphaValue.trim() !== "×" && 
+                        deltaValue && deltaValue.trim() !== "" && deltaValue.trim() !== "×";
+    var hasGalactic = gkValue && gkValue.trim() !== "" && gkValue.trim() !== "×" && 
+                      giValue && giValue.trim() !== "" && giValue.trim() !== "×";
+    
+    if (hasEquatorial) {
+        // 赤道座標系の値がある場合、sarchPointE()を実行
+        sarchPointE();
+    } else if (hasGalactic) {
+        // 銀河座標系の値がある場合、sarchPointG()を実行
+        sarchPointG();
+    } else {
+        // どちらにも値がない場合
+        parent.mainframe.alert("InputError\nPlease enter coordinate values");
+    }
 }
 
 function jnamesearch()
