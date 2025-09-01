@@ -2172,7 +2172,8 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 	// 	});
 	// データを送信し、成功したら光度曲線を表示する
 	sendLightCurveRequest(
-    	'/cgi-bin/make_LCdata2.py',
+    	// '/cgi-bin/make_LCdata2.py',
+		'/cgi-bin/make_LCdataBG.py',
     	send,
     	(receive_LCdata) => { 
     	    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
@@ -2210,7 +2211,7 @@ async function mainPopLightCurve(){
 				   "energy"    : "High",
 				   "error"     : "",
 				   "star"      : "",
-				   "ra"        : migiClickRa, //イベントのない適当な位置
+				   "ra"        : migiClickRa,
     			   "dec"       : migiClickDec
 				//    "ra"        : 180.0,
 				//    "dec"       : 0.0
@@ -2224,8 +2225,8 @@ async function mainPopLightCurve(){
 
 	// データを送信し、成功したら光度曲線を表示する
 	sendLightCurveRequest(
-		'/cgi-bin/make_LCdata2.py',
-	    // '/cgi-bin/make_LCdataBG.py',
+		// '/cgi-bin/make_LCdata2.py',
+	    '/cgi-bin/make_LCdataBG.py',
 	    send2,
 	    (receive_LCdata) => {
 	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, []);
@@ -2236,6 +2237,77 @@ async function mainPopLightCurve(){
 	showLoadingMessage('waiting...')	
 }
 
+// ra, decを指定してマーカーを移動する関数
+function moveMarkerToRaDec(ra, dec) {
+    // 座標を設定
+    alpha = parseFloat(ra);
+    delta = parseFloat(dec);
+    ePhi = alpha;
+    eTheta = delta;
+    
+    // 座標が有効範囲内かチェック
+    if (ra >= 0 && ra < 360 && dec >= -90 && dec <= 90) {
+        pointSta = 1;
+        
+        // 座標変換処理
+        polar2cart("e");
+        equ2gal(); 
+        cart2polar("e");
+        
+        // モルワイデ図法での座標計算
+        polar2mollwide();
+        
+        // 画像サイズを取得してマーカー位置を計算
+        getImgStatus();
+        setMarkscal();
+        
+        // マーカーを移動
+        markerDisp(IX, IY, "y");
+        
+        console.log('Marker moved to RA=' + ra + ', Dec=' + dec);
+        
+    } else {
+        console.log("Invalid coordinates: RA=" + ra + ", Dec=" + dec);
+    }
+}
+
+// MARK: 右クリックした時に表示される LightCurve を押した時に実行される関数
+async function firstLC(ra, dec){
+	// underframeのドキュメントを取得
+	const underframe = window.parent.underframe.document;
+	
+	// 既存のコンテンツをクリア
+	let divs = underframe.getElementsByTagName('div');
+	while (divs.length > 0) {
+		divs[0].remove();
+	}
+
+	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
+
+	var send2 = { "dptc_zero" : gwTriGPS,
+				   "timescale" : "4orb",
+				   "energy"    : "High",
+				   "error"     : "",
+				   "star"      : "",
+				   "ra"        : ra,
+    			   "dec"       : dec
+			   	};
+
+	console.log(send2);
+
+	// データを送信し、成功したら光度曲線を表示する
+	sendLightCurveRequest(
+		// '/cgi-bin/make_LCdata2.py',
+	    '/cgi-bin/make_LCdataBG.py',
+	    send2,
+	    (receive_LCdata) => {
+	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, []);
+	    }
+	);
+
+	showUnderFrame();
+	showLoadingMessage('waiting...')	
+}
 
 // var send_data 	={aaaa : a};
 
