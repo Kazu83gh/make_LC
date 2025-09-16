@@ -2191,7 +2191,8 @@ async function makeLCpath()
 	console.log(LC_array);
 }
 
-// MARK: 右クリックした時に表示される LightCurve を押した時に実行される関数
+// 右クリックした時に表示される LightCurve を押した時に実行される関数
+// MARK: mainPopLightCurve関数
 async function mainPopLightCurve(){
 	// underframeのドキュメントを取得
 	const underframe = window.parent.underframe.document;
@@ -2271,42 +2272,81 @@ function moveMarkerToRaDec(ra, dec) {
     }
 }
 
-// MARK: 右クリックした時に表示される LightCurve を押した時に実行される関数
-async function firstLC(ra, dec){
+// MARK: firstLc関数
+async function firstLC(){
 	// underframeのドキュメントを取得
 	const underframe = window.parent.underframe.document;
 	
-	// 既存のコンテンツをクリア
+	// 既存のコンテンツを削除
 	let divs = underframe.getElementsByTagName('div');
 	while (divs.length > 0) {
 		divs[0].remove();
 	}
 
-	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
+	let probanaAjax = new XMLHttpRequest();
+	let dirUrl  = window.parent.leftframe.dirUrl; // leftframeのdirUrlを取得
+	let dirName = window.parent.leftframe.dirName; // leftframeのdirNameを取得
+	let csvUrl = dirUrl + dirName + '/' + dirName + '_probana.csv';
+	console.log("csvfile:", csvUrl);
 
-	var send2 = { "dptc_zero" : gwTriGPS,
+	probanaAjax.onreadystatechange = function() {
+	    if (probanaAjax.readyState == 4) {
+	        if (probanaAjax.status == 200) {
+	            // CSVファイルの取得に成功
+	            let csvData = probanaAjax.responseText;
+	            probanaArray = [];
+	            let csvLines = csvData.split('\n');
+
+	            for (let i = 0; i < csvLines.length; i++) {
+	                if (csvLines[i].trim() !== '') { // 空行を除く
+	                    let columns = csvLines[i].split(',');
+	                    // 各カラムの前後の空白を除去
+	                    for (let j = 0; j < columns.length; j++) {
+	                        columns[j] = columns[j].trim();
+	                    }
+	                    probanaArray.push(columns);
+	                }
+	            }
+
+				console.log("ファイルの中身:", probanaArray);
+				showUnderFrame();
+
+				let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
+				let send2 = { "dptc_zero" : gwTriGPS,
 				   "timescale" : "4orb",
 				   "energy"    : "High",
 				   "error"     : "",
 				   "star"      : "",
-				   "ra"        : ra,
-    			   "dec"       : dec
+				   "ra"        : probanaArray[5][0],
+    			   "dec"       : probanaArray[5][1]
 			   	};
 
-	console.log(send2);
+				console.log(send2);
 
-	// データを送信し、成功したら光度曲線を表示する
-	sendLightCurveRequest(
-		// '/cgi-bin/make_LCdata2.py',
-	    '/cgi-bin/make_LCdataBG.py',
-	    send2,
-	    (receive_LCdata) => {
-	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, []);
+				// データを送信し、成功したら光度曲線を表示する
+				sendLightCurveRequest(
+					// '/cgi-bin/make_LCdata2.py',
+				    '/cgi-bin/make_LCdataBG.py',
+				    send2,
+				    (receive_LCdata) => {
+				        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, []);
+				    }
+				);
+
+				moveMarkerToRaDec(probanaArray[5][0], probanaArray[5][1]); // マーカーを移動
+	        }
+	    } else {
+	        // CSVファイルの取得に失敗
+	        console.log('Failed to load probana.csv: ' + probanaAjax.status);
+	        console.log('URL: ' + csvUrl);
+	        probanaArray = [];
+	        parent.mainframe.hideUnderFrame();
 	    }
-	);
+	}
+	probanaAjax.open("GET", csvUrl, true);
+	probanaAjax.send(null);
 
-	showUnderFrame();
-	showLoadingMessage('waiting...')	
+	showLoadingMessage('waiting...')
 }
 
 // var send_data 	={aaaa : a};
