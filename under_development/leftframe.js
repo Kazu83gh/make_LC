@@ -139,13 +139,8 @@ function firstLoad(){ //サイトが開かれた際の処理
     setTimeout("create_errorbox('')",1200);
     setTimeout("create_triggerbox('')",1200);
     timer4 = setTimeout("loadFinish('i')",2500); //準備が完了したことを画面に反映する関数を呼び出す
-
     setTimeout(detailsmap, 2500);
-
-    // K.Takagi 20250901
-    setTimeout("highprob()", 2500);
-    setTimeout("parent.mainframe.firstLC(probanaArray[5][0], probanaArray[5][1])", 3000);
-    setTimeout("parent.mainframe.moveMarkerToRaDec(probanaArray[5][0], probanaArray[5][1])", 3000);
+    setTimeout("parent.mainframe.firstLC()", 3000); //K.Takagi 20250901 光度曲線の自動表示
 }
 
 function secondLoad(){ //画像タイプ、エネルギー、エラー領域を変更したときに、それぞれの関数から呼び出される
@@ -176,11 +171,7 @@ function thirdLoad(){  //追加,event/test切替時呼び出し
     setTimeout("create_errorbox('i')",1200);
     setTimeout("create_triggerbox('i')",1200);
     setTimeout("loadFinish('i')",2500);
-
-    // K.Takagi 20250901
-    setTimeout("highprob()", 2500);
-    setTimeout("parent.mainframe.firstLC(probanaArray[5][0], probanaArray[5][1])", 3000);
-    setTimeout("parent.mainframe.moveMarkerToRaDec(probanaArray[5][0], probanaArray[5][1])", 3000);
+    setTimeout("parent.mainframe.firstLC()", 3000); //K.Takagi 20250901 光度曲線の自動表示
 }
 
 function dirListGet(){ //ajaxでディレクトリ名のテキストファイルを取得する
@@ -1141,7 +1132,7 @@ function create_triggerbox(init){ //トリガーマップのセレクトボッ�
     document.getElementById("error").value = useArea;
 }
 
-//MARK:change_dir
+//MARK:change_dir関数
 function change_dir(value){ //イベントが切り替えられた際の処理
 
     delArray();
@@ -1174,55 +1165,7 @@ function change_dir(value){ //イベントが切り替えられた際の処理
     setTimeout(parent.detailsframe.fit, 1600);
     setTimeout("get_csvfile('i')",500);
     // K.Takagi 20250901
-    setTimeout("highprob()", 2500);
-    setTimeout("parent.mainframe.firstLC(probanaArray[5][0], probanaArray[5][1])", 3000);
-    setTimeout("parent.mainframe.moveMarkerToRaDec(probanaArray[5][0], probanaArray[5][1])", 3000);
-}
-
-//追加　K.Takagi 20250901
-//MARK:highprob()
-function highprob(){
-    console.log("csvfile:" + dirUrl + dirName + '/' + dirName + '_probana.csv');
-    
-    // CSVファイルの中身を取得する処理
-    var probanaAjax = new XMLHttpRequest();
-    var csvUrl = dirUrl + dirName + '/' + dirName + '_probana.csv';
-    
-    probanaAjax.onreadystatechange = function() {
-        if (probanaAjax.readyState == 4) {
-            if (probanaAjax.status == 200) {
-                // CSVファイルの取得に成功
-                var csvData = probanaAjax.responseText;
-                probanaArray = [];
-                var csvLines = csvData.split('\n');
-
-                for (var i = 0; i < csvLines.length; i++) {
-                    if (csvLines[i].trim() !== '') { // 空行を除く
-                        var columns = csvLines[i].split(',');
-                        // 各カラムの前後の空白を除去
-                        for (var j = 0; j < columns.length; j++) {
-                            columns[j] = columns[j].trim();
-                        }
-                        probanaArray.push(columns);
-                    }
-                }
-
-                console.log(probanaArray);
-            }
-
-        } else {
-            // CSVファイルの取得に失敗
-            console.log('Failed to load probana.csv: ' + probanaAjax.status);
-            console.log('URL: ' + csvUrl);
-            probanaArray = [];
-            parent.mainframe.hideUnderFrame();
-        }
-    }
-    
-    probanaAjax.open("GET", csvUrl, true);
-    probanaAjax.send(null);
-
-
+    setTimeout("parent.mainframe.firstLC()", 3000); //K.Takagi 20250901 光度曲線の自動表示
 }
 
 function change_energy(value){ //エネルギーバンドが切り替えられたの処理
