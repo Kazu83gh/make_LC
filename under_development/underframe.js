@@ -83,12 +83,13 @@ function gps2unix(gpsTime){
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // クリックした時に呼び出される関数
-function underframe_pro(LCdata, gwTriUnix, maxiTriArray){ 
+// MARK: underframe_pro関数
+function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
     // まず、underframe.htmlのdivタグを全て削除
-	let divs = document.getElementsByTagName('div');
-    while (divs.length > 0) {
-        divs[0].remove();
-    }
+	// let divs = document.getElementsByTagName('div');
+    // while (divs.length > 0) {
+    //     divs[0].remove();
+    // }
 	
     // 変数
 	let num = []
@@ -127,7 +128,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 		bgErrArr = [];
 	
 	if (LCdata.BG && LCdata.BGErr) { //BG情報がある時だけ更新
-		useBG = 1; //BG情報を使用するフラグを立てる
+		// useBG = 1; //BG情報を使用するフラグを立てる
     	bgArr = LCdata.BG;
 		bgErrArr = LCdata.BGErr;
 		console.log("bgArr: ", bgArr);
@@ -303,6 +304,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
 	// 光度曲線のデフォルトの表示範囲を設定(横軸)
 	const dict_AllLCdata = Tolist(all_LCdata);
+	// const highDict = Tolist(high_LCdata);
+	// const medDict = Tolist(med_LCdata);
+	// const lowDict = Tolist(low_LCdata);
+
 	startAllRange = dict_AllLCdata[0][0] - 3600;
 	endAllRange = dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600;
 	
@@ -326,8 +331,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 
     // dict_LCdataをもとに光度曲線の描画
     function createLC(dptc_count_data) {
-    	//console.log(dptc_count_data); 
-		// dict_LCdata = Tolist(dptc_count_data); 
 		// "ALL" を選択肢した時だけ違う処理
 		if (selectedEnergyBand === "multiColor") {
 			selectedEnergyBand = "High";
@@ -340,14 +343,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 			let lowDict = Tolist(low_LCdata);
 
 			selectedEnergyBand = "multiColor";
+
 			dict_LCdata = [...highDict, ...medDict, ...lowDict];
-		} else {
-			dict_LCdata = Tolist(dptc_count_data); 
+			zoomData = zoomAlldata;
+		} else { //その他のエネルギーバンドを選択した時
+			dict_LCdata = Tolist(dptc_count_data);
+			zoomData = zoomArray(graph_Summarize(dict_LCdata));
 		}
-		// console.log(Tolist(dptc_count_data));
-    	graph_data = graph_Summarize(dict_LCdata);
-		// console.log(graph_Summarize(dict_LCdata));
-		//console.log("GPSとdptcの差:" + dptcUnixDiff);
+    	// graph_data = graph_Summarize(dict_LCdata);
 
 		//dict_LCdataをもとに光度曲線の描画
     	ParcelRequire = (function (e, r, t, n) {
@@ -8047,6 +8050,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  (e.blue = "#169fff"),
 					  (e.yellow = "#ffff00"),
 					  (e.orange = "#ff8c00"),
+					  (e.gray = "#808080"),
 					  (e.lightblue = "#71c5e8");
 					})((p = exports.Color || (exports.Color = {}))),
 					// バンドごとに光度曲線の色を設定
@@ -8620,13 +8624,16 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					  return e(this, function (e) {
 						// MARK:光度曲線のデータを作成
 						while (dataNum !== r.length) {
-							for (let i = 0; i < zoomAlldata.length - 1; i += 2) {
-								let startBin = zoomAlldata[i] - 0.5;
-								let endBin = zoomAlldata[i + 1] + 0.5;
+							for (let i = 0; i < zoomData.length - 1; i += 2) {
+								// let startBin = zoomData[i] - 0.5;
+								// let endBin = zoomData[i + 1] + 0.5;
+								//データの取りこぼしがないように10秒前から10秒後まで
+								let startBin = zoomData[i] - 10.5;
+								let endBin = zoomData[i + 1] + 10.5;
 
 								// startBin ~ endBinの範囲外のデータはスキップ
     							while (dataNum < r.length && r[dataNum][0] < startBin) {
-									console.error("skip::dataNum", dataNum, "r.length", r.length);
+									console.error("skip::dataNum", dataNum, ", r.length", r.length);
     							    dataNum++;
     							}
 								
@@ -9141,7 +9148,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 							//ダブルクリックのときの処理
                         	if (clickCount === 2) {
 								if (zoomJudge(m(i.x)) && target_id && !shift_on) {
-									const differences = zoomAlldata.map(value => ({
+									const differences = zoomData.map(value => ({
 										value: value,
 										difference: Math.abs(m(i.x) - value)
 									}));
@@ -9297,7 +9304,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  "./nearest": "YORH",
 				},
 			  ],
-			  //目盛りなどのスケールの設定
+			  //MARK:目盛りのスケールの取得
 			  CKjx: [
 				function (require, module, exports) {
 				  "use strict";
@@ -9314,7 +9321,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						c = n * Math.ceil(e / n);
 					  return {
 						step: u,
-						stepOffset: Math.floor((c - M) / l),
+						// stepOffset: Math.floor((c - M) / l),
+						stepOffset: Math.round((c - M) / l),
 						subScale: l,
 						firstSub: M,
 						mainScale: n,
@@ -9328,7 +9336,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  "@maxi-js/number-tools": "1evX",
 				},
 			  ],
-			  // 下横軸の目盛りの設定
+			  // MARK:目盛りの取得
 			  "+xmN": [
 				function (require, module, exports) {
 				  "use strict";
@@ -9369,7 +9377,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 				  "@maxi-js/date-tools": "LNvY",
 				},
 			  ],
-			  //縦目盛りの作成、設定
+			  //MARK:縦目盛りの作成、設定
 			  ebhF: [
 				function (require, module, exports) {
 				  "use strict";
@@ -9383,6 +9391,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					var a = n.min,
 					  	c = n.max,
 					  	o = n.left,
+						ri = n.right,
 					  	l = n.bottom,
 					  	s = n.height,
 					  	//u = t.getTicks(a, c, s / 100);
@@ -9415,11 +9424,21 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 						  stroke: i.Color.white,
 						}),
 					  ];
+					d.push(
+						e.createElement("path", {
+							d: "M" + o + "," + k(0) + " H" + ri,
+							stroke: i.Color.gray,
+						}),
+					);
 					return (
 					  //縦の目盛りの値を入力
 					  u.main.forEach(function (t, r) {
-						if (Number.isInteger(t)) { // tが整数の場合のみ処理を行う
-							//console.log(t); //目盛りの値
+						// 配列内の全ての要素が整数かどうかをチェック
+						var isAllInteger = u.main.every(function(value) {
+							return Number.isInteger(value);
+						});
+
+						if (isAllInteger) { //全て整数であれば、整数表示
 							d.push(
 								e.createElement(
 									"text",
@@ -9431,11 +9450,25 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 										dominantBaseline: "middle",
 										textAnchor: "end",
 									},
-									//t.toFixed(f)
 									t.toFixed(0) //整数表示
 								)
 							);
-						}
+						} else { //小数があれば、小数以下も表示
+							d.push(
+								e.createElement(
+									"text",
+									{
+										key: "yLabel-" + r,
+										x: o - 4,
+										y: k(t),
+										fill: i.Color.white,
+										dominantBaseline: "middle",
+										textAnchor: "end",
+									},
+									t.toFixed(f)
+								)
+							);
+						} 
 					  }),
 					  e.createElement("g", {
 						children: d,
@@ -10867,17 +10900,37 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								null,
 								n.createElement(
 								  "li",
-								  null,
+								//   null,
+								  {
+								    style: {
+								    	display: "flex",
+								      	justifyContent: "space-between",
+								      	alignItems: "center",
+								      	width: "100%",
+										position: "relative"
+								    }
+								  },
+								  n.createElement(
+    								"div",
+    								{
+    								  style: {
+    								    display: "flex",
+    								    alignItems: "center",
+    								    gap: "5px",
+    								  }
+    								},
 								  n.createElement(
 									"label",
 									{
 									  htmlFor: o.URLParameterKey.binSize,
-                                      style: {color: "white"},
+                                      style: {
+										color: "white",
+									  },
 									},
 									"Bin size: "
 								  ),
-								//MARK:Bin sizeの入力
-								//bin sizeの入力
+								  //MARK:Bin sizeの入力
+								  //bin sizeの入力
 								  n.createElement("input", {
 									id: o.URLParameterKey.binSize,
 									type: "number",
@@ -10937,30 +10990,53 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 								  n.createElement(
                                     "label", 
                                     {
-                                      style: {color: "white"}
+                                      style: {color: "white"},
                                     },
                                     "s"),
+								),
+								n.createElement(
+    								"div",
+    								{
+    								  style: {
+    								    display: "flex",
+    								    alignItems: "center",
+    								    gap: "10px",
+										marginRight: "40px"
+    								  }
+    								},
+								  n.createElement(
+                                    "label", 
+                                    {
+                                      style: {
+										color: "white",
+										transform: "translateX(65px)"
+									  }
+                                    },
+                                    "(α, δ)= (" +  Number(ra).toFixed(1) + ", " +  Number(dec).toFixed(1) + ")"),
 								  // MARK:BGボタン
   								  n.createElement("button", {
   								    type: "button",
   								    style: {
-										position: "absolute",
-    									right: "50px", 
-    									top: "34px",
-    									padding: "2px 10px",
     									backgroundColor: useBG ? "gainsboro" : "gray",
     									color: "black",
     									border: "none",
     									borderRadius: "3px",
     									cursor: "pointer",
-    									fontSize: "14px"
+    									fontSize: "14px",
+										transform: "translateY(24px)"
   								    },
   								    onClick: function() {
-										// underframeのdivを消去
-										let divs = window.parent.underframe.document.getElementsByTagName('div');
-    									while (divs.length > 0) {
-    									    divs[0].remove();
-    									} 
+										// // underframeのdivを消去
+										// let divs = window.parent.underframe.document.getElementsByTagName('div');
+    									// while (divs.length > 0) {
+    									//     divs[0].remove();
+    									// } 
+										// 特定のIDを持つdivのみを削除
+    									let targetDiv = window.parent.underframe.document.getElementById('lc-' + index);
+    									if (targetDiv) {
+    									    targetDiv.remove();
+											// targetDiv.innerHTML = '';
+    									}
 
 								     	if (useBG) { //BG→通常
 											useBG = 0;
@@ -10978,7 +11054,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 													'/cgi-bin/make_LCdataBG.py',
 													send,
 													(receive_LCdata) => {
-    												    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+    												    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray, ra, dec, index);
     												}
 												);
 
@@ -10987,7 +11063,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 										} 
   								    }
   								  }, useBG ? "BG on" : "BG off")
-								),						
+								),
+								),					
 							  	// エネルギーバンドの選択するラジオボタンの表示
 							    n.createElement.apply(
                                   void 0,
@@ -11053,8 +11130,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
                                       );
                                     }),
                                     ["."]
-                                  )
-							    )
+                                  ),	
+							    ),			
 							  ),
 							  //光度曲線全体をfigureタグの中に入れている
 							  n.createElement("figure", null, K)
@@ -11103,6 +11180,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray){
 					n = require("./components/App");
 				  require("./style.css");
 				  var s = document.createElement("div");
+				  s.id = `lc-${index}`;
 				  document.body.appendChild(s),
 					r.render(t.createElement(n.App), s),
 					[
