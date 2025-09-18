@@ -2175,8 +2175,9 @@ async function polar2lightCurvePath(x, y, detail, diff) {
     	// '/cgi-bin/make_LCdata2.py',
 		'/cgi-bin/make_LCdataBG.py',
     	send,
-    	(receive_LCdata) => { 
-    	    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray);
+    	(receive_LCdata) => {
+			clearDivs(window.parent.underframe.document); // 既存のコンテンツを削除
+    	    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray, sigMaxRa, sigMaxDec, 0);
     	}
 	);
 
@@ -2230,15 +2231,17 @@ async function mainPopLightCurve(){
 	    '/cgi-bin/make_LCdataBG.py',
 	    send2,
 	    (receive_LCdata) => {
-	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, []);
+			clearDivs(window.parent.underframe.document); // 既存のコンテンツを削除
+	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], migiClickRa, migiClickDec, 0);
 	    }
 	);
 
 	showUnderFrame();
-	showLoadingMessage('waiting...')	
+	showLoadingMessage('waiting...')
 }
 
 // ra, decを指定してマーカーを移動する関数
+// MARK: moveMarkerToRaDec関数
 function moveMarkerToRaDec(ra, dec) {
     // 座標を設定
     alpha = parseFloat(ra);
@@ -2272,16 +2275,21 @@ function moveMarkerToRaDec(ra, dec) {
     }
 }
 
+function clearDivs(frame) {
+    let divs = frame.getElementsByTagName('div');
+    while (divs.length > 0) {
+        divs[0].remove();
+    }
+}
+
 // MARK: firstLc関数
 async function firstLC(){
 	// underframeのドキュメントを取得
-	const underframe = window.parent.underframe.document;
+	// const underframe = window.parent.underframe.document;
+	
 	
 	// 既存のコンテンツを削除
-	let divs = underframe.getElementsByTagName('div');
-	while (divs.length > 0) {
-		divs[0].remove();
-	}
+	clearDivs(window.parent.underframe.document);
 
 	let probanaAjax = new XMLHttpRequest();
 	let dirUrl  = window.parent.leftframe.dirUrl; // leftframeのdirUrlを取得
@@ -2289,10 +2297,12 @@ async function firstLC(){
 	let csvUrl = dirUrl + dirName + '/' + dirName + '_probana.csv';
 	console.log("csvfile:", csvUrl);
 
-	probanaAjax.onreadystatechange = function() {
+	probanaAjax.onreadystatechange = async function() {
 	    if (probanaAjax.readyState == 4) {
 	        if (probanaAjax.status == 200) {
-	            // CSVファイルの取得に成功
+	            // CSVファイルの取得に成功したときの処理
+				showUnderFrame();
+
 	            let csvData = probanaAjax.responseText;
 	            probanaArray = [];
 	            let csvLines = csvData.split('\n');
@@ -2308,17 +2318,39 @@ async function firstLC(){
 	                }
 	            }
 
+				let probanaArray1 = probanaArray.slice(5); //ヘッダー行を除去
+
+				// 自動表示するイベントを選択
+    			let selected = [probanaArray1[0]];
+
+    			for (let i = 1; i < probanaArray1.length; i++) {
+    			    if (selected.length >= 4) break;
+				
+    			    let prev = selected[selected.length - 1];
+    			    let prevRa = parseFloat(prev[0]);
+    			    let prevDec = parseFloat(prev[1]);
+    			    let currRa = parseFloat(probanaArray1[i][0]);
+    			    let currDec = parseFloat(probanaArray1[i][1]);
+				
+    			    // ra, decの差がともに1.5度以上なら追加
+    			    if (Math.abs(prevRa - currRa) >= 1.5 && Math.abs(prevDec - currDec) >= 1.5) {
+    			        selected.push(probanaArray1[i]);
+    			    }
+    			}
+
 				console.log("ファイルの中身:", probanaArray);
-				showUnderFrame();
+				console.log("ファイルの中身１:", probanaArray1);
+				console.log("ファイルの中身２:", selected);
 
 				let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
-				let send2 = { "dptc_zero" : gwTriGPS,
-				   "timescale" : "4orb",
-				   "energy"    : "High",
-				   "error"     : "",
-				   "star"      : "",
-				   "ra"        : probanaArray[5][0],
-    			   "dec"       : probanaArray[5][1]
+				let send2 = { 
+					"dptc_zero" : gwTriGPS,
+				   	"timescale" : "4orb",
+				   	"energy"    : "High",
+				   	"error"     : "",
+				   	"star"      : "",
+				   	"ra"        : probanaArray1[0][0],
+    			   	"dec"       : probanaArray1[0][1]
 			   	};
 
 				console.log(send2);
@@ -2329,18 +2361,51 @@ async function firstLC(){
 				    '/cgi-bin/make_LCdataBG.py',
 				    send2,
 				    (receive_LCdata) => {
-				        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, []);
+						clearDivs(window.parent.underframe.document);
+				        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], probanaArray1[0][0], probanaArray1[0][1], 0);
 				    }
 				);
 
-				moveMarkerToRaDec(probanaArray[5][0], probanaArray[5][1]); // マーカーを移動
+				moveMarkerToRaDec(probanaArray1[0][0], probanaArray1[0][1]); // マーカーを移動
+
+				///追加///複数表示
+				// let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
+
+				// for (let i = 0; i < selected.length; i++) {
+				// 	let send2 = { 
+				// 		"dptc_zero" : gwTriGPS,
+				// 	   	"timescale" : "4orb",
+				// 	   	"energy"    : "High",
+				// 	   	"error"     : "",
+				// 	   	"star"      : "",
+				// 	   	"ra"        : selected[i][0],
+    			// 	   	"dec"       : selected[i][1]
+			   	// 	};
+
+				// 	console.log("送信データ ra: " + send2.ra + ", dec: " + send2.dec);
+
+				// 	// データを送信し、成功したら光度曲線を表示する
+				// 	await sendLightCurveRequest(
+				// 		// '/cgi-bin/make_LCdata2.py',
+				// 	    '/cgi-bin/make_LCdataBG.py',
+				// 	    send2,
+				// 	    (receive_LCdata) => {
+				// 			if (i == 0) { clearDivs(window.parent.underframe.document); }
+				// 	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], selected[i][0], selected[i][1], i);
+				// 	    }
+				// 	);
+				// 	console.log("i番目:", i);
+				// }
+				/////////
+
 	        }
 	    } else {
-	        // CSVファイルの取得に失敗
+	        // CSVファイルの取得に失敗したときの処理
 	        console.log('Failed to load probana.csv: ' + probanaAjax.status);
 	        console.log('URL: ' + csvUrl);
+
 	        probanaArray = [];
-	        parent.mainframe.hideUnderFrame();
+	        hideUnderFrame();
 	    }
 	}
 	probanaAjax.open("GET", csvUrl, true);
