@@ -1,3 +1,4 @@
+let lcStates = {};
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // urlの場所からGPStimeとDPTCの差を取得
 let recentDptcUnixDiff = '';
@@ -90,6 +91,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
     // while (divs.length > 0) {
     //     divs[0].remove();
     // }
+
+	if (!lcStates[index]) {
+        lcStates[index] = {
+            selectedEnergyBand: "All",
+            changeBinsize: 1,
+            useBG: 0,
+        };
+    }
 	
     // 変数
 	let num = []
@@ -103,12 +112,19 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
         clickCount = 0, //クリックされた回数。
         delete_child = 0, //子要素を何個削除したかカウント
         Re_Reload = 0, //再リロードするか
-		selectedEnergyBand = "All", //デフォルトで選択されるエネルギーバンド
-		changeBinsize = 1, //デフォルトで選択されるbinsize
 		loopCount = 0, //3色同時表示用
 		changeEBArray = [], //3色同時表示用
 		dptcUnixDiff = 0; //dptcとunixtimeの差
-		useBG = 0; //BG情報を使用するかどうかのフラグ
+		// , 
+		// selectedEnergyBand = "All", //デフォルトで選択されるエネルギーバンド
+		// changeBinsize = 1, //デフォルトで選択されるbinsize
+		// useBG = 0; //BG情報を使用するかどうかのフラグ
+	
+	// 光度曲線の状態を取得
+    const lightCurveId = `lc-${index}`;
+	let selectedEnergyBand = lcStates[index].selectedEnergyBand;
+    let changeBinsize = lcStates[index].changeBinsize;
+    let useBG = lcStates[index].useBG;
 
 	const energyBandIndex = {
 		"All": 0,
@@ -11034,8 +11050,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 										// 特定のIDを持つdivのみを削除
     									let targetDiv = window.parent.underframe.document.getElementById('lc-' + index);
     									if (targetDiv) {
-    									    targetDiv.remove();
-											// targetDiv.innerHTML = '';
+    									    // targetDiv.remove();
+											targetDiv.innerHTML = '';
     									}
 
 								     	if (useBG) { //BG→通常
@@ -11054,7 +11070,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 													'/cgi-bin/make_LCdataBG.py',
 													send,
 													(receive_LCdata) => {
-    												    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray, ra, dec, index);
+    												    window.parent.underframe.underframe_pro(
+															receive_LCdata, 
+															gwTriUnix, 
+															maxiTriArray, 
+															ra, 
+															dec, 
+															index
+														);
     												}
 												);
 
@@ -11086,11 +11109,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
                                         },
                                         n.createElement("input", {
                                           type: "radio",
-                                          name: "EnergyBandChice", //設定必要？
+                                        //   name: "EnergyBandChice", //設定必要？
+										  name: `EnergyBandChoice-${index}`,
                                           value: e,
                                           defaultChecked: selectedEnergyBand === e, 
                                           onChange: function (e) {
                                             ////////////// MARK:選択肢ごとの処理 //////////////
+											lcStates[index].selectedEnergyBand = e.currentTarget.value;
                                             selectedEnergyBand = e.currentTarget.value;
                                             switch (selectedEnergyBand) {
                                               case "All":
@@ -11115,10 +11140,15 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
                                             }
   
                                             // 光度曲線を消去
-                                            var divs = document.getElementsByTagName('div');
-                                            for(var i = 0; i < divs.length; i++){
-                                              divs[i].innerHTML = '';
-                                            };
+                                            // var divs = document.getElementsByTagName('div');
+                                            // for(var i = 0; i < divs.length; i++){
+                                            //   divs[i].innerHTML = '';
+                                            // };
+											let targetDiv = window.parent.underframe.document.getElementById('lc-' + index);
+    										if (targetDiv) {
+    										    // targetDiv.remove();
+												targetDiv.innerHTML = '';
+    										}
   
                                             // 光度曲線を再描画	
                                             createLC(pre_LCdata);
@@ -11179,10 +11209,30 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 					r = e(require("react-dom")),
 					n = require("./components/App");
 				  require("./style.css");
-				  var s = document.createElement("div");
-				  s.id = `lc-${index}`;
-				  document.body.appendChild(s),
-					r.render(t.createElement(n.App), s),
+				//   var s = document.createElement("div");
+				//   s.id = `lc-${index}`;
+				//   document.body.appendChild(s),
+				// 	r.render(t.createElement(n.App), s),
+				// 	[
+				// 	  "https://cdn.maxi.wemo.me/fonts/Serif/cmun-serif.css",
+				// 	  "https://cdn.maxi.wemo.me/fonts/Sans/cmun-sans.css",
+				// 	  "https://cdn.maxi.wemo.me/fonts/Typewriter/cmun-typewriter-light.css",
+				// 	].forEach(function (e) {
+				// 	  var t = document.createElement("link");
+				// 	  (t.rel = "stylesheet"), (t.href = e), document.head.appendChild(t);
+				// 	});
+                //     document.body.setAttribute("id", "body");
+				/////
+				var s = document.createElement("div");
+				var existingElement = document.getElementById(`lc-${index}`);
+
+				// lc-{index}というIDの要素がすでに存在するかチェック
+				if (existingElement) { // lc-{index}というIDの要素が存在する場合
+				    existingElement.appendChild(s);
+				} else { // lc-{index}というIDの要素が存在しない場合
+				    s.id = `lc-${index}`;
+				    document.body.appendChild(s); // 新しいdivを作成してbodyに追加
+
 					[
 					  "https://cdn.maxi.wemo.me/fonts/Serif/cmun-serif.css",
 					  "https://cdn.maxi.wemo.me/fonts/Sans/cmun-sans.css",
@@ -11191,7 +11241,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 					  var t = document.createElement("link");
 					  (t.rel = "stylesheet"), (t.href = e), document.head.appendChild(t);
 					});
-                    document.body.setAttribute("id", "body");
+                	document.body.setAttribute("id", "body");
+				}
+				r.render(t.createElement(n.App), s);
+				/////
 				},
 				{
 				  react: "SAdv",
