@@ -1,4 +1,10 @@
+// 光度曲線の状態を保存するオブジェクトを設定
 let lcStates = {};
+
+function resetLcStates() {
+    lcStates = {};
+	console.log("lcStates has been reset");
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // urlの場所からGPStimeとDPTCの差を取得
 let recentDptcUnixDiff = '';
@@ -96,7 +102,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
         lcStates[index] = {
             selectedEnergyBand: "All",
             changeBinsize: 1,
-            useBG: 0,
+            useBG: 1,
+			startRange: 1400000000, //すぐ後に更新されるので適当な値
+        	endRange: 1400000000, //すぐ後に更新されるので適当な値
+            zoomAlldata: [],
+            highZoom: [],
+            medZoom: [],
+            lowZoom: [],		
         };
     }
 	
@@ -208,10 +220,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 			if (i % 2 != 0) {
 				if (i > 1) {
     				let gap = data[i - 1] - data[i - 3];
-    				if (gap > 800) { 
+    				// if (gap > 800) { 
+					if (gap > 500) { 
     				    gapcnt += 1;
     				}
-					if (gap > 1 && gap <= 800) { // 0カウントの部分のデータを追加
+					// if (gap > 1 && gap <= 800) { // 0カウントの部分のデータを追加
+					if (gap > 1 && gap <= 500) { // 0カウントの部分のデータを追加
 						if (useBG) { //BG処理
     				    	for (let missingDptc = data[i - 3] + 1; missingDptc < data[i - 1]; missingDptc++) {
     				    	    let missingConvertedValue = gps2unix(missingDptc - dptcUnixDiff) + 0.5;
@@ -262,8 +276,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 	
 		// まとまりごとの配列を作成
 		for (i = 1; i < data.length; i++) {
-			// 前のデータとの差が800秒未満の場合は同じ配列にまとめる
-			if (Math.abs(data[i][0] - data[i - 1][0]) < 800) {
+			// // 前のデータとの差が800秒未満の場合は同じ配列にまとめる
+			// if (Math.abs(data[i][0] - data[i - 1][0]) < 800) {
+			// 前のデータとの差が500秒未満の場合は同じ配列にまとめる
+			if (Math.abs(data[i][0] - data[i - 1][0]) < 500) {
 				array.push(data[i]);
 			} else {
 				// それ以外の場合は新しい配列としてまとめる
@@ -291,12 +307,21 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 
 	// ダブルクリックした近くにデータがあるかを判定する関数
 	let zoomJudge = function (data) {
-		// 引数とzoomAlldataの値を比較し、差が200未満のものがあればtrue
-		for (let i = 0; i < zoomAlldata.length; i++) {
-		  if (Math.abs(data - zoomAlldata[i]) < 200) {
-			return true; // 差が200未満の場合trueを返す
-		  }
-		}
+        const currentZoomAlldata = lcStates[index].zoomAlldata;
+        if (!currentZoomAlldata) return false;
+
+		for (let i = 0; i < currentZoomAlldata.length; i++) {
+          if (Math.abs(data - currentZoomAlldata[i]) < 200) {
+            return true; // 差が200未満の場合trueを返す
+          }
+        }
+
+		// // 引数とzoomAlldataの値を比較し、差が200未満のものがあればtrue
+		// for (let i = 0; i < zoomAlldata.length; i++) {
+		//   if (Math.abs(data - zoomAlldata[i]) < 200) {
+		// 	return true; // 差が200未満の場合trueを返す
+		//   }
+		// }
 
 		return false; // 該当する値がない場合はfalse
 	}
@@ -331,9 +356,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 	startRange = startAllRange;
 	endRange = endAllRange;
 
+	lcStates[index].startRange = startRange;
+	lcStates[index].endRange = endRange;
+
 	// 拡大機能のためにデータをまとめる
 	sumAlldata = graph_Summarize(dict_AllLCdata);
-	zoomAlldata = zoomArray(sumAlldata);
+	lcStates[index].zoomAlldata = zoomArray(sumAlldata);
+	zoomAlldata = lcStates[index].zoomAlldata;
 
 	// MAXI trigger(青線)を描画するための下準備
 	maxiTriUnix = dptc2unix(maxiTriArray[0]);
@@ -351,22 +380,112 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 		if (selectedEnergyBand === "multiColor") {
 			selectedEnergyBand = "High";
 			let highDict = Tolist(high_LCdata);
+			let highZoom = zoomArray(graph_Summarize(highDict));
 
 			selectedEnergyBand = "Med";
 			let medDict = Tolist(med_LCdata);
+			let medZoom = zoomArray(graph_Summarize(medDict));
 
 			selectedEnergyBand = "Low";
 			let lowDict = Tolist(low_LCdata);
+			let lowZoom = zoomArray(graph_Summarize(lowDict));
 
 			selectedEnergyBand = "multiColor";
 
+            // lcStatesに各エネルギーバンドのzoomデータを保存
+            lcStates[index].highZoom = highZoom;
+            lcStates[index].medZoom = medZoom;
+            lcStates[index].lowZoom = lowZoom;
+
 			dict_LCdata = [...highDict, ...medDict, ...lowDict];
-			zoomData = zoomAlldata;
+
+			console.log("zoomAlldata: ", zoomAlldata);
+			console.log("highZoom: ", highZoom);
+			console.log("medZoom: ", medZoom);
+			console.log("lowZoom: ", lowZoom);
+
+			// lcStatesから各zoomデータを取得
+			const currentZoomAlldata = lcStates[index].zoomAlldata;
+			const currentHighZoom = lcStates[index].highZoom;
+			const currentMedZoom = lcStates[index].medZoom;
+			const currentLowZoom = lcStates[index].lowZoom;
+
+			const result = [];
+
+			for (let i = 0; i < currentZoomAlldata.length; i += 2) {
+			    if (i + 1 < currentZoomAlldata.length) {
+			        const rangeStart = currentZoomAlldata[i] - 100;
+			        const rangeEnd = currentZoomAlldata[i + 1] + 100;
+				
+			        // 各Zoomから範囲内のデータを抽出
+			        const highValues = currentHighZoom.filter(value => value >= rangeStart && value <= rangeEnd);
+			        const medValues = currentMedZoom.filter(value => value >= rangeStart && value <= rangeEnd);
+			        const lowValues = currentLowZoom.filter(value => value >= rangeStart && value <= rangeEnd);
+				
+			        // 長さが2以上の配列のみを対象にする
+			        const validArrays = [];
+			        if (highValues.length >= 2) validArrays.push(highValues);
+			        if (medValues.length >= 2) validArrays.push(medValues);
+			        if (lowValues.length >= 2) validArrays.push(lowValues);
+				
+			        // 有効な配列が存在する場合のみ処理
+			        if (validArrays.length > 0) {
+			            // 各配列の最初の要素から最小値を取得
+			            const minValues = validArrays.map(arr => arr[0]);
+			            const minRng = Math.min(...minValues);
+					
+			            // 各配列の2番目の要素から最大値を取得
+			            const maxValues = validArrays.map(arr => arr[1]);
+			            const maxRng = Math.max(...maxValues);
+					
+			            result.push(minRng);
+			            result.push(maxRng);
+			        }
+			    }
+			}
+			/////////////////////
+            // // lcStatesから各zoomデータを取得
+            // const currentHighZoom = lcStates[index].highZoom;
+            // const currentMedZoom = lcStates[index].medZoom;
+            // const currentLowZoom = lcStates[index].lowZoom;
+
+            // const result = [];
+            // const maxLength = Math.max(
+            //     currentHighZoom ? currentHighZoom.length : 0,
+            //     currentMedZoom ? currentMedZoom.length : 0,
+            //     currentLowZoom ? currentLowZoom.length : 0
+            // );
+
+            // for (let i = 0; i < maxLength; i++) {
+            //     const values = [];
+            
+            //     // 各配列の i番目の値を取得（存在する場合のみ）
+            //     if (currentHighZoom && i < currentHighZoom.length) values.push(currentHighZoom[i]);
+            //     if (currentMedZoom && i < currentMedZoom.length) values.push(currentMedZoom[i]);
+            //     if (currentLowZoom && i < currentLowZoom.length) values.push(currentLowZoom[i]);
+            
+            //     if (values.length > 0) {
+            //         if (i % 2 === 0) {
+            //             // 偶数インデックス（0, 2, 4...）: 最小値を格納
+            //             result.push(Math.min(...values));
+            //         } else {
+            //             // 奇数インデックス（1, 3, 5...）: 最大値を格納
+            //             result.push(Math.max(...values));
+            //         }
+            //     }
+            // }
+
+			// resultを新しい配列として設定
+			zoomData = result;
+			console.log("zoomData: ", zoomData);
 		} else { //その他のエネルギーバンドを選択した時
 			dict_LCdata = Tolist(dptc_count_data);
 			zoomData = zoomArray(graph_Summarize(dict_LCdata));
 		}
     	// graph_data = graph_Summarize(dict_LCdata);
+
+		startRange = lcStates[index].startRange;
+		endRange = lcStates[index].endRange;
 
 		//dict_LCdataをもとに光度曲線の描画
     	ParcelRequire = (function (e, r, t, n) {
@@ -9164,10 +9283,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							//ダブルクリックのときの処理
                         	if (clickCount === 2) {
 								if (zoomJudge(m(i.x)) && target_id && !shift_on) {
-									const differences = zoomData.map(value => ({
-										value: value,
-										difference: Math.abs(m(i.x) - value)
-									}));
+									// lcStatesから現在の光度曲線のzoomデータを取得
+    								const currentZoomData = selectedEnergyBand === "multiColor" ? zoomData : lcStates[index].zoomAlldata;
+
+    								if (!currentZoomData) return;
+
+    								const differences = currentZoomData.map(value => ({
+    								    value: value,
+    								    difference: Math.abs(m(i.x) - value)
+    								}));
+
+									// const differences = zoomData.map(value => ({
+									// 	value: value,
+									// 	difference: Math.abs(m(i.x) - value)
+									// }));
 									
 									// 差が小さい順にソート
 									differences.sort((a, b) => a.difference - b.difference);
@@ -9181,13 +9310,19 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 									startRange = closestValues[0] - 10;
 									endRange = closestValues[1] + 10;
 
+									lcStates[index].startRange = startRange;
+									lcStates[index].endRange = endRange;
+
 	                            	child_remove();
                           		} else if (target_id && shift_on) {
 									//shiftを押されていた場合、初期表示画面に戻す
 									startRange = startAllRange;
-									endRange = endAllRange;	
-									shift_event = true;
+									endRange = endAllRange;
 
+									lcStates[index].startRange = startRange;
+									lcStates[index].endRange = endRange;
+
+									shift_event = true;
 									child_remove();
 								}
                         	} else {
@@ -10420,11 +10555,21 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 						};
 				  }),
 					(exports.LightCurve = function (e) {
+					//   const savedRange = lcStates[index] ? 
+					//       [lcStates[index].startRange, lcStates[index].endRange] : 
+					//       e.preferences.mjdRange;
+					//   console.log("savedRange: " + savedRange);
+					//   console.log("e.preferences.mjdRange: " + e.preferences.mjdRange);
+										  
+					//   exports.h = t.useState(savedRange);
                       exports.h = t.useState(e.preferences.mjdRange);
 					//   console.log(exports.h[0][0]);
 					//   console.log(exports.h[0][1]);
 					  startRange = exports.h[0][0];
 					  endRange = exports.h[0][1];
+
+					  lcStates[index].startRange = startRange;
+					  lcStates[index].endRange = endRange;
 
 					  var u = t.useRef(null),
 						s = t.useState(0.94 * window.innerWidth),
@@ -10952,25 +11097,30 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 									type: "number",
 									min: 1,
 									max: 128,
-									defaultValue: c.default_binsize,
+									// defaultValue: c.default_binsize,
+									defaultValue: lcStates[index].changeBinsize || c.default_binsize,
+									name: `EnergyBandChoice-${index}`,
 									onMouseDown: function(e) { //スピンボタンをクリックしたときの処理
 										const input = e.currentTarget;
 										const rect = input.getBoundingClientRect();
 										const clickSpin = e.clientX > (rect.right - 20);
 										const isSpinUp = e.clientY < (rect.top + rect.height / 2);
-										const currentValue = parseInt(input.value, 10);
+										// const currentValue = parseInt(input.value, 10);
+										const currentValue = lcStates[index].changeBinsize;
 								
 										if (clickSpin && isSpinUp) {  // 上ボタン
 											const newValue = currentValue * 2 - 1;
 											if (newValue <= 128) {
 												input.value = parseInt(newValue, 10);
 												T({ binSize: c.filterBinSize(newValue) });
+												lcStates[index].changeBinsize = newValue;//
 											}
 										} else if (clickSpin) {  // 下ボタン
 											const newValue = currentValue / 2 + 1;
 											if (newValue >= 2) {
 												input.value = parseInt(newValue, 10);
 												T({ binSize: c.filterBinSize(newValue) });
+												lcStates[index].changeBinsize = newValue;//
 											}
 										}
 									},
@@ -10984,6 +11134,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 												if (newValue <= 128) {
 													e.currentTarget.value = newValue;
 													T({ binSize: c.filterBinSize(newValue) });
+													lcStates[index].changeBinsize = newValue;//
 												}
 											} else if (e.key === "ArrowDown") {
 												e.preventDefault();
@@ -10991,6 +11142,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 												if (newValue >= 1) {
 													e.currentTarget.value = newValue;
 													T({ binSize: c.filterBinSize(newValue) });
+													lcStates[index].changeBinsize = newValue;//
 												}
 											}
 										}
@@ -11000,6 +11152,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 										if (!isNaN(value)) {
 											T({ binSize: c.filterBinSize(value) });
 											changeBinsize = value;
+											lcStates[index].changeBinsize = value;//
 										}
 									}
 								  }),
@@ -11028,7 +11181,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 										transform: "translateX(65px)"
 									  }
                                     },
-                                    "(α, δ)= (" +  Number(ra).toFixed(1) + ", " +  Number(dec).toFixed(1) + ")"),
+                                    "(α, δ) = (" +  Number(ra).toFixed(1) + ", " +  Number(dec).toFixed(1) + ")"),
 								  // MARK:BGボタン
   								  n.createElement("button", {
   								    type: "button",
