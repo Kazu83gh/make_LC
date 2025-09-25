@@ -58,6 +58,7 @@ var candidateData,candidateData2, candidateData3, candidateData4;
 var nCandidate,nCandidate2;
 var nCandidate2_tri, nCandidate2_mail;
 var migiClickRa, migiClickDec; //右クリックした時の位置(ra,dec)を格納する変数
+var blinkInterval = null; // マーカーの点滅
 window.currentSend = null;
 
 const priorities = { // timescale の優先順位を定義
@@ -306,15 +307,45 @@ function markerDisp(inputX,inputY,force)
 
 	if(force == "y"){
 		marButton.value = "Marker-on";
-		marButton.style.backgroundColor = "gray";
-		marObj.visibility="visible";		
+		// marButton.style.backgroundColor = "gray";
+		marButton.style.backgroundColor = "gainsboro";
+		// marObj.visibility="visible";
+		startMarkerBlink(marObj); // 点滅を開始		
 	}else{
 		if(marButton.value == "Marker-on"){
-			marObj.visibility="visible";	
+			// marObj.visibility="visible";	
+			startMarkerBlink(marObj); // 点滅を開始
 		}else{
+			stopMarkerBlink(); // 点滅を停止
 			marObj.visibility="hidden";
 		}
 	}					
+}
+
+// マーカーの点滅を開始する関数 20250925 K.Takagi
+function startMarkerBlink(marObj) {
+    // 既存の点滅を停止
+    stopMarkerBlink();
+    
+    // マーカーを表示状態にする
+    marObj.visibility = "visible";
+    
+    // 1000ms間隔で点滅させる
+    blinkInterval = setInterval(function() {
+        if (marObj.visibility === "visible") {
+            marObj.visibility = "hidden";
+        } else {
+            marObj.visibility = "visible";
+        }
+    }, 1000);
+}
+
+// マーカーの点滅を停止する関数
+function stopMarkerBlink() {
+    if (blinkInterval !== null) {
+        clearInterval(blinkInterval);
+        blinkInterval = null;
+    }
 }
 
 //以下、赤道座標入力->地図平面にマーカー表示、星の検索（カタログ表示）
@@ -2075,6 +2106,8 @@ async function polar2lightCurvePath(x, y, detail, diff) {
         divs[0].remove();
     }
 
+	window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
+
 	var a = []; // aを初期化
 
 	if (diff == "") {
@@ -2204,6 +2237,8 @@ async function mainPopLightCurve(){
 		divs[0].remove();
 	}
 
+	window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
+
 	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
 	// console.log("migiClickRa:", migiClickRa);
 	// console.log("migiClickDec:", migiClickDec);
@@ -2266,7 +2301,8 @@ function moveMarkerToRaDec(ra, dec) {
         setMarkscal();
         
         // マーカーを移動
-        markerDisp(IX, IY, "y");
+        // markerDisp(IX, IY, "y");
+		markerDisp(IX, IY);
         
         console.log('Marker moved to RA=' + ra + ', Dec=' + dec);
         
@@ -2289,13 +2325,14 @@ async function firstLC(){
 	
 	
 	// 既存のコンテンツを削除
-	clearDivs(window.parent.underframe.document);
+	clearDivs(window.parent.underframe.document); // 既存のコンテンツを削除
+	window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
 
 	let probanaAjax = new XMLHttpRequest();
 	let dirUrl  = window.parent.leftframe.dirUrl; // leftframeのdirUrlを取得
 	let dirName = window.parent.leftframe.dirName; // leftframeのdirNameを取得
 	let csvUrl = dirUrl + dirName + '/' + dirName + '_probana.csv';
-	console.log("csvfile:", csvUrl);
+	// console.log("csvfile:", csvUrl);
 
 	probanaAjax.onreadystatechange = async function() {
 	    if (probanaAjax.readyState == 4) {
@@ -2342,67 +2379,68 @@ async function firstLC(){
 				console.log("ファイルの中身１:", probanaArray1);
 				console.log("ファイルの中身２:", selected);
 
-				let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
-				let send2 = { 
-					"dptc_zero" : gwTriGPS,
-				   	"timescale" : "4orb",
-				   	"energy"    : "High",
-				   	"error"     : "",
-				   	"star"      : "",
-				   	"ra"        : probanaArray1[0][0],
-    			   	"dec"       : probanaArray1[0][1]
-			   	};
+				// let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
+				// let send2 = { 
+				// 	"dptc_zero" : gwTriGPS,
+				//    	"timescale" : "4orb",
+				//    	"energy"    : "High",
+				//    	"error"     : "",
+				//    	"star"      : "",
+				//    	"ra"        : probanaArray1[0][0],
+    			//    	"dec"       : probanaArray1[0][1]
+			   	// };
 
-				console.log(send2);
+				// console.log(send2);
 
-				// データを送信し、成功したら光度曲線を表示する
-				sendLightCurveRequest(
-					// '/cgi-bin/make_LCdata2.py',
-				    '/cgi-bin/make_LCdataBG.py',
-				    send2,
-				    (receive_LCdata) => {
-						clearDivs(window.parent.underframe.document);
-				        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], probanaArray1[0][0], probanaArray1[0][1], 0);
-				    }
-				);
+				// // データを送信し、成功したら光度曲線を表示する
+				// sendLightCurveRequest(
+				// 	// '/cgi-bin/make_LCdata2.py',
+				//     '/cgi-bin/make_LCdataBG.py',
+				//     send2,
+				//     (receive_LCdata) => {
+				// 		clearDivs(window.parent.underframe.document);
+				//         window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], probanaArray1[0][0], probanaArray1[0][1], 0);
+				//     }
+				// );
 
 				moveMarkerToRaDec(probanaArray1[0][0], probanaArray1[0][1]); // マーカーを移動
 
 				///追加///複数表示
-				// let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
+				let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
 
-				// for (let i = 0; i < selected.length; i++) {
-				// 	let send2 = { 
-				// 		"dptc_zero" : gwTriGPS,
-				// 	   	"timescale" : "4orb",
-				// 	   	"energy"    : "High",
-				// 	   	"error"     : "",
-				// 	   	"star"      : "",
-				// 	   	"ra"        : selected[i][0],
-    			// 	   	"dec"       : selected[i][1]
-			   	// 	};
+				for (let i = 0; i < selected.length; i++) {
+					let send2 = { 
+						"dptc_zero" : gwTriGPS,
+					   	"timescale" : "4orb",
+					   	"energy"    : "High",
+					   	"error"     : "",
+					   	"star"      : "",
+					   	"ra"        : selected[i][0],
+    				   	"dec"       : selected[i][1]
+			   		};
 
-				// 	console.log("送信データ ra: " + send2.ra + ", dec: " + send2.dec);
+					console.log("送信データ ra: " + send2.ra + ", dec: " + send2.dec);
 
-				// 	// データを送信し、成功したら光度曲線を表示する
-				// 	await sendLightCurveRequest(
-				// 		// '/cgi-bin/make_LCdata2.py',
-				// 	    '/cgi-bin/make_LCdataBG.py',
-				// 	    send2,
-				// 	    (receive_LCdata) => {
-				// 			if (i == 0) { clearDivs(window.parent.underframe.document); }
-				// 	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], selected[i][0], selected[i][1], i);
-				// 	    }
-				// 	);
-				// 	console.log("i番目:", i);
-				// }
+					// データを送信し、成功したら光度曲線を表示する
+					await sendLightCurveRequest(
+					    '/cgi-bin/make_LCdataBG.py',
+						// '/cgi-bin/make_LCdata2.py',
+						// '/cgi-bin/make_LCdataBGv4.py',
+					    send2,
+					    (receive_LCdata) => {
+							if (i == 0) { clearDivs(window.parent.underframe.document); }
+					        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], selected[i][0], selected[i][1], i);
+					    }
+					);
+					console.log("i番目:", i);
+				}
 				/////////
 
 	        }
 	    } else {
 	        // CSVファイルの取得に失敗したときの処理
 	        console.log('Failed to load probana.csv: ' + probanaAjax.status);
-	        console.log('URL: ' + csvUrl);
+	        // console.log('URL: ' + csvUrl);
 
 	        probanaArray = [];
 	        hideUnderFrame();
