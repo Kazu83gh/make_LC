@@ -1559,10 +1559,8 @@ function widthSet(){
     gapImgHeight = Math.round(gapImgHeight / widthRate);
     } else if(scale == 2){
 	heightSet();
-	/*
 	parent.mainframe.document.getElementById("image1").style.width = 2 * winWidth;
 	parent.mainframe.document.getElementById("image1").style.height = 2 * Math.floor(imgHeight / widthRate);
-	*/    
     }
 }
 
@@ -1676,15 +1674,18 @@ function sizeChange(){
 // 	}
 // }
 
-// 2025/6/17 デフォルトが"Marker-on"と"Cursor-on"にしたため、処理を変更（髙木）
+// 2025/6/17 デフォルトを"Marker-on"と"Cursor-on"にしたため、処理を変更（髙木）
 function marker(){ // マーカーが押された際の処理
     curButton = document.getElementById("marker");
     if(curButton.value == "Marker-off"){
         curButton.value = "Marker-on";
         curButton.style.backgroundColor = "gainsboro";
+        // parent.mainframe.document.getElementById("myMarker").style.visibility="visible";
+        parent.mainframe.startMarkerBlink();
     } else {
         curButton.value = "Marker-off";
         curButton.style.backgroundColor = "gray";
+        parent.mainframe.stopMarkerBlink();
         parent.mainframe.document.getElementById("myMarker").style.visibility="hidden";
     }
 }
