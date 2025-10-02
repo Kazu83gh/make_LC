@@ -54,11 +54,17 @@ var showPopStates = 1; //0:右クリックでpopを出している時  1:出し�
 var alpha2,delta2;
 var candidateType;
 
+// K.Takagi
 var candidateData,candidateData2, candidateData3, candidateData4;
 var nCandidate,nCandidate2;
 var nCandidate2_tri, nCandidate2_mail;
 var migiClickRa, migiClickDec; //右クリックした時の位置(ra,dec)を格納する変数
-var blinkInterval = null; // マーカーの点滅
+
+// K.Takagi 20251002
+var globalBlinkTimer = null;
+var globalBlinkState = true; // true: 表示, false: 非表示
+var activeMarkers = new Set(); // アクティブなマーカーのIDを管理
+
 window.currentSend = null;
 
 const priorities = { // timescale の優先順位を定義
@@ -290,61 +296,118 @@ function cart2polar(eg){ // XY座標を極座標に変換
 	}
 }
 
+// MARK:markerDisp
+// マーカーを動かす関数
 function markerDisp(inputX,inputY,force)
 {
-	var marButton = parent.leftframe.document.getElementById("marker");
-	var marObj = parent.mainframe.document.getElementById("myMarker").style;
+    var marButton = parent.leftframe.document.getElementById("marker");
+    var marObj = parent.mainframe.document.getElementById("myMarker").style;
 
-	//submarkerDisp();
+    marObj.left = -12 + inputX + "px";
+    marObj.top  = -12 + inputY + "px";
 
-	//マーカーの位置を指定する
-	marObj.left = -12 + inputX + "px";
-	marObj.top  = -12 + inputY + "px";
+    recordX = inputX;
+    recordY = inputY;
 
-	//マーカーの位置を記録する。（全画面表示をする時に使うため）
-	recordX = inputX;
-	recordY = inputY;
-
-	if(force == "y"){
-		marButton.value = "Marker-on";
-		// marButton.style.backgroundColor = "gray";
-		marButton.style.backgroundColor = "gainsboro";
-		// marObj.visibility="visible";
-		startMarkerBlink(marObj); // 点滅を開始		
-	}else{
-		if(marButton.value == "Marker-on"){
-			// marObj.visibility="visible";	
-			startMarkerBlink(marObj); // 点滅を開始
-		}else{
-			stopMarkerBlink(); // 点滅を停止
-			marObj.visibility="hidden";
-		}
-	}					
+    if(force == "y"){
+        marButton.value = "Marker-on";
+        marButton.style.backgroundColor = "gainsboro";
+        startMarkerBlink(marObj, "myMarker"); // マーカーIDを渡す
+    }else{
+        if(marButton.value == "Marker-on"){
+            startMarkerBlink(marObj, "myMarker"); // マーカーIDを渡す
+        }else{
+            stopMarkerBlink("myMarker"); // 該当マーカーのみ停止
+            marObj.visibility="hidden";
+        }
+    }
 }
 
-// マーカーの点滅を開始する関数 20250925 K.Takagi
-function startMarkerBlink(marObj) {
-    // 既存の点滅を停止
-    stopMarkerBlink();
-    
-    // マーカーを表示状態にする
-    marObj.visibility = "visible";
-    
-    // 1000ms間隔で点滅させる
-    blinkInterval = setInterval(function() {
-        if (marObj.visibility === "visible") {
-            marObj.visibility = "hidden";
-        } else {
-            marObj.visibility = "visible";
+// myMarker1~3を動かす関数
+function markerDispId(inputX,inputY,id,force)
+{
+    var marButton = parent.leftframe.document.getElementById("marker");
+    var marObj = parent.mainframe.document.getElementById("myMarker"+id).style;
+
+    marObj.left = -12 + inputX + "px";
+    marObj.top  = -12 + inputY + "px";
+
+    recordX = inputX;
+    recordY = inputY;
+
+    if(force == "y"){
+        marButton.value = "Marker-on";
+        marButton.style.backgroundColor = "gainsboro";
+        startMarkerBlink(marObj, "myMarker" + id); // マーカーIDを渡す
+    }else{
+        if(marButton.value == "Marker-on"){
+            startMarkerBlink(marObj, "myMarker" + id); // マーカーIDを渡す
+        }else{
+            stopMarkerBlink("myMarker" + id); // 該当マーカーのみ停止
+            marObj.visibility="hidden";
         }
+    }
+}
+
+// 20250925 K.Takagi
+// 共通の点滅タイマーを開始する関数
+function startGlobalBlink() {
+    if (globalBlinkTimer !== null) {
+        return; // すでに開始されている場合は何もしない
+    }
+    
+    globalBlinkTimer = setInterval(function() {
+        globalBlinkState = !globalBlinkState;
+        const visibility = globalBlinkState ? "visible" : "hidden";
+        
+        // すべてのアクティブなマーカーに同じ状態を適用
+        activeMarkers.forEach(function(markerId) {
+            const marObj = document.getElementById(markerId);
+            if (marObj) {
+                marObj.style.visibility = visibility;
+            }
+        });
     }, 1000);
 }
 
+// 共通の点滅タイマーを停止する関数
+function stopGlobalBlink() {
+    if (globalBlinkTimer !== null) {
+        clearInterval(globalBlinkTimer);
+        globalBlinkTimer = null;
+    }
+    activeMarkers.clear();
+}
+
+// マーカーの点滅を開始する関数
+function startMarkerBlink(marObj, markerId = "myMarker") {
+    // マーカーを表示状態にする
+    marObj.visibility = "visible";
+    
+    // アクティブなマーカーリストに追加
+    activeMarkers.add(markerId);
+    
+    // グローバルタイマーを開始（まだ開始されていない場合）
+    startGlobalBlink();
+}
+
 // マーカーの点滅を停止する関数
-function stopMarkerBlink() {
-    if (blinkInterval !== null) {
-        clearInterval(blinkInterval);
-        blinkInterval = null;
+function stopMarkerBlink(markerId = null) {
+    if (markerId) {
+        // 指定されたマーカーのみ停止
+        activeMarkers.delete(markerId);
+        const marObj = document.getElementById(markerId);
+        if (marObj) {
+            marObj.style.visibility = "hidden";
+        }
+        
+        // アクティブなマーカーがなくなったらタイマーを停止
+        if (activeMarkers.size === 0) {
+            stopGlobalBlink();
+        }
+    } else {
+        // 全てのマーカーを停止
+        stopGlobalBlink();
     }
 }
 
@@ -2081,6 +2144,16 @@ function sendLightCurveRequest(url, data, successCallback) {
         try {
             console.log("LCdata:", LCdata);
             let receive_LCdata = JSON.parse(LCdata);
+
+			// DB情報をコンソールに表示
+            if (receive_LCdata.performance) {
+                console.log("------ DB Info -------");
+                console.log("Machine:", receive_LCdata.performance.machine);
+                console.log("DB Execute Time:", receive_LCdata.performance.db_execute_time + "s");
+                console.log("DB Fetch Time:", receive_LCdata.performance.db_fetch_time + "s");
+                console.log("DB Total Time:", receive_LCdata.performance.db_total_time + "s");
+                console.log("----------------------");
+            }
             
             // 成功時のコールバック関数を実行
             if (successCallback) {
@@ -2107,6 +2180,16 @@ async function polar2lightCurvePath(x, y, detail, diff) {
     }
 
 	window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
+
+	// 番号付きマーカー（myMarker1, myMarker2, myMarker3）を非表示
+    for (let i = 1; i <= 3; i++) {
+		stopMarkerBlink("myMarker" + i); // マーカーの点滅を停止
+
+        var marObjId = parent.mainframe.document.getElementById("myMarker" + i);
+        if (marObjId) {
+            marObjId.style.visibility = "hidden";
+        }
+    }
 
 	var a = []; // aを初期化
 
@@ -2239,6 +2322,16 @@ async function mainPopLightCurve(){
 
 	window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
 
+	// 番号付きマーカー（myMarker1, myMarker2, myMarker3）を非表示
+    for (let i = 1; i <= 3; i++) {
+		stopMarkerBlink("myMarker" + i); // マーカーの点滅を停止
+
+        var marObjId = parent.mainframe.document.getElementById("myMarker" + i);
+        if (marObjId) {
+            marObjId.style.visibility = "hidden";
+        }
+    }
+
 	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
 	// console.log("migiClickRa:", migiClickRa);
 	// console.log("migiClickDec:", migiClickDec);
@@ -2311,6 +2404,40 @@ function moveMarkerToRaDec(ra, dec) {
     }
 }
 
+// myMarker1~3用の関数
+function moveMarkerToRaDecId(ra, dec, id) {
+    // 座標を設定
+    alpha = parseFloat(ra);
+    delta = parseFloat(dec);
+    ePhi = alpha;
+    eTheta = delta;
+    
+    // 座標が有効範囲内かチェック
+    if (ra >= 0 && ra < 360 && dec >= -90 && dec <= 90) {
+        pointSta = 1;
+        
+        // 座標変換処理
+        polar2cart("e");
+        equ2gal(); 
+        cart2polar("e");
+        
+        // モルワイデ図法での座標計算
+        polar2mollwide();
+        
+        // 画像サイズを取得してマーカー位置を計算
+        getImgStatus();
+        setMarkscal();
+        
+        // マーカーを移動
+		markerDispId(IX, IY, id);
+        
+        console.log('Marker moved to RA=' + ra + ', Dec=' + dec);
+        
+    } else {
+        console.log("Invalid coordinates: RA=" + ra + ", Dec=" + dec);
+    }
+}
+
 function clearDivs(frame) {
     let divs = frame.getElementsByTagName('div');
     while (divs.length > 0) {
@@ -2323,10 +2450,25 @@ async function firstLC(){
 	// underframeのドキュメントを取得
 	// const underframe = window.parent.underframe.document;
 	
-	
 	// 既存のコンテンツを削除
 	clearDivs(window.parent.underframe.document); // 既存のコンテンツを削除
 	window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
+
+	stopMarkerBlink(); // 全てのマーカーの点滅を停止
+    
+    // 通常のマーカー（myMarker）を非表示
+    var marObj = parent.mainframe.document.getElementById("myMarker");
+    if (marObj) {
+        marObj.style.visibility = "hidden";
+    }
+    
+    // 番号付きマーカー（myMarker1, myMarker2, myMarker3）を非表示
+    for (let i = 1; i <= 3; i++) {
+        var marObjId = parent.mainframe.document.getElementById("myMarker" + i);
+        if (marObjId) {
+            marObjId.style.visibility = "hidden";
+        }
+    }
 
 	let probanaAjax = new XMLHttpRequest();
 	let dirUrl  = window.parent.leftframe.dirUrl; // leftframeのdirUrlを取得
@@ -2403,8 +2545,6 @@ async function firstLC(){
 				//     }
 				// );
 
-				moveMarkerToRaDec(probanaArray1[0][0], probanaArray1[0][1]); // マーカーを移動
-
 				///追加///複数表示
 				let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
 
@@ -2420,6 +2560,13 @@ async function firstLC(){
 			   		};
 
 					console.log("送信データ ra: " + send2.ra + ", dec: " + send2.dec);
+
+					// マーカーを表示（i=0なら通常のマーカー、それ以外なら番号付きマーカー）
+    				if (i === 0) {
+    				    moveMarkerToRaDec(selected[i][0], selected[i][1]);
+    				} else {
+    				    moveMarkerToRaDecId(selected[i][0], selected[i][1], i.toString());
+    				}
 
 					// データを送信し、成功したら光度曲線を表示する
 					await sendLightCurveRequest(
