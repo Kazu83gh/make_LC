@@ -20,6 +20,9 @@ var preImgWidth;
 var preImgHeight;
 var recordX;
 var recordY;
+var recordX1, recordY1; // myMarker1用 20251006 K.Takagi
+var recordX2, recordY2; // myMarker2用
+var recordX3, recordY3; // myMarker3用
 var x,y; //画像の縦、横
 var eTheta,gTheta; //赤道座標・銀河座標でのθ(緯度)
 var ePhi,gPhi; //赤道座標・銀河座標でのφ(経度)
@@ -332,8 +335,24 @@ function markerDispId(inputX,inputY,id,force)
     marObj.left = -12 + inputX + "px";
     marObj.top  = -12 + inputY + "px";
 
-    recordX = inputX;
-    recordY = inputY;
+    // recordX = inputX;
+    // recordY = inputY;
+	if (typeof id !== 'undefined' && id) {
+	    switch(id) {
+	        case '1':
+	            recordX1 = inputX;
+	            recordY1 = inputY;
+	            break;
+	        case '2':
+	            recordX2 = inputX;
+	            recordY2 = inputY;
+	            break;
+	        case '3':
+	            recordX3 = inputX;
+	            recordY3 = inputY;
+	            break;
+	    }
+	}
 
     if(force == "y"){
         marButton.value = "Marker-on";
@@ -1084,6 +1103,32 @@ function rewriteMarker(inputX,inputY) {
 	recordY *= imgHeight/preImgHeight;
 }
 
+function rewriteMarkerId(inputX,inputY, id) {
+	var marButton = parent.leftframe.document.getElementById("marker");
+	var marObj = parent.mainframe.document.getElementById("myMarker" + id).style;
+
+	if(marButton.value == "Marker-on"){
+		marObj.left = -12 + inputX * imgWidth/preImgWidth + "px";
+		marObj.top  = -12 + inputY * imgHeight/preImgHeight + "px";
+	}
+
+	// idに対応する変数を更新
+    switch(id) {
+        case '1':
+            recordX1 *= imgWidth/preImgWidth;
+            recordY1 *= imgHeight/preImgHeight;
+            break;
+        case '2':
+            recordX2 *= imgWidth/preImgWidth;
+            recordY2 *= imgHeight/preImgHeight;
+            break;
+        case '3':
+            recordX3 *= imgWidth/preImgWidth;
+            recordY3 *= imgHeight/preImgHeight;
+            break;
+    }
+}
+
 function clickFunction(evt) {
 	var cursorMode = parent.leftframe.document.getElementById('cursor');
 
@@ -1120,6 +1165,9 @@ function beforeChange() {
 function afterChange() {
 	getImgStatus();
 	rewriteMarker(recordX, recordY);
+	rewriteMarkerId(recordX1, recordY1, '1'); //20251006 K.Takagi
+	rewriteMarkerId(recordX2, recordY2, '2');
+	rewriteMarkerId(recordX3, recordY3, '3');	
 }
 
 //20191213
@@ -1836,7 +1884,8 @@ function nearCandidate(mousePositionObject) {
 
 //underframeを表示する関数
 function showUnderFrame() {
-	parent.document.getElementById("mainFrames").setAttribute("rows", "*,300");
+	// parent.document.getElementById("mainFrames").setAttribute("rows", "*,300");
+	parent.document.getElementById("mainFrames").setAttribute("rows", "*,580");
   }
 
 //underframeを非表示にする関数
@@ -2286,6 +2335,11 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 	// 	}).fail(() => {
 	// 		console.log('failed');
 	// 	});
+
+	// 実行時間計測開始
+    const startTime = performance.now();
+    const startTimestamp = new Date().toISOString();
+
 	// データを送信し、成功したら光度曲線を表示する
 	sendLightCurveRequest(
     	// '/cgi-bin/make_LCdata2.py',
@@ -2293,7 +2347,23 @@ async function polar2lightCurvePath(x, y, detail, diff) {
     	send,
     	(receive_LCdata) => {
 			clearDivs(window.parent.underframe.document); // 既存のコンテンツを削除
-    	    window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, maxiTriArray, sigMaxRa, sigMaxDec, 0);
+			createGridContainer('single');
+    	    window.parent.underframe.underframe_pro(
+				receive_LCdata,
+				gwTriUnix,
+				maxiTriArray,
+				sigMaxRa,
+				sigMaxDec,
+				0
+			);
+
+			// 実行時間計測終了
+            const endTime = performance.now();
+            const endTimestamp = new Date().toISOString();
+            const executionTime = (endTime - startTime) / 1000; 
+			console.log(`sendLightCurveRequest START: ${startTimestamp} (${(startTime / 1000).toFixed(3)}s)`);
+            console.log(`sendLightCurveRequest END: ${endTimestamp} (${(endTime / 1000).toFixed(3)}s)`);
+            console.log(`sendLightCurveRequest DURATION: ${executionTime.toFixed(3)}s`);
     	}
 	);
 
@@ -2360,7 +2430,15 @@ async function mainPopLightCurve(){
 	    send2,
 	    (receive_LCdata) => {
 			clearDivs(window.parent.underframe.document); // 既存のコンテンツを削除
-	        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], migiClickRa, migiClickDec, 0);
+			createGridContainer('single');
+	        window.parent.underframe.underframe_pro(
+				receive_LCdata,
+				gwTriUnix,
+				[],
+				migiClickRa,
+				migiClickDec,
+				0
+			);
 	    }
 	);
 
@@ -2455,13 +2533,11 @@ async function firstLC(){
 	window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
 
 	stopMarkerBlink(); // 全てのマーカーの点滅を停止
-    
     // 通常のマーカー（myMarker）を非表示
     var marObj = parent.mainframe.document.getElementById("myMarker");
     if (marObj) {
         marObj.style.visibility = "hidden";
-    }
-    
+    } 
     // 番号付きマーカー（myMarker1, myMarker2, myMarker3）を非表示
     for (let i = 1; i <= 3; i++) {
         var marObjId = parent.mainframe.document.getElementById("myMarker" + i);
@@ -2517,33 +2593,9 @@ async function firstLC(){
     			    }
     			}
 
-				console.log("ファイルの中身:", probanaArray);
-				console.log("ファイルの中身１:", probanaArray1);
+				// console.log("ファイルの中身:", probanaArray);
+				// console.log("ファイルの中身１:", probanaArray1);
 				console.log("ファイルの中身２:", selected);
-
-				// let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
-				// let send2 = { 
-				// 	"dptc_zero" : gwTriGPS,
-				//    	"timescale" : "4orb",
-				//    	"energy"    : "High",
-				//    	"error"     : "",
-				//    	"star"      : "",
-				//    	"ra"        : probanaArray1[0][0],
-    			//    	"dec"       : probanaArray1[0][1]
-			   	// };
-
-				// console.log(send2);
-
-				// // データを送信し、成功したら光度曲線を表示する
-				// sendLightCurveRequest(
-				// 	// '/cgi-bin/make_LCdata2.py',
-				//     '/cgi-bin/make_LCdataBG.py',
-				//     send2,
-				//     (receive_LCdata) => {
-				// 		clearDivs(window.parent.underframe.document);
-				//         window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], probanaArray1[0][0], probanaArray1[0][1], 0);
-				//     }
-				// );
 
 				///追加///複数表示
 				let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix); 
@@ -2568,6 +2620,10 @@ async function firstLC(){
     				    moveMarkerToRaDecId(selected[i][0], selected[i][1], i.toString());
     				}
 
+					// 実行時間計測開始
+                    const startTime = performance.now();
+                    const startTimestamp = new Date().toISOString();
+
 					// データを送信し、成功したら光度曲線を表示する
 					await sendLightCurveRequest(
 					    '/cgi-bin/make_LCdataBG.py',
@@ -2575,20 +2631,36 @@ async function firstLC(){
 						// '/cgi-bin/make_LCdataBGv4.py',
 					    send2,
 					    (receive_LCdata) => {
-							if (i == 0) { clearDivs(window.parent.underframe.document); }
-					        window.parent.underframe.underframe_pro(receive_LCdata, gwTriUnix, [], selected[i][0], selected[i][1], i);
+							if (i == 0) { 
+								clearDivs(window.parent.underframe.document);
+								createGridContainer('grid');
+							}
+							window.currentLCIndex = i;
+					        window.parent.underframe.underframe_pro(
+								receive_LCdata,
+								gwTriUnix,
+								[],
+								selected[i][0],
+								selected[i][1],
+								i
+							);
+
+							// 実行時間計測終了
+                    		const endTime = performance.now();
+                    		const endTimestamp = new Date().toISOString();
+                    		const executionTime = (endTime - startTime) / 1000; 
+							console.log(`sendLightCurveRequest START: ${startTimestamp} (${(startTime / 1000).toFixed(3)}s)`);
+                    		console.log(`sendLightCurveRequest END: ${endTimestamp} (${(endTime / 1000).toFixed(3)}s)`);
+                    		console.log(`sendLightCurveRequest DURATION: ${executionTime.toFixed(3)}s`);
 					    }
 					);
 					console.log("i番目:", i);
 				}
-				/////////
-
 	        }
 	    } else {
 	        // CSVファイルの取得に失敗したときの処理
 	        console.log('Failed to load probana.csv: ' + probanaAjax.status);
 	        // console.log('URL: ' + csvUrl);
-
 	        probanaArray = [];
 	        hideUnderFrame();
 	    }
@@ -2597,6 +2669,72 @@ async function firstLC(){
 	probanaAjax.send(null);
 
 	showLoadingMessage('waiting...')
+}
+
+// MARK: createGridContainer関数
+// コンテナを作成する関数v2 K.Takagi 2025/10/06
+function createGridContainer(mode = 'single') {
+    const underframeDoc = window.parent.underframe.document;
+    
+    // 既存のコンテナを削除
+    const existingGrid = underframeDoc.getElementById('lc-grid-container');
+    const existingSingle = underframeDoc.getElementById('lc-single-container');
+    if (existingGrid) existingGrid.remove();
+    if (existingSingle) existingSingle.remove();
+    
+    if (mode === 'grid') {
+		 // グリッド表示用コンテナを作成
+        const gridContainer = underframeDoc.createElement('div');
+        gridContainer.id = 'lc-grid-container';
+        gridContainer.style.cssText = `
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            height: 100vh;
+            width: 100%;
+            background-color: black;
+        `;
+        
+        // 4つのグリッドアイテムを作成
+        for (let i = 0; i < 4; i++) {
+            const gridItem = underframeDoc.createElement('div');
+            gridItem.id = `lc-${i}`;
+            gridItem.style.cssText = `
+                background-color: black;
+                border: 1px solid #333;
+                overflow: hidden;
+            `;
+            gridContainer.appendChild(gridItem);
+            // console.log(`Created grid item: lc-${i}`);
+        }
+        
+        underframeDoc.body.appendChild(gridContainer);
+        // console.log('Grid container created successfully'); 
+    } else {
+		// 単一表示用コンテナを作成
+        const singleContainer = underframeDoc.createElement('div');
+        singleContainer.id = 'lc-single-container';
+        singleContainer.style.cssText = `
+            width: 100%;
+            height: 100vh;
+            background-color: black;
+        `;
+        
+        // 単一の光度曲線用コンテナ
+        const lightCurveDiv = underframeDoc.createElement('div');
+        lightCurveDiv.id = 'lc-0';  // 常にlc-0を使用
+        lightCurveDiv.style.cssText = `
+            background-color: black;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        `;
+        
+        singleContainer.appendChild(lightCurveDiv);
+        underframeDoc.body.appendChild(singleContainer);
+        // console.log('Single container created successfully');  
+    }
 }
 
 // var send_data 	={aaaa : a};
