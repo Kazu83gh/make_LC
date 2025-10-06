@@ -138,9 +138,9 @@ function firstLoad(){ //サイトが開かれた際の処理
     timer11 = setTimeout("create_areabox('')",1200);
     setTimeout("create_errorbox('')",1200);
     setTimeout("create_triggerbox('')",1200);
+    setTimeout("parent.mainframe.firstLC()", 2000); //K.Takagi 20251006 光度曲線の自動表示
     timer4 = setTimeout("loadFinish('i')",2500); //準備が完了したことを画面に反映する関数を呼び出す
     setTimeout(detailsmap, 2500);
-    setTimeout("parent.mainframe.firstLC()", 3000); //K.Takagi 20250901 光度曲線の自動表示
 }
 
 function secondLoad(){ //画像タイプ、エネルギー、エラー領域を変更したときに、それぞれの関数から呼び出される
