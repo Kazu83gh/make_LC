@@ -98,6 +98,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
     //     divs[0].remove();
     // }
 
+    console.log(`underframe_pro called with index: ${index}`);
+    
+    // 正しいドキュメントを指定してグリッドコンテナを取得
+    const targetContainer = document.getElementById(`lc-${index}`);
+    if (!targetContainer) {
+        console.error(`Grid container lc-${index} not found`);
+        console.log("Available containers:", 
+            Array.from(document.querySelectorAll('[id^="lc-"]')).map(el => el.id)
+        );
+        return;
+    }
+
+    console.log(`Found target container: lc-${index}`);
+
 	if (!lcStates[index]) {
         lcStates[index] = {
             selectedEnergyBand: "All",
@@ -108,7 +122,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
             zoomAlldata: [],
             highZoom: [],
             medZoom: [],
-            lowZoom: [],		
+            lowZoom: [],
+			pre_LCdata: null,
+			dict_LCdata: null,
         };
     }
 	
@@ -173,7 +189,16 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 	console.log("UTC: ", convUTC_LCdata);
   
     // jsonデータの受け取り、変数に格納
-	let pre_LCdata = all_LCdata;
+	// let pre_LCdata = all_LCdata;
+	if (!lcStates[index].pre_LCdata) {
+	    lcStates[index].pre_LCdata = all_LCdata;
+	}
+	pre_LCdata = lcStates[index].pre_LCdata;
+
+	if (!lcStates[index].dict_LCdata) {
+	    lcStates[index].dict_LCdata = Tolist(all_LCdata);
+	}
+	dict_LCdata = lcStates[index].dict_LCdata;
 
 	// convUTC_LCdataの値が"2000-01-01T00:00:0."のようになっていた場合、2000-01-01T00:00:00に修正
 	if (convUTC_LCdata.endsWith('.')) {
@@ -327,20 +352,48 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 	}
 
     let zoomLC = function () {
-    	setTimeout(function () {
-			if (startRange != startAllRange && endRange != endAllRange) {
-        		if (Re_Reload == 0) {
-        			Re_Reload += 1;
-        			createLC(pre_LCdata);
-        		}
+    	// setTimeout(function () {
+		// 	if (startRange != startAllRange && endRange != endAllRange) {
+        // 		if (Re_Reload == 0) {
+        // 			Re_Reload += 1;
+        // 			createLC(pre_LCdata);
+        // 		}
 
-        		// 初期化部分
-        		Re_Reload = 0;
-			} else if (startRange == startAllRange && endRange == endAllRange && shift_event) {
-        		shift_event = false;
-        		createLC(pre_LCdata);
-        	}
-      	}, 540);
+        // 		// 初期化部分
+        // 		Re_Reload = 0;
+		// 	} else if (startRange == startAllRange && endRange == endAllRange && shift_event) {
+        // 		shift_event = false;
+        // 		createLC(pre_LCdata);
+        // 	}
+      	// }, 540);
+	    setTimeout(function () {
+    	    // lcStatesから範囲を取得
+    	    const currentStartRange = lcStates[index].startRange;
+    	    const currentEndRange = lcStates[index].endRange;
+			
+    	    if (currentStartRange != startAllRange && currentEndRange != endAllRange) {
+    	        if (Re_Reload == 0) {
+    	            Re_Reload += 1;
+				
+    	            // 範囲を更新
+    	            startRange = currentStartRange;
+    	            endRange = currentEndRange;
+				
+    	            // 拡大範囲用のデータを再作成
+    	            const currentPreLCdata = lcStates[index].pre_LCdata;
+    	            if (currentPreLCdata) {
+    	                createLC(currentPreLCdata);
+    	            }
+    	        }
+    	        // 初期化部分
+    	        Re_Reload = 0;
+    	    } else if (currentStartRange == startAllRange && currentEndRange == endAllRange && shift_event) {
+    	        shift_event = false;
+    	        startRange = startAllRange;
+    	        endRange = endAllRange;
+    	        createLC(lcStates[index].pre_LCdata);
+    	    }
+    	}, 540);	
     };
 
 	// 光度曲線のデフォルトの表示範囲を設定(横軸)
@@ -349,13 +402,25 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 	// const medDict = Tolist(med_LCdata);
 	// const lowDict = Tolist(low_LCdata);
 
-	startAllRange = dict_AllLCdata[0][0] - 3600;
-	endAllRange = dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600;
+	// startAllRange = dict_AllLCdata[0][0] - 3600;
+	// endAllRange = dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600;
+	// 全ての光度曲線で共通の表示範囲を使用
+    if (index === 0) {
+        // 最初の光度曲線で基準範囲を設定
+        window.commonDisplayRange = {
+            start: dict_AllLCdata[0][0] - 3600,
+            end: dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600
+        };
+    }
+    
+    startAllRange = window.commonDisplayRange.start;
+    endAllRange = window.commonDisplayRange.end;
 	
 	// 光度曲線の表示範囲を記憶する変数
 	startRange = startAllRange;
 	endRange = endAllRange;
 
+	// lcStatesに範囲を保存
 	lcStates[index].startRange = startRange;
 	lcStates[index].endRange = endRange;
 
@@ -398,11 +463,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
             lcStates[index].lowZoom = lowZoom;
 
 			dict_LCdata = [...highDict, ...medDict, ...lowDict];
+			lcStates[index].dict_LCdata = dict_LCdata;
 
-			console.log("zoomAlldata: ", zoomAlldata);
-			console.log("highZoom: ", highZoom);
-			console.log("medZoom: ", medZoom);
-			console.log("lowZoom: ", lowZoom);
+			// console.log("zoomAlldata: ", zoomAlldata);
+			// console.log("highZoom: ", highZoom);
+			// console.log("medZoom: ", medZoom);
+			// console.log("lowZoom: ", lowZoom);
 
 			// lcStatesから各zoomデータを取得
 			const currentZoomAlldata = lcStates[index].zoomAlldata;
@@ -480,6 +546,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 			console.log("zoomData: ", zoomData);
 		} else { //その他のエネルギーバンドを選択した時
 			dict_LCdata = Tolist(dptc_count_data);
+			lcStates[index].dict_LCdata = dict_LCdata;
 			zoomData = zoomArray(graph_Summarize(dict_LCdata));
 		}
     	// graph_data = graph_Summarize(dict_LCdata);
@@ -8305,13 +8372,18 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 					//console.log(exports.AvailableEnergyBands),
 					// エネルギーバンドタイトル
 					(exports.AvailableEnergyBandTitles =
-						(((e = {})[r.EnergyBand.all] = "2-20keV,    "),
-						(e[r.EnergyBand.low] = "2-4keV"),
-						(e[r.EnergyBand.med] = "4-10keV"),
-						(e[r.EnergyBand.high] = "10-20keV"),
-						(e[r.EnergyBand.multiColor] = "ALL"),
+						// (((e = {})[r.EnergyBand.all] = "2-20keV,    "),
+						// (e[r.EnergyBand.low] = "2-4keV"),
+						// (e[r.EnergyBand.med] = "4-10keV"),
+						// (e[r.EnergyBand.high] = "10-20keV"),
+						// (e[r.EnergyBand.multiColor] = "ALL"),
+						// e)),
+						(((e = {})[r.EnergyBand.all] = "All"),
+						(e[r.EnergyBand.low] = "Low"),
+						(e[r.EnergyBand.med] = "Med"),
+						(e[r.EnergyBand.high] = "High"),
+						(e[r.EnergyBand.multiColor] = "Multi"),
 						e)),
-						
 					//console.log(exports.AvailableEnergyBandTitles),
 					//フォントの種類を格納している。
 					// (exports.AvailableFonts = [r.Font.sans, r.Font.serif]),
@@ -9244,14 +9316,21 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 				function child_remove() {
 					setTimeout(function () {
 					  	// 初めはすべて削除するが２回目からは一つ目の子要素のみ削除する
-					  	while (exports.parent.firstChild) {
-							exports.parent.removeChild(exports.parent.firstChild);
-							// 全て消えてしまう場合はこのへんを修正
-							// if (delete_child == 6) {
-							//   break;
-							// }
-							// delete_child++;
-					  	}
+					  	// while (exports.parent.firstChild) {
+						// 	exports.parent.removeChild(exports.parent.firstChild);
+						// 	// 全て消えてしまう場合はこのへんを修正
+						// 	// if (delete_child == 6) {
+						// 	//   break;
+						// 	// }
+						// 	// delete_child++;
+
+						let targetDiv = exports.parent.querySelector(`#lc-${index}`);
+            			if (targetDiv) {
+            			    while (targetDiv.firstChild) {
+            			        targetDiv.removeChild(targetDiv.firstChild);
+            			    }
+
+            			}
 					}, 540); //この処理を540ミリ秒経過後に完了させる
 
 					//新しい光度曲線を作成
@@ -9259,13 +9338,25 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 
 					//divタグ内の要素がもしもなくなってしまった時の対処
 					setTimeout(function () {
-						if (exports.parent.childElementCount != 1) {
-							console.log("表示エラーが発生しました");
+						// if (exports.parent.childElementCount != 1) {
+						// 	console.log("表示エラーが発生しました");
 						
-							//一旦全部初期化
-						  	startRange = startAllRange;
-						  	endRange = endAllRange;
-							createLC(pre_LCdata); 
+						// 	//一旦全部初期化
+						//   	startRange = startAllRange;
+						//   	endRange = endAllRange;
+						// 	createLC(pre_LCdata); 
+						// }
+
+    					let targetDiv = exports.parent.querySelector(`#lc-${index}`);
+    					if (targetDiv && targetDiv.childElementCount === 0) { // childElementCountが0の場合のみ
+    					    console.log("表示エラーが発生しました");
+						
+    					    //一旦全部初期化
+    					    startRange = startAllRange;
+    					    endRange = endAllRange;
+    					    lcStates[index].startRange = startRange;
+    					    lcStates[index].endRange = endRange;
+    					    createLC(lcStates[index].pre_LCdata);
 						} 
 					}, 700); //この判定は700ミリ秒経過後に実行される
 			  	}
@@ -10529,8 +10620,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 				  (exports.getMargin = function (e) {
 					return e < 470
 					  ? {
-						  left: 56,
-						  right: 0.5,
+						//   left: 56,
+						  left: 44,
+						//   right: 0.5,
+						  right: 1,
 						  top: 37, //文字表示のため、変更（もとは32）
 						  bottom: 32,
 						  gap: 6,
@@ -10538,16 +10631,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 						}
 					  : e < 658
 					  ? {
-						  left: 64,
-						  right: 0.5,
+						//   left: 64,
+						  left: 52,
+						//   right: 0.5,
+						  right: 1,
 						  top: 37, //文字表示のため、変更（もとは32）
 						  bottom: 32,
 						  gap: 6,
 						  lineHeight: 14,
 						}
 					  : {
-						  left: 70,
-						  right: 0.5,
+						//   left: 70,
+						  left: 58,
+						//   right: 0.5,
+						  right: 1,
 						  top: 37, //文字表示のため、変更（もとは32）
 						  bottom: 32,
 						  gap: 6,
@@ -10979,18 +11076,17 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 						  keys: F,
 						  getter: l.getLightCurveData,
 						  onError: E,
-						}),
-						O = i.useCache({
-						  keys: F,
-						  getter: function (e) {
+						});
+					var O = i.useCache({
+					  	keys: F,
+					  	getter: function (e) {
 							var t = dict_LCdata;
 							//console.log(t ? a.getRollingAverage(t, y.binSize) : null);
-		  
 							return t ? a.getRollingAverage(t, y.binSize) : null;
-						  },
-						  onError: E,
-						  dependencies: [y.binSize, _],
-						});
+					  	},
+					  	onError: E,
+					  	dependencies: [y.binSize, _],
+					});
 
 
 		  
@@ -11058,7 +11154,15 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							  //光度曲線のPlot typeやBin sizeを設定する場所
 							  n.createElement(
 								"ul",
-								null,
+								// null,
+								{
+  								  	style: {
+  								  	  	marginTop: "3px",
+        								marginBottom: "3px",
+										marginLeft: "10px",
+  								  	  	padding: "0",
+  								  	}
+  								},
 								n.createElement(
 								  "li",
 								//   null,
@@ -11170,7 +11274,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
     								    display: "flex",
     								    alignItems: "center",
     								    gap: "10px",
-										marginRight: "40px"
+										// marginRight: "40px"
+										marginRight: "10px"
     								  }
     								},
 								  n.createElement(
@@ -11208,13 +11313,17 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
     									}
 
 								     	if (useBG) { //BG→通常
+											lcStates[index].useBG = 0;
 											useBG = 0;
-											createLC(pre_LCdata);
+											// createLC(pre_LCdata);
+											createLC(lcStates[index].pre_LCdata); 
 										} else { //通常→BG
 											// BGデータが既に取得済みかチェック
     										if (LCdata.BG && LCdata.BGErr) { // BGデータが存在する場合
+												lcStates[index].useBG = 1;
     										    useBG = 1;
-    										    createLC(pre_LCdata);
+    										    // createLC(pre_LCdata);
+												createLC(lcStates[index].pre_LCdata); 
 											} else { // BGデータが存在しない場合
 												// CGIに送るデータを取得
 												let send = window.parent.mainframe.currentSend; 
@@ -11270,27 +11379,54 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
                                             ////////////// MARK:選択肢ごとの処理 //////////////
 											lcStates[index].selectedEnergyBand = e.currentTarget.value;
                                             selectedEnergyBand = e.currentTarget.value;
-                                            switch (selectedEnergyBand) {
-                                              case "All":
-                                                pre_LCdata = all_LCdata;
-												break;
-                                              case "High":
-                                                pre_LCdata = high_LCdata;
-                                                break;
-                                              case "Med":
-                                                pre_LCdata = med_LCdata;
-                                                break;
-                                              case "Low":
-                                                pre_LCdata = low_LCdata;
-                                                break;
-											  case "multiColor":
-											  	// pre_LCdata = comb_LCdata;
-												pre_LCdata = [];
-											  	break;
-                                              default:
-                                                // デフォルトの処理
-                                                break;
-                                            }
+
+                                            // switch (selectedEnergyBand) {
+                                            //   case "All":
+                                            //     pre_LCdata = all_LCdata;
+											// 	break;
+                                            //   case "High":
+                                            //     pre_LCdata = high_LCdata;
+                                            //     break;
+                                            //   case "Med":
+                                            //     pre_LCdata = med_LCdata;
+                                            //     break;
+                                            //   case "Low":
+                                            //     pre_LCdata = low_LCdata;
+                                            //     break;
+											//   case "multiColor":
+											//   	// pre_LCdata = comb_LCdata;
+											// 	pre_LCdata = [];
+											//   	break;
+                                            //   default:
+                                            //     // デフォルトの処理
+                                            //     break;
+                                            // }
+
+											let targetData;
+    										switch (selectedEnergyBand) {
+    										    case "All":
+    										        targetData = all_LCdata;
+    										        break;
+    										    case "High":
+    										        targetData = high_LCdata;
+    										        break;
+    										    case "Med":
+    										        targetData = med_LCdata;
+    										        break;
+    										    case "Low":
+    										        targetData = low_LCdata;
+    										        break;
+    										    case "multiColor":
+    										        targetData = [];
+    										        break;
+    										    default:
+    										        targetData = all_LCdata;
+    										        break;
+    										}
+										
+    										// 追加：lcStatesに保存
+    										lcStates[index].pre_LCdata = targetData;
+    										pre_LCdata = targetData;
   
                                             // 光度曲線を消去
                                             // var divs = document.getElementsByTagName('div');
@@ -11317,7 +11453,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							    ),			
 							  ),
 							  //光度曲線全体をfigureタグの中に入れている
-							  n.createElement("figure", null, K)
+							//   n.createElement("figure", null, K)
+							  n.createElement("figure", {
+							    style: {
+							      margin: 3,
+							      padding: 0
+							    }
+							  }, K)
 							)
 						  );
 					});
@@ -11376,27 +11518,76 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 				// 	});
                 //     document.body.setAttribute("id", "body");
 				/////
-				var s = document.createElement("div");
-				var existingElement = document.getElementById(`lc-${index}`);
+				// v2
+				// var s = document.createElement("div");
+				// var existingElement = document.getElementById(`lc-${index}`);
 
-				// lc-{index}というIDの要素がすでに存在するかチェック
-				if (existingElement) { // lc-{index}というIDの要素が存在する場合
-				    existingElement.appendChild(s);
-				} else { // lc-{index}というIDの要素が存在しない場合
-				    s.id = `lc-${index}`;
-				    document.body.appendChild(s); // 新しいdivを作成してbodyに追加
+				// // lc-{index}というIDの要素がすでに存在するかチェック
+				// if (existingElement) { // lc-{index}というIDの要素が存在する場合
+				//     existingElement.appendChild(s);
+				// } else { // lc-{index}というIDの要素が存在しない場合
+				//     s.id = `lc-${index}`;
+				//     document.body.appendChild(s); // 新しいdivを作成してbodyに追加
 
-					[
-					  "https://cdn.maxi.wemo.me/fonts/Serif/cmun-serif.css",
-					  "https://cdn.maxi.wemo.me/fonts/Sans/cmun-sans.css",
-					  "https://cdn.maxi.wemo.me/fonts/Typewriter/cmun-typewriter-light.css",
-					].forEach(function (e) {
-					  var t = document.createElement("link");
-					  (t.rel = "stylesheet"), (t.href = e), document.head.appendChild(t);
-					});
-                	document.body.setAttribute("id", "body");
-				}
-				r.render(t.createElement(n.App), s);
+				// 	[
+				// 	  "https://cdn.maxi.wemo.me/fonts/Serif/cmun-serif.css",
+				// 	  "https://cdn.maxi.wemo.me/fonts/Sans/cmun-sans.css",
+				// 	  "https://cdn.maxi.wemo.me/fonts/Typewriter/cmun-typewriter-light.css",
+				// 	].forEach(function (e) {
+				// 	  var t = document.createElement("link");
+				// 	  (t.rel = "stylesheet"), (t.href = e), document.head.appendChild(t);
+				// 	});
+                // 	document.body.setAttribute("id", "body");
+				// }
+				// r.render(t.createElement(n.App), s);
+				/////
+				//v3
+				// 現在のindex（グリッド位置）を取得
+        		// const currentIndex = window.currentLCIndex || 0;
+				const currentIndex = index || 0;
+				console.log(`vqK8: Creating LC for index ${currentIndex}`);
+
+        		var s = document.createElement("div");
+        		var targetContainer = document.getElementById(`lc-${currentIndex}`);
+
+        		if (targetContainer) {
+					console.log(`Found target container: lc-${currentIndex}`);
+        		    // 既存の内容をクリア
+        		    targetContainer.innerHTML = '';
+					// div要素に上移動のスタイルを適用
+    				s.style.marginTop = "-20px"; // 上に20px移動
+        		    targetContainer.appendChild(s);
+        		} else {
+					console.error(`Target container lc-${currentIndex} not found in vqK8`);
+            		console.log("Available elements:", 
+            		    Array.from(document.querySelectorAll('[id^="lc-"]')).map(el => el.id)
+            		);
+        		    // フォールバック：従来の方法
+        		    s.id = `lc-${currentIndex}`;
+        		    document.body.appendChild(s);
+        		}
+			
+        		// CSSが未ロードの場合のみロード
+        		if (!document.querySelector('link[href*="cmun-serif.css"]')) {
+        		    [
+        		        "https://cdn.maxi.wemo.me/fonts/Serif/cmun-serif.css",
+        		        "https://cdn.maxi.wemo.me/fonts/Sans/cmun-sans.css",
+        		        "https://cdn.maxi.wemo.me/fonts/Typewriter/cmun-typewriter-light.css",
+        		    ].forEach(function (e) {
+        		        var t = document.createElement("link");
+        		        (t.rel = "stylesheet"), (t.href = e), document.head.appendChild(t);
+        		    });
+        		}
+			
+        		if (!document.body.id) {
+        		    document.body.setAttribute("id", "body");
+        		}
+
+				// bodyの余白を変更
+				document.body.style.margin = "5px";
+				document.body.style.padding = "0";
+			
+        		r.render(t.createElement(n.App), s);
 				/////
 				},
 				{
@@ -11414,4 +11605,3 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 		  
           }
         }
-
