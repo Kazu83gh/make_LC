@@ -6,6 +6,35 @@ function resetLcStates() {
 	console.log("lcStates has been reset");
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
+// MARK: performanceLogger
+// 実行時間測定用のオブジェクト
+const performanceLogger = {
+    timers: {},
+    
+    start: function(label) {
+        this.timers[label] = {
+            start: performance.now(),
+            startTimestamp: new Date().toISOString()
+        };
+        console.log(`[PERF] ${label} START: ${this.timers[label].startTimestamp}`);
+    },
+    
+    end: function(label) {
+        if (this.timers[label]) {
+            const endTime = performance.now();
+            const endTimestamp = new Date().toISOString();
+            const duration = (endTime - this.timers[label].start) / 1000;
+            
+            console.log(`[PERF] ${label} END: ${endTimestamp}`);
+            console.log(`[PERF] ${label} DURATION: ${duration.toFixed(3)}s`);
+            
+            delete this.timers[label];
+            return duration;
+        }
+        return 0;
+    }
+};
+////////////////////////////////////////////////////////////////////////////////////////////////////
 // urlの場所からGPStimeとDPTCの差を取得
 let recentDptcUnixDiff = '';
 const url = 'http://maxim.phys.cst.nihon-u.ac.jp/mxdata/auxil/GPS2DPTC.txt';
@@ -91,14 +120,12 @@ function gps2unix(gpsTime){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 // クリックした時に呼び出される関数
 // MARK: underframe_pro関数
-function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
+function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide = 0){
     // まず、underframe.htmlのdivタグを全て削除
 	// let divs = document.getElementsByTagName('div');
     // while (divs.length > 0) {
     //     divs[0].remove();
     // }
-
-    console.log(`underframe_pro called with index: ${index}`);
     
     // 正しいドキュメントを指定してグリッドコンテナを取得
     const targetContainer = document.getElementById(`lc-${index}`);
@@ -109,8 +136,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
         );
         return;
     }
-
-    console.log(`Found target container: lc-${index}`);
 
 	if (!lcStates[index]) {
         lcStates[index] = {
@@ -142,7 +167,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
         Re_Reload = 0, //再リロードするか
 		loopCount = 0, //3色同時表示用
 		changeEBArray = [], //3色同時表示用
-		dptcUnixDiff = 0; //dptcとunixtimeの差
+		dptcUnixDiff = 0, //dptcとunixtimeの差
+		globalScale = divide ? 0.7 : 1.0; // divideパラメータに基づいてスケールを設定
 		// , 
 		// selectedEnergyBand = "All", //デフォルトで選択されるエネルギーバンド
 		// changeBinsize = 1, //デフォルトで選択されるbinsize
@@ -187,6 +213,25 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 	console.log("Low", low_LCdata);
 	// console.log("Comb", comb_LCdata);
 	console.log("UTC: ", convUTC_LCdata);
+	// Calculate and display size of LCdata
+	const calculateSize = (obj) => {
+		const json = JSON.stringify(obj);
+		const size = new Blob([json]).size;
+		return size;
+	};
+
+	const totalSize = calculateSize(LCdata);
+
+	let totalCount = 0;
+	for (let i = 1; i < all_LCdata.length; i += 2) {
+		totalCount += all_LCdata[i];
+	}
+
+	console.log("--- LCdata size information ---");
+	console.log(`Total counts: ${totalCount}`);
+	console.log(`Total LCdata size: ${(totalSize / 1024).toFixed(2)} KB`);
+	console.log(`Total LCdata size: ${(totalSize / (1024 * 1024)).toFixed(4)} MB`);
+	console.log("-------------------------------");
   
     // jsonデータの受け取り、変数に格納
 	// let pre_LCdata = all_LCdata;
@@ -405,16 +450,23 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 	// startAllRange = dict_AllLCdata[0][0] - 3600;
 	// endAllRange = dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600;
 	// 全ての光度曲線で共通の表示範囲を使用
-    if (index === 0) {
-        // 最初の光度曲線で基準範囲を設定
-        window.commonDisplayRange = {
-            start: dict_AllLCdata[0][0] - 3600,
-            end: dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600
-        };
-    }
+    // if (index === 0) {
+    //     // 最初の光度曲線で基準範囲を設定
+    //     window.commonDisplayRange = {
+    //         start: dict_AllLCdata[0][0] - 3600,
+    //         end: dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600
+    //     };
+    // }
+	if (!parent.window.commonDisplayRange || Object.keys(parent.window.commonDisplayRange).length === 0) {
+    	parent.window.commonDisplayRange = {
+    	    start: dict_AllLCdata[0][0] - 3600,
+    	    end: dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600
+    	};
+	}
+	// console.log("[under]commonDisplayRange: ", parent.window.commonDisplayRange);
     
-    startAllRange = window.commonDisplayRange.start;
-    endAllRange = window.commonDisplayRange.end;
+	startAllRange = parent.window.commonDisplayRange.start;
+	endAllRange = parent.window.commonDisplayRange.end;
 	
 	// 光度曲線の表示範囲を記憶する変数
 	startRange = startAllRange;
@@ -8378,7 +8430,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 						// (e[r.EnergyBand.high] = "10-20keV"),
 						// (e[r.EnergyBand.multiColor] = "ALL"),
 						// e)),
-						(((e = {})[r.EnergyBand.all] = "All"),
+						(((e = {})[r.EnergyBand.all] = "All,  "),
 						(e[r.EnergyBand.low] = "Low"),
 						(e[r.EnergyBand.med] = "Med"),
 						(e[r.EnergyBand.high] = "High"),
@@ -8405,9 +8457,21 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 					//(exports.pageTitle = "光度曲線テスト"),
 					(exports.mainTickSize = 10),
 					(exports.subTickSize = 5),
-                    //光度曲線の表示範囲（縦）
+                    //MARK:光度曲線の高さ
 					(exports.getAreaHeight = function () {
-					  return 150; //0.2 * window.innerHeight;
+						// return 0.2 * window.innerHeight;
+					  	// return 150;
+						// グリッドコンテナの高さを取得
+						const underframe = window.parent.underframe.document;
+						const container = underframe.getElementById('lc-' + index);
+  						if (container) {
+  							const containerHeight = container.clientHeight;
+
+  						    return Math.min(containerHeight - 100, 200);
+  						}
+					
+  						// フォールバック
+  						return 150;
 					}),
 					(exports.bandCount = 1) /*4*/;
 				},
@@ -8891,12 +8955,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							loopCount++;
 						}
 
-						if (useBG) {
-							n[0] = Math.min(n[0], -1.0);
-						} else { //BGを考慮しない時にはグラフの最小値を0に
-							n[0] = 0.0				
-						}
-
+						// if (useBG) {
+						// 	n[0] = Math.min(n[0], -1.0);
+						// } else { //BGを考慮しない時にはグラフの最小値を0に
+						// 	n[0] = 0.0				
+						// }
+						n[0] = Math.min(n[0], -2.0);
 						a[0] = a[0] * 1.2; //十字が見切れないように縦軸の最大値を調整(1.2倍に)
 
 						return (
@@ -9451,7 +9515,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 						{
 						  x: a + i.x + 2,
 						  y: i.y - 2 - 2 * 0.9 * x,
-						  fontSize: "80%",
+						//   fontSize: "80%",
+						  fontSize: (80 * globalScale) + "%",
 						  fill: r.Color.white,
 						  opacity: 0.7,
 						},
@@ -9463,7 +9528,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 						{
 						  x: a + i.x + 2,
 						  y: i.y - 2 - 0.9 * x,
-						  fontSize: "80%",
+						//   fontSize: "80%",
+						  fontSize: (80 * globalScale) + "%",
 						  fill: r.Color.white,
 						  opacity: 0.7,
 						},
@@ -9477,7 +9543,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 						{
 						  x: a + i.x + 2,
 						  y: i.y - 2,
-						  fontSize: "80%",
+						//   fontSize: "80%",
+						  fontSize: (80 * globalScale) + "%",
 						  fill: r.Color.white,
 						  opacity: 0.7,
 						},
@@ -9689,6 +9756,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 										x: o - 4,
 										y: k(t),
 										fill: i.Color.white,
+										fontSize: (100 * globalScale) + "%",
 										dominantBaseline: "middle",
 										textAnchor: "end",
 									},
@@ -9704,6 +9772,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 										x: o - 4,
 										y: k(t),
 										fill: i.Color.white,
+										fontSize: (100 * globalScale) + "%",
 										dominantBaseline: "middle",
 										textAnchor: "end",
 									},
@@ -10057,7 +10126,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 								{
 									x: y(gwTriUnix) - 5,
 									y: 5,
-									fontSize: "80%",
+									// fontSize: "80%",
+									fontSize: (80 * globalScale) + "%",
 									fill: i.Color.white,
 									opacity: 0.7,
 								},
@@ -10085,7 +10155,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 								{
 									x: y(maxiTriUnix) + 2,
 									y: 17,
-									fontSize: "80%",
+									// fontSize: "80%",
+									fontSize: (80 * globalScale) + "%",
 									fill: i.Color.white,
 									opacity: 0.7,
 								},
@@ -10119,6 +10190,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							  x: r,
 							  y: d - 4,
 							  fill: i.Color.white,
+							  fontSize: (100 * globalScale) + "%",
 							  dominantBaseline: "baseline",
 							  textAnchor: "middle",
 							  ref: l(r, u, m, 0 === n, n === S),
@@ -10136,6 +10208,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							  x: y(s),
 							  y: d - 4 - p,
 							  fill: i.Color.white,
+							  fontSize: (100 * globalScale) + "%",
 							  dominantBaseline: "baseline",
 							  textAnchor: "end",
 							},
@@ -10156,6 +10229,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							x: y(c) + 50,
 							y: d - 4 - p,
 							fill: i.Color.white,
+							fontSize: (100 * globalScale) + "%",
 							dominantBaseline: "baseline",
 							textAnchor: "end",
 						  },
@@ -10177,6 +10251,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							  x: r,
 							  y: f + 4,
 							  fill: i.Color.white,
+							  fontSize: (100 * globalScale) + "%",
 							  dominantBaseline: "hanging",
 							  textAnchor: "middle",
 							  ref: l(r, u, m, 0 === n, n === C),
@@ -10194,6 +10269,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							x: y(s),
 							y: f + 4 + p,
 							fill: i.Color.white,
+							fontSize: (100 * globalScale) + "%",
 							dominantBaseline: "hanging",
 							textAnchor: "end",
 						  },
@@ -10202,7 +10278,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 					  );
 					}
 					return e.createElement("g", {
-					  children: E,
+					  	id: "xTicks",
+  						width: a,
+  					  	children: E,
 					});
 				  });
 				},
@@ -10278,9 +10356,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							"text",
 							{
 								//文字を回転させている関係でx,yの値が逆になっているので注意
-								x: - c - u / 2 - 45,
-								y: l - 40,
-								fontSize: "100%",
+								// x: - c - u / 2 - 45,
+								// y: l - 40,
+								x: divide ? - c - u / 2 - 30 : - c - u / 2 - 45,
+								y: divide ? l - 30 : l - 40,
+								// fontSize: "100%",
+								fontSize: (100 * globalScale) + "%",
 								fill: t.Color.white,
 								transform: "rotate(-90)",
 							},
@@ -10617,38 +10698,48 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 					i = require("../../util/constants"),
 					r = require("./Cursor"),
 					o = require("./Body");
+					//MARK:getMargin関数
 				  (exports.getMargin = function (e) {
 					return e < 470
 					  ? {
-						//   left: 56,
-						  left: 44,
-						//   right: 0.5,
-						  right: 1,
-						  top: 37, //文字表示のため、変更（もとは32）
-						  bottom: 32,
-						  gap: 6,
-						  lineHeight: 12,
+							// left: 56,
+							// left: 30,
+							left: divide ? 32 : 40,
+							// right: 0.5,
+						  	right: 10,
+							// top: 32,
+							// top: 37, 
+						  	top: divide ? 30 : 37, 
+						  	bottom: 32,
+						  	gap: 6,
+						  	lineHeight: 12,
 						}
 					  : e < 658
 					  ? {
-						//   left: 64,
-						  left: 52,
-						//   right: 0.5,
-						  right: 1,
-						  top: 37, //文字表示のため、変更（もとは32）
-						  bottom: 32,
-						  gap: 6,
-						  lineHeight: 14,
+							// left: 64,
+						  	// left: 38,
+							left: divide ? 40 : 48,
+							// right: 0.5,
+						  	right: 10,
+							// top: 32,
+							// top: 37, 
+						  	top: divide ? 30 : 37, 
+						  	bottom: 32,
+						  	gap: 6,
+						  	lineHeight: 14,
 						}
 					  : {
-						//   left: 70,
-						  left: 58,
-						//   right: 0.5,
-						  right: 1,
-						  top: 37, //文字表示のため、変更（もとは32）
-						  bottom: 32,
-						  gap: 6,
-						  lineHeight: 16,
+							// left: 70,
+						  	// left: 44,
+							left: divide ? 46 : 54,
+							// right: 0.5,
+						  	right: 10,
+							// top: 32,
+							// top: 37, 
+						  	top: divide ? 30 : 37, 
+						  	bottom: 32,
+						  	gap: 6,
+						  	lineHeight: 16,
 						};
 				  }),
 					(exports.LightCurve = function (e) {
@@ -10665,11 +10756,30 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 					  startRange = exports.h[0][0];
 					  endRange = exports.h[0][1];
 
+					  	if (!lcStates[index]) {
+					  	    lcStates[index] = {
+					  	        selectedEnergyBand: "All",
+					  	        changeBinsize: 1,
+					  	        useBG: 1,
+					  	        startRange: 1400000000,
+					  	        endRange: 1400000000,
+					  	        zoomAlldata: [],
+					  	        highZoom: [],
+					  	        medZoom: [],
+					  	        lowZoom: [],
+					  	        pre_LCdata: null,
+					  	        dict_LCdata: null,
+					  	    };
+					  	}
+
 					  lcStates[index].startRange = startRange;
 					  lcStates[index].endRange = endRange;
 
 					  var u = t.useRef(null),
-						s = t.useState(0.94 * window.innerWidth),
+						// s = t.useState(0.94 * window.innerWidth),
+						s = divide 
+							? t.useState(0.485 * window.innerWidth)
+							: t.useState(0.98 * window.innerWidth),
 						a = s[0],
 						l = s[1],
 						c = exports.getMargin(a),
@@ -11158,7 +11268,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 								{
   								  	style: {
   								  	  	marginTop: "3px",
-        								marginBottom: "3px",
+        								marginBottom: "0px",
 										marginLeft: "10px",
   								  	  	padding: "0",
   								  	}
@@ -11190,6 +11300,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 									  htmlFor: o.URLParameterKey.binSize,
                                       style: {
 										color: "white",
+										fontSize: (100 * globalScale) + "%",
 									  },
 									},
 									"Bin size: "
@@ -11204,10 +11315,16 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 									// defaultValue: c.default_binsize,
 									defaultValue: lcStates[index].changeBinsize || c.default_binsize,
 									name: `EnergyBandChoice-${index}`,
+									style: {
+    								    width: (49 * globalScale) + "px",
+    								    height: (21 * globalScale) + "px",
+    								    fontSize: (14 * globalScale) + "px"
+    								},
 									onMouseDown: function(e) { //スピンボタンをクリックしたときの処理
 										const input = e.currentTarget;
 										const rect = input.getBoundingClientRect();
-										const clickSpin = e.clientX > (rect.right - 20);
+										// const clickSpin = e.clientX > (rect.right - 20);
+										const clickSpin = e.clientX > (rect.right - 20 * globalScale);
 										const isSpinUp = e.clientY < (rect.top + rect.height / 2);
 										// const currentValue = parseInt(input.value, 10);
 										const currentValue = lcStates[index].changeBinsize;
@@ -11263,7 +11380,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 								  n.createElement(
                                     "label", 
                                     {
-                                      style: {color: "white"},
+                                      style: {
+										color: "white",
+										fontSize: (100 * globalScale) + "%",
+									  },
                                     },
                                     "s"),
 								),
@@ -11283,7 +11403,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
                                     {
                                       style: {
 										color: "white",
-										transform: "translateX(65px)"
+										fontSize: (100 * globalScale) + "%",
+										// transform: "translateX(62px)" //一つだけ表示する場合
+										// transform: "translateX(51px)" //四分割表示する場合
+										transform: divide ? "translateX(51px)" : "translateX(62px)"
 									  }
                                     },
                                     "(α, δ) = (" +  Number(ra).toFixed(1) + ", " +  Number(dec).toFixed(1) + ")"),
@@ -11296,8 +11419,11 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
     									border: "none",
     									borderRadius: "3px",
     									cursor: "pointer",
-    									fontSize: "14px",
-										transform: "translateY(24px)"
+    									// fontSize: "14px",
+										fontSize: (88 * globalScale) + "%",
+										// transform: "translateY(24px)" //一つだけ表示する場合
+										// transform: "translateY(15px)" //四分割表示する場合
+										transform: divide ? "translateY(16px)" : "translateY(24px)"
   								    },
   								    onClick: function() {
 										// // underframeのdivを消去
@@ -11331,6 +11457,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 												window.parent.mainframe.sendLightCurveRequest(
 													'/cgi-bin/make_LCdataBG.py',
 													send,
+													index,
 													(receive_LCdata) => {
     												    window.parent.underframe.underframe_pro(
 															receive_LCdata, 
@@ -11355,10 +11482,19 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
                                   void 0,
                                   [
                                     "li",
-                                    null,
+                                    // null,
+									{
+									    style: {
+											display: "flex",
+    									  	listStyle: "none",  // マーカーを非表示
+    									}
+									},
                                     n.createElement("label", 
                                     {
-                                      style: {color: "white"}
+                                      style: {
+										color: "white",
+										fontSize: (100 * globalScale) + "%",
+									  },
                                     }, 
                                     "Energy band: "),
                                   ].concat(
@@ -11367,7 +11503,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
                                         "label",
                                         {
                                           className: "EnergyBand_name",
-                                          style: {color: "white"},
+                                          style: {
+											color: "white",
+											fontSize: (100 * globalScale) + "%",
+										  },
                                         },
                                         n.createElement("input", {
                                           type: "radio",
@@ -11375,6 +11514,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 										  name: `EnergyBandChoice-${index}`,
                                           value: e,
                                           defaultChecked: selectedEnergyBand === e, 
+										  style: {
+										      width: (16 * globalScale) + "px",
+										      height: (16 * globalScale) + "px"
+										  },
                                           onChange: function (e) {
                                             ////////////// MARK:選択肢ごとの処理 //////////////
 											lcStates[index].selectedEnergyBand = e.currentTarget.value;
@@ -11448,7 +11591,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
                                         // console.log(o.AvailableEnergyBandTitles[e])
                                       );
                                     }),
-                                    ["."]
+                                    // ["."]
                                   ),	
 							    ),			
 							  ),
@@ -11456,7 +11599,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 							//   n.createElement("figure", null, K)
 							  n.createElement("figure", {
 							    style: {
-							      margin: 3,
+							      margin: 0,
 							      padding: 0
 							    }
 							  }, K)
@@ -11545,13 +11688,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 				// 現在のindex（グリッド位置）を取得
         		// const currentIndex = window.currentLCIndex || 0;
 				const currentIndex = index || 0;
-				console.log(`vqK8: Creating LC for index ${currentIndex}`);
+				// console.log(`vqK8: Creating LC for index ${currentIndex}`);
 
         		var s = document.createElement("div");
         		var targetContainer = document.getElementById(`lc-${currentIndex}`);
 
         		if (targetContainer) {
-					console.log(`Found target container: lc-${currentIndex}`);
+					// console.log(`Found target container: lc-${currentIndex}`);
         		    // 既存の内容をクリア
         		    targetContainer.innerHTML = '';
 					// div要素に上移動のスタイルを適用
@@ -11601,7 +11744,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index){
 			{},
 			["vqK8"],
 			null
-		  );
-		  
-          }
-        }
+		);
+    }
+}
