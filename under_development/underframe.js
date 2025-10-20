@@ -279,6 +279,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 		return dptc;
 	}
 
+	let testDptc = unix2dptc(gwTriUnix);
+	console.log("GW tigger (DPTC): " + testDptc);
+
 	//MARK: Tolist関数
 	function Tolist(data){
 		let array = [];
@@ -8430,10 +8433,16 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						// (e[r.EnergyBand.high] = "10-20keV"),
 						// (e[r.EnergyBand.multiColor] = "ALL"),
 						// e)),
-						(((e = {})[r.EnergyBand.all] = "All,  "),
-						(e[r.EnergyBand.low] = "Low"),
-						(e[r.EnergyBand.med] = "Med"),
-						(e[r.EnergyBand.high] = "High"),
+						// (((e = {})[r.EnergyBand.all] = "All,  "),
+						// (e[r.EnergyBand.low] = "Low"),
+						// (e[r.EnergyBand.med] = "Med"),
+						// (e[r.EnergyBand.high] = "High"),
+						// (e[r.EnergyBand.multiColor] = "Multi"),
+						// e)),
+						(((e = {})[r.EnergyBand.all] = "All"),
+						(e[r.EnergyBand.low] = divide ? "L" : "Low"),
+						(e[r.EnergyBand.med] = divide ? "M" : "Med"),
+						(e[r.EnergyBand.high] = divide ? "H" : "High"),
 						(e[r.EnergyBand.multiColor] = "Multi"),
 						e)),
 					//console.log(exports.AvailableEnergyBandTitles),
@@ -8464,10 +8473,17 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						// グリッドコンテナの高さを取得
 						const underframe = window.parent.underframe.document;
 						const container = underframe.getElementById('lc-' + index);
-  						if (container) {
-  							const containerHeight = container.clientHeight;
+						const containerHeight = container.clientHeight;
 
-  						    return Math.min(containerHeight - 100, 200);
+						// console.log("Container Height:", containerHeight);
+						
+  						if (container) {
+							if(divide){
+								// return Math.min(containerHeight - 85, 150);
+								return Math.min(containerHeight - 60, 150);
+							} else {
+								return Math.min(containerHeight - 135, 200);
+							}
   						}
 					
   						// フォールバック
@@ -10107,25 +10123,33 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						}),
 						];
 					//GWのtrggertimeを描画
-					if (gwTriUnix > c) {
+					// if (gwTriUnix > c) {
+					if (gwTriUnix > c && gwTriUnix < s) {
 						E.push(
 							e.createElement("path", {
 								//d: ["M" + y(gwTriUnix) + ", 1v225"],
-								d: ["M" + y(gwTriUnix) + ", 9V" + d 
-									+"l -6,-16 M" +	y(gwTriUnix) + "," + d 
-									+"l 6,-16"],
+								// d: ["M" + y(gwTriUnix) + ", 9V" + d 
+								// 	+"l -6,-16 M" +	y(gwTriUnix) + "," + d 
+								// 	+"l 6,-16"],
+								
+								d: divide ? 
+									["M" + y(gwTriUnix) + ", 5V" + d + "l -3,-8 M" + y(gwTriUnix) + "," + d + "l 3,-8"]
+									: ["M" + y(gwTriUnix) + ", 9V" + d + "l -6,-16 M" +	y(gwTriUnix) + "," + d + "l 6,-16"],
 								stroke: i.Color.orange,
 							})
 						);
 					};
 					//GW triggerという文字を表示
-					if (gwTriUnix > c) {
+					// if (gwTriUnix > c) {
+					if (gwTriUnix > c && gwTriUnix < s) {
 						E.push(
 							e.createElement(
 								"text",
 								{
+									// x: y(gwTriUnix) - 5,
+									// y: 5,
 									x: y(gwTriUnix) - 5,
-									y: 5,
+									y: divide ? 3 : 5,
 									// fontSize: "80%",
 									fontSize: (80 * globalScale) + "%",
 									fill: i.Color.white,
@@ -10205,8 +10229,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							"text",
 							{
 							  key: "dateLabel",
-							  x: y(s),
-							  y: d - 4 - p,
+							//   x: y(s),
+							//   y: d - 4 - p,
+							  x: divide ? y(s) + 30 : y(s),
+							  y: divide ? d + 5 : d - 4 - p,
 							  fill: i.Color.white,
 							  fontSize: (100 * globalScale) + "%",
 							  dominantBaseline: "baseline",
@@ -10221,7 +10247,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					  //初期化
 					  num = [];
 					  ////////////////////////////////////////////////////////////////////////////////////
-					  E.push(
+					//   E.push(
+					  !divide ? E.push(
 						e.createElement(
 						  "text",
 						  {
@@ -10235,7 +10262,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						  },
 						  result
 						)
-					  );
+					//   );
+					  ) : null;
 					}
 					if (b) {
 					  var C = T.main.length - 1;
@@ -10266,8 +10294,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						  "text",
 						  {
 							key: "mjdLabel",
-							x: y(s),
-							y: f + 4 + p,
+							// x: y(s),
+							// y: f + 4 + p,
+							x: divide ? y(s) + 30 : y(s),
+							y: divide ? f - 5 : f + 4 + p,
 							fill: i.Color.white,
 							fontSize: (100 * globalScale) + "%",
 							dominantBaseline: "hanging",
@@ -10706,11 +10736,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							// left: 30,
 							left: divide ? 32 : 40,
 							// right: 0.5,
-						  	right: 10,
+						  	// right: 10,
+							right: divide ? 40 : 10,
 							// top: 32,
 							// top: 37, 
-						  	top: divide ? 30 : 37, 
-						  	bottom: 32,
+						  	// top: divide ? 30 : 37, 
+							top: divide ? 18 : 37,
+						  	// bottom: 32,
+							bottom: divide ? 10 : 32,
 						  	gap: 6,
 						  	lineHeight: 12,
 						}
@@ -10720,11 +10753,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						  	// left: 38,
 							left: divide ? 40 : 48,
 							// right: 0.5,
-						  	right: 10,
+						  	// right: 10,
+							right: divide ? 40 : 10,
 							// top: 32,
 							// top: 37, 
-						  	top: divide ? 30 : 37, 
-						  	bottom: 32,
+						  	// top: divide ? 30 : 37, 
+							top: divide ? 18 : 37,
+						  	// bottom: 32,
+							bottom: divide ? 10 : 32,
 						  	gap: 6,
 						  	lineHeight: 14,
 						}
@@ -10733,11 +10769,14 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						  	// left: 44,
 							left: divide ? 46 : 54,
 							// right: 0.5,
-						  	right: 10,
+						  	// right: 10,
+							right: divide ? 40 : 10,
 							// top: 32,
 							// top: 37, 
-						  	top: divide ? 30 : 37, 
-						  	bottom: 32,
+						  	// top: divide ? 30 : 37, 
+							top: divide ? 18 : 37,
+						  	// bottom: 32,
+							bottom: divide ? 10 : 32,
 						  	gap: 6,
 						  	lineHeight: 16,
 						};
@@ -11386,6 +11425,90 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 									  },
                                     },
                                     "s"),
+									/////////////////////////////////////////////
+									// //四分割表示の時にはここには表示
+    							    divide ? n.createElement(
+    							      "div",
+    							      {
+    							        style: {
+    							          display: "flex",
+    							          alignItems: "center",
+    							          gap: "5px",
+    							          marginLeft: "15px"
+    							        }
+    							      },
+    							      n.createElement("label", 
+    							      {
+    							        style: {
+    							          color: "white",
+    							          fontSize: (100 * globalScale) + "%",
+										   marginLeft: "-5px", // 左側を詰める
+    							        },
+    							      },
+    							      "Energy band: "),
+    							      // Energy bandのラジオボタンを追加
+    							      ...o.AvailableEnergyBands.map(function (e) {
+    							        return n.createElement(
+    							          "label",
+    							          {
+    							            className: "EnergyBand_name",
+    							            style: {
+    							              color: "white",
+    							              fontSize: (100 * globalScale) + "%",
+    							            },
+    							          },
+    							          n.createElement("input", {
+    							            type: "radio",
+    							            name: `EnergyBandChoice-${index}`,
+    							            value: e,
+    							            defaultChecked: selectedEnergyBand === e, 
+    							            style: {
+    							              width: (16 * globalScale) + "px",
+    							              height: (16 * globalScale) + "px"
+    							            },
+    							            onChange: function (e) {
+    							              // ...existing onChange logic...
+    							              lcStates[index].selectedEnergyBand = e.currentTarget.value;
+    							              selectedEnergyBand = e.currentTarget.value;
+										  
+    							              let targetData;
+    							              switch (selectedEnergyBand) {
+    							                case "All":
+    							                  targetData = all_LCdata;
+    							                  break;
+    							                case "High":
+    							                  targetData = high_LCdata;
+    							                  break;
+    							                case "Med":
+    							                  targetData = med_LCdata;
+    							                  break;
+    							                case "Low":
+    							                  targetData = low_LCdata;
+    							                  break;
+    							                case "multiColor":
+    							                  targetData = [];
+    							                  break;
+    							                default:
+    							                  targetData = all_LCdata;
+    							                  break;
+    							              }
+										  
+    							              lcStates[index].pre_LCdata = targetData;
+    							              pre_LCdata = targetData;
+										  
+    							              let targetDiv = window.parent.underframe.document.getElementById('lc-' + index);
+    							              if (targetDiv) {
+    							                targetDiv.innerHTML = '';
+    							              }
+										  
+    							              createLC(pre_LCdata);
+    							            },
+    							          }),
+    							          o.AvailableEnergyBandTitles[e],
+    							        );
+    							      })
+    							    ) : null
+									/////////////////////////////////////////////
 								),
 								n.createElement(
     								"div",
@@ -11406,7 +11529,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										fontSize: (100 * globalScale) + "%",
 										// transform: "translateX(62px)" //一つだけ表示する場合
 										// transform: "translateX(51px)" //四分割表示する場合
-										transform: divide ? "translateX(51px)" : "translateX(62px)"
+										// transform: divide ? "translateX(51px)" : "translateX(62px)"
+										transform: divide ? "" : "translateX(62px)"
 									  }
                                     },
                                     "(α, δ) = (" +  Number(ra).toFixed(1) + ", " +  Number(dec).toFixed(1) + ")"),
@@ -11423,7 +11547,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										fontSize: (88 * globalScale) + "%",
 										// transform: "translateY(24px)" //一つだけ表示する場合
 										// transform: "translateY(15px)" //四分割表示する場合
-										transform: divide ? "translateY(16px)" : "translateY(24px)"
+										// transform: divide ? "translateY(16px)" : "translateY(24px)"
+										transform: divide ? "" : "translateY(24px)"
   								    },
   								    onClick: function() {
 										// // underframeのdivを消去
@@ -11478,7 +11603,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 								),
 								),					
 							  	// エネルギーバンドの選択するラジオボタンの表示
-							    n.createElement.apply(
+								// 四分割表示の時にはここには表示せず１行目に表示
+							    // n.createElement.apply(
+								!divide ? n.createElement.apply( 
                                   void 0,
                                   [
                                     "li",
@@ -11519,7 +11646,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										      height: (16 * globalScale) + "px"
 										  },
                                           onChange: function (e) {
-                                            ////////////// MARK:選択肢ごとの処理 //////////////
+                                            //MARK:選択肢ごとの処理
 											lcStates[index].selectedEnergyBand = e.currentTarget.value;
                                             selectedEnergyBand = e.currentTarget.value;
 
@@ -11584,7 +11711,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
   
                                             // 光度曲線を再描画	
                                             createLC(pre_LCdata);
-                                            /////////////////////////////////////////////
                                           },
                                         }),
                                         o.AvailableEnergyBandTitles[e],
@@ -11593,7 +11719,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
                                     }),
                                     // ["."]
                                   ),	
-							    ),			
+							    // ),	
+								) : null		
 							  ),
 							  //光度曲線全体をfigureタグの中に入れている
 							//   n.createElement("figure", null, K)
