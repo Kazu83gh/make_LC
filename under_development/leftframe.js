@@ -138,9 +138,10 @@ function firstLoad(){ //サイトが開かれた際の処理
     timer11 = setTimeout("create_areabox('')",1200);
     setTimeout("create_errorbox('')",1200);
     setTimeout("create_triggerbox('')",1200);
-    setTimeout("parent.mainframe.firstLC()", 2000); //K.Takagi 20251006 光度曲線の自動表示
+    setTimeout("parent.mainframe.firstLC()", 2600); //光度曲線の自動表示 20251006 K.Takagi
     timer4 = setTimeout("loadFinish('i')",2500); //準備が完了したことを画面に反映する関数を呼び出す
     setTimeout(detailsmap, 2500);
+    setTimeout("initUnderframeMonitoring()", 3000); //underframeの高さを監視 20251111 K.Takagi
 }
 
 function secondLoad(){ //画像タイプ、エネルギー、エラー領域を変更したときに、それぞれの関数から呼び出される
@@ -170,8 +171,8 @@ function thirdLoad(){  //追加,event/test切替時呼び出し
     setTimeout("create_areabox('i')",1200);
     setTimeout("create_errorbox('i')",1200);
     setTimeout("create_triggerbox('i')",1200);
+    setTimeout("parent.mainframe.firstLC()", 2600); //K.Takagi 20251007 光度曲線の自動表示
     setTimeout("loadFinish('i')",2500);
-    setTimeout("parent.mainframe.firstLC()", 3000); //K.Takagi 20250901 光度曲線の自動表示
 }
 
 function dirListGet(){ //ajaxでディレクトリ名のテキストファイルを取得する
@@ -859,7 +860,8 @@ function create_listbox(){ //GWeventのリストボックスの生成
 
 function changeBox(value){ //GWeventに表示するセレクトボックス数の選択
 
-    if(value == "more"){
+    // if(value == "more"){
+    if(value == "recent"){
         for(s=sLength; s<selectdir.length; s++){
             opt[s] = document.createElement("option");
             opt[s].value = selectdir[s];
@@ -867,14 +869,17 @@ function changeBox(value){ //GWeventに表示するセレクトボックス数�
             opt[s].appendChild(str[s]);
             document.getElementById("dlist").appendChild(opt[s]);
         }
-        document.getElementById("change_list").value = "recent";
-    }else if(value == "recent"){
+        // document.getElementById("change_list").value = "recent";
+        document.getElementById("change_list").value = "all";
+    // }else if(value == "recent"){
+    }else if(value == "all"){
         var dlist = document.list.dlist;
 
         for(s = dlist.length-1; s > (sLength-1); s--){
             dlist.remove(s)
         }
-        document.getElementById("change_list").value = "more"
+        // document.getElementById("change_list").value = "more"
+        document.getElementById("change_list").value = "recent"
 
     }
 }
@@ -1159,13 +1164,15 @@ function change_dir(value){ //イベントが切り替えられた際の処理
     timer12 = setTimeout("create_areabox('i')",800);
     setTimeout("create_errorbox('i')",800);
     setTimeout("create_triggerbox('i')",800);
-    timer8 = setTimeout("loadFinish('i')",1000);
-    timer9 = setTimeout("get_details('')",1000);
+    // setTimeout("parent.mainframe.firstLC()", 900);
+    // timer8 = setTimeout("loadFinish('i')",1000);
+    // timer9 = setTimeout("get_details('')",1000);
+    timer9 = setTimeout("get_details('')",900);
+    setTimeout("parent.mainframe.firstLC()", 1600); //K.Takagi 20251007 光度曲線の自動表示
+    timer8 = setTimeout("loadFinish('i')",1500);
     setTimeout(detailsmap, 1500);
     setTimeout(parent.detailsframe.fit, 1600);
     setTimeout("get_csvfile('i')",500);
-    // K.Takagi 20250901
-    setTimeout("parent.mainframe.firstLC()", 3000); //K.Takagi 20250901 光度曲線の自動表示
 }
 
 function change_energy(value){ //エネルギーバンドが切り替えられたの処理
@@ -1484,6 +1491,7 @@ function full(){
     parent.mainframe.beforeChange(); //変更前の画像の大きさを記録する
     parent.mainframe.document.getElementById("image1").style.width = orgWidth;
     parent.mainframe.document.getElementById("image1").style.height = orgHeight;
+    updateMarkerSize(); // マーカーサイズを更新
     parent.mainframe.afterChange(); //画像の大きさが変わった分だけマーカーの位置を適切にずらす
 
     parent.mainframe.document.getElementById("skymap").style.width = orgWidth;
@@ -1509,6 +1517,7 @@ function full2(){
     parent.mainframe.beforeChange(); //変更前の画像の大きさを記録する
 	parent.mainframe.document.getElementById("image1").style.width = 2 * orgWidth;
     parent.mainframe.document.getElementById("image1").style.height = 2 * orgHeight;
+    updateMarkerSize(); // マーカーサイズを更新
     parent.mainframe.afterChange(); //画像の大きさが変わった分だけマーカーの位置を適切にずらす
 
     parent.mainframe.document.getElementById("skymap").style.width = 2 * orgWidth;
@@ -1534,6 +1543,7 @@ function harf(){
     parent.mainframe.beforeChange(); //変更前の画像の大きさを記録する
     scale = 2;
     sizeChange();
+    updateMarkerSize(); // マーカーサイズを更新
     parent.mainframe.afterChange(); //画像の大きさが変わった分だけマーカーの位置を適切にずらす
     //parent.mainframe.reDispMarker();
     
@@ -1545,6 +1555,7 @@ function fit(){
     parent.mainframe.beforeChange(); //変更前の画像の大きさを記録する
     scale = 1;
     sizeChange();
+    updateMarkerSize(); // マーカーサイズを更新
     parent.mainframe.afterChange(); //画像の大きさが変わった分だけマーカーの位置を適切にずらす
     //parent.mainframe.reDispMarker();
     
@@ -1648,6 +1659,31 @@ function sizeChange(){
 
 }
 //ここまで画像サイズ合わせ
+
+// マーカーサイズを更新する関数 2025/11/7 K.Takagi
+function updateMarkerSize() {
+    var originalMarkerSize = 25; // 元のマーカーサイズ
+    var currentImgWidth = parent.mainframe.document.getElementById("image1").width;
+    var scaleRatio = currentImgWidth / orgWidth; // 画像の拡大縮小率を計算
+    var newMarkerSize = Math.round(originalMarkerSize * scaleRatio);
+    
+    // 最小サイズと最大サイズを制限
+    newMarkerSize = Math.max(10, Math.min(newMarkerSize, 100));
+    
+    // 各マーカーのサイズを更新
+    var markers = parent.mainframe.document.querySelectorAll('.marker-image');
+    for (var i = 0; i < markers.length; i++) {
+        markers[i].width = newMarkerSize;
+        markers[i].height = newMarkerSize;
+    }
+    
+    // 既存のmyMarkerも更新（もし使用されている場合）
+    var myMarkerImg = parent.mainframe.document.querySelector('#myMarker img');
+    if (myMarkerImg) {
+        myMarkerImg.width = newMarkerSize;
+        myMarkerImg.height = newMarkerSize;
+    }
+}
 
 //11月26日、稲木が追加したもの
 // function marker(){ // マーカーが押された際の処理
@@ -1862,7 +1898,8 @@ function eventTestJudge() {//testディレクトリとeventディレクトリの
         teamUrl =slash+dirDef+teamDef;
         thirdLoad();
     }
-    document.getElementById("change_list").value = "more";
+    // document.getElementById("change_list").value = "more";
+    document.getElementById("change_list").value = "recent";
 }
 
 // 'popupを表示するまでのdelay time' を変更するHTMLタグ（popupDelay）の設定
@@ -1880,6 +1917,31 @@ function popupDelayConfig() {
     })
 }
 window.addEventListener("load", popupDelayConfig); // 設定を即座に反映させる
+
+// underframeのリサイズ監視 20251111 K.Takagi
+function setupUnderframeResize() {    
+    // underframeのwindowオブジェクトにresizeイベントを追加
+    try {
+        if (parent.underframe && parent.underframe.window) {
+            parent.underframe.window.addEventListener('resize', function() {
+                // console.log('underframe resize detected');
+                // setTimeout(fit, 150);
+                setTimeout(fit, 500);
+            });
+            console.log('underframe resize listener added successfully');
+        } else {
+            console.log('underframe or underframe.window not found');
+        }
+    } catch(e) {
+        console.log('underframe resize setup failed:', e);
+    }
+}
+
+// 初期化関数
+function initUnderframeMonitoring() {
+    // console.log('Initializing underframe monitoring...');
+    setupUnderframeResize();
+}
 
 window.onload = firstLoad(); //サイトが開かれた際に関数firstLoadを呼び出す
 window.onresize = fit(); // ウィンドウの大きさが変更されるとfitを呼び出す,20191203追加
