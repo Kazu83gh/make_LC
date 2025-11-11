@@ -14,7 +14,7 @@ function resetLcStates() {
             highZoom: [],
             medZoom: [],
             lowZoom: [],
-            outOfRangeEvents: [], // これを最初から初期化
+			outOfRangeEvents: {},
             pre_LCdata: null,
             dict_LCdata: null,
             LCdata: null,
@@ -169,7 +169,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
             highZoom: [],
             medZoom: [],
             lowZoom: [],
-			outOfRangeEvents: [], 
+			outOfRangeEvents: {},
 			pre_LCdata: null,
 			dict_LCdata: null,
 			LCdata: null,
@@ -8959,7 +8959,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						dataNum = 0;
 						loopCount = 0;
 						changeEBArray = [];
-						lcStates[index].outOfRangeEvents = []; //lcStateの範囲外イベントを初期化
+						lcStates[index].outOfRangeEvents = {}; //lcStateの範囲外イベントを初期化
 					  return e(this, function (e) {
 						// MARK:光度曲線のデータを作成
 						while (dataNum !== r.length) {
@@ -9011,10 +9011,16 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										let countMinusErr = countSec - countErr; 
 										let countPlusErr = countSec + countErr;
 
+										if (!lcStates[index].outOfRangeEvents[loopCount]) {
+    										    lcStates[index].outOfRangeEvents[loopCount] = [];
+    										}
+
 										// countMinusErrが-5.0以下の場合、centUNIXを配列に記録
                             			if (countMinusErr <= -5.0) {
 											// console.log("範囲外unix:", countMinusErr, "at", centUNIX);
-                            			    lcStates[index].outOfRangeEvents.push(centUNIX);
+
+											// outOfRangeEventsにloopCount別で記録
+    										lcStates[index].outOfRangeEvents[loopCount].push(centUNIX);
                             			}
 
 										n[0] = Math.min(n[0], countMinusErr); //縦軸の最小値を見つける
@@ -10613,8 +10619,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 									  	// .join(""),
 										.join("") + 
 										// 範囲外イベントの矢印パスを追加
-            							(lcStates[index] && lcStates[index].outOfRangeEvents ? 
-            							    lcStates[index].outOfRangeEvents.map(function(value) {
+            							// (lcStates[index] && lcStates[index].outOfRangeEvents ? 
+            							//     lcStates[index].outOfRangeEvents.map(function(value) {
+										(lcStates[index] && lcStates[index].outOfRangeEvents[0] ? 
+            							    lcStates[index].outOfRangeEvents[0].map(function(value) {
             							        var arrowX = z(value);
             							        if (l <= arrowX && arrowX <= s) {
             							            return "M" + arrowX + "," + (m - 20) + "V" + m +
@@ -10644,7 +10652,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 												r = P(e[w]), //十字の中心のy座標
 												a = e[A] * B, //カウント数のエラーバーの長さ
 												o = [];
-										  	if (l < n && i < s) {
+										  	// if (l < n && i < s) {
+											if (l < n && i < s && m > r) {
 												o.push(
 												  	"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
 												);
@@ -10654,7 +10663,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										  	}
 										  	return o.join("");
 										})
-										.join(""),
+										// .join(""),
+										.join("") + 
+										// 範囲外イベントの矢印パスを追加
+										(lcStates[index] && lcStates[index].outOfRangeEvents[0] ? 
+            							    lcStates[index].outOfRangeEvents[0].map(function(value) {
+            							        var arrowX = z(value);
+            							        if (l <= arrowX && arrowX <= s) {
+            							            return "M" + arrowX + "," + (m - 20) + "V" + m +
+														"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
+            							                "l 4,-11";
+            							        }
+            							        return "";
+            							    }).join("") : ""
+            							),
 										stroke: t.Color.blue,
 								})
 							);
@@ -10671,7 +10693,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 												r = P(e[w]), //十字の中心のy座標
 												a = e[A] * B, //カウント数のエラーバーの長さ
 												o = [];
-										  	if (l < n && i < s) {
+										  	// if (l < n && i < s) {
+											if (l < n && i < s && m > r) {
 												o.push(
 												  	"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
 												);
@@ -10681,7 +10704,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										  	}
 										  	return o.join("");
 										})
-										.join(""),
+										// .join(""),
+										.join("") + 
+										// 範囲外イベントの矢印パスを追加
+										(lcStates[index] && lcStates[index].outOfRangeEvents[1] ? 
+            							    lcStates[index].outOfRangeEvents[1].map(function(value) {
+            							        var arrowX = z(value);
+            							        if (l <= arrowX && arrowX <= s) {
+            							            return "M" + arrowX + "," + (m - 20) + "V" + m +
+														"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
+            							                "l 4,-11";
+            							        }
+            							        return "";
+            							    }).join("") : ""
+            							),
 										stroke: t.Color.green,
 								})
 							);
@@ -10698,7 +10734,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 												r = P(e[w]), //十字の中心のy座標
 												a = e[A] * B, //カウント数のエラーバーの長さ
 												o = [];
-										  	if (l < n && i < s) {
+										  	// if (l < n && i < s) {
+											if (l < n && i < s && m > r) {
 												o.push(
 												  	"M" + Math.max(l, i) + "," + r + "H" + Math.min(s, n)
 												);
@@ -10708,7 +10745,20 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										  	}
 										  	return o.join("");
 										})
-										.join(""),
+										// .join(""),
+										.join("") + 
+										// 範囲外イベントの矢印パスを追加
+										(lcStates[index] && lcStates[index].outOfRangeEvents[2] ? 
+            							    lcStates[index].outOfRangeEvents[2].map(function(value) {
+            							        var arrowX = z(value);
+            							        if (l <= arrowX && arrowX <= s) {
+            							            return "M" + arrowX + "," + (m - 20) + "V" + m +
+														"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
+            							                "l 4,-11";
+            							        }
+            							        return "";
+            							    }).join("") : ""
+            							),
 										stroke: t.Color.red,
 								})
 							);
