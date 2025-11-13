@@ -14,6 +14,7 @@ function resetLcStates() {
             highZoom: [],
             medZoom: [],
             lowZoom: [],
+			zoomData: [],
 			outOfRangeEvents: {},
             pre_LCdata: null,
             dict_LCdata: null,
@@ -169,6 +170,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
             highZoom: [],
             medZoom: [],
             lowZoom: [],
+			zoomData: [],
 			outOfRangeEvents: {},
 			pre_LCdata: null,
 			dict_LCdata: null,
@@ -645,15 +647,18 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
             // }
 
 			// resultを新しい配列として設定
-			zoomData = result;
-			console.log("zoomData: ", zoomData);
+			// zoomData = result;
+			// console.log("zoomData: ", zoomData);
+			lcStates[index].zoomData = result;
 		} else { //その他のエネルギーバンドを選択した時
 			dict_LCdata = Tolist(dptc_count_data);
 			lcStates[index].dict_LCdata = dict_LCdata;
-			// console.log("テストdict_LCdata: ", dict_LCdata);
-			zoomData = zoomArray(graph_Summarize(dict_LCdata));
+			// console.log("dict_LCdata: ", dict_LCdata);
+			// zoomData = zoomArray(graph_Summarize(dict_LCdata));
+			lcStates[index].zoomData = zoomArray(graph_Summarize(dict_LCdata));
 		}
     	// graph_data = graph_Summarize(dict_LCdata);
+		// console.log("[" + index + "]zoomData: ", lcStates[index].zoomData);
 
 		startRange = lcStates[index].startRange;
 		endRange = lcStates[index].endRange;
@@ -8726,6 +8731,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 				  var n = require("./constants"),
 					a = require("./createError"),
 					o = require("./extractResponseData");
+				  //MARK:getLightCurveData関数
 				  exports.getLightCurveData = function (i) {
 					return e(r, void 0, Promise, function () {
 					  var e, r;
@@ -8928,6 +8934,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					//   }
 					// }
 					// this.count = false;
+					let currentZoomData = lcStates[index].zoomData;
+					// console.log("[" + index + "]zoomData:", lcStates[index].zoomData);
+
 					return t(n, void 0, Promise, function () {
 					  	var t,
 							n,
@@ -8963,12 +8972,15 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					  return e(this, function (e) {
 						// MARK:光度曲線のデータを作成
 						while (dataNum !== r.length) {
-							for (let i = 0; i < zoomData.length - 1; i += 2) {
+							// for (let i = 0; i < zoomData.length - 1; i += 2) {
+							for (let i = 0; i < currentZoomData.length - 1; i += 2) {
 								// let startBin = zoomData[i] - 0.5;
 								// let endBin = zoomData[i + 1] + 0.5;
 								//データの取りこぼしがないように10秒前から10秒後まで
-								let startBin = zoomData[i] - 10.5;
-								let endBin = zoomData[i + 1] + 10.5;
+								// let startBin = zoomData[i] - 10.5;
+								// let endBin = zoomData[i + 1] + 10.5;
+								let startBin = currentZoomData[i] - 10.5;
+								let endBin = currentZoomData[i + 1] + 10.5;
 
 								// startBin ~ endBinの範囲外のデータはスキップ
     							while (dataNum < r.length && r[dataNum][0] < startBin) {
@@ -9086,24 +9098,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 				  	exports.__esModule = !0;
 				  	var e = require("react");
 
-					// グローバルキャッシュマップを作成
-        			// var globalCacheMap = new Map(); ///追加
-
 				  	//MARK:useCache関数
 				  	exports.useCache = function (t) {
-						///追加
-						// キャッシュIDを取得（指定されていない場合はdefault）
-            			// var cacheId = t.cacheId || 'default';
-
-            			// // 該当するキャッシュを取得または作成
-            			// if (!globalCacheMap.has(cacheId)) {
-            			//     globalCacheMap.set(cacheId, new Map());
-            			// }
-            			// var globalCache = globalCacheMap.get(cacheId);
-
-						// var n = e.useState(function() { return new Map(globalCache); }),
-						////
-
 						var n = e.useState(new Map()),
 						    r = n[0], // cache: Map型のキャッシュストレージ
 						    c = n[1], // setCache: キャッシュ更新関数
@@ -9126,15 +9122,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										.then(function (t) {
 										  null !== t && (r.set(e, t), c(new Map(r)));  // 成功時キャッシュに保存
 										})
-										///追加
-										// .then(function (t) {
-                                        //     if (null !== t) {
-                                        //         r.set(e, t);
-                                        //         globalCache.set(e, t);
-                                        //         c(new Map(r));
-                                        //     }
-                                        // })
-										////
 										.catch(t.onError) // エラー時の処理
 										.finally(function () {
 										  o(u.filter(function (t) { // ローディング配列から削除
@@ -9152,12 +9139,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							  }
 							},
 							[t.keys, i] // keysまたはcounterが変更されたら再実行
-							// [t.keys, i, cacheId] ///追加
 						  ),
 						  t.dependencies &&
 							e.useEffect(function () {
 							  r.clear(), // キャッシュクリア
-							//   globalCache.clear(); ///追加
 							  f(i + 1); // カウンター増加（上記useEffectを再実行）
 							}, t.dependencies),
 						  r
@@ -9375,6 +9360,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					(exports.map = new Map()),
 					exports.map.set("J0006+202", {
 					  id: "J0006+202",
+					// exports.map.set("LC_0", {
+					//   id: "LC_0",
 					  name: "Mrk 335",
 					  category: "ExtraGalactic-AGN",
 					  ra: 1.582,
@@ -9390,7 +9377,13 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						  data: "http://maxi.riken.jp/star_data/J0006+202/J0006+202_g_lc_1day_all.dat",
 						},
 					  },
-					});
+					}
+					/////
+					// , "LC_0", {
+					// 	id: "LC_0",
+					// }
+					//////
+				);
 				},
 				{},
 			  ],
@@ -9556,7 +9549,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
                         	if (clickCount === 2) {
 								if (zoomJudge(m(i.x)) && target_id && !shift_on) {
 									// lcStatesから現在の光度曲線のzoomデータを取得
-    								const currentZoomData = selectedEnergyBand === "multiColor" ? zoomData : lcStates[index].zoomAlldata;
+    								// const currentZoomData = selectedEnergyBand === "multiColor" ? zoomData : lcStates[index].zoomAlldata;
+									const currentZoomData = selectedEnergyBand === "multiColor" ? lcStates[index].zoomData : lcStates[index].zoomAlldata;
 
     								if (!currentZoomData) return;
 
@@ -10498,7 +10492,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							"count / sec"
 						),
 					  ];
-					if (f && x) {
+					// if (f && x) {
+					if (x) {
 					  var j = h / (y - k),
 						z = function (e) {
 						  return l + j * (e - k);
@@ -10844,7 +10839,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							  minMJD: u,
 							  maxMJD: h,
 							  binSize: s,
-							  object: n.map.get(_),
+							//   object: n.map.get(_),
+							  object: null,
 							  data: l.get(_),
 							  plotType: c,
 							  isFirst: 0 === v,
@@ -11331,18 +11327,22 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					h = e(require("../../util/catalog")),
 					p = t(require("./style.css")),
 					g = require("../Errors");
+				//MARK:getInitialSelectedObjects関数
 				  (exports.getInitialSelectedObjects = function () {
-					var e = location.pathname.match(/^\/objects\/([^\/]+)$/),
-					  t = [];
+					// var e = location.pathname.match(/^\/objects\/([^\/]+)$/),
+					//   t = [];
 		  
-					return (
-					  e &&
-						(t = e[1].split(/\s*,\s*/).filter(function (e) {
-						  return h.map.has(e);
-						})),
-					  0 === t.length && t.push(h.firstObjectId),
-					  t
-					);
+					// return (
+					//   e &&
+					// 	(t = e[1].split(/\s*,\s*/).filter(function (e) {
+					// 	  return h.map.has(e);
+					// 	})),
+					//   0 === t.length && t.push(h.firstObjectId),
+					//   t
+					// );
+
+					// 光度曲線ごとに一意のキーを生成
+    				return [`LC_${index}`];
 				  }),
 					(exports.App = function () {
 					  var e = n.useReducer(function (e, t) {
@@ -11381,6 +11381,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						q = P[1],
 						w = n.useState(exports.getInitialSelectedObjects()),
 						F = w[0],
+						// F = [`LC_${index}`],
 						U = w[1],
 						//サイトのURL名作成
 						x = n.useReducer(function (e, t) {
@@ -11388,25 +11389,26 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						}, new URL(location.href)),
 						A = x[0],
 						k = x[1],
+						//MARK:キャッシュ設定
 						_ = i.useCache({
 						  keys: F,
 						  getter: l.getLightCurveData,
 						  onError: E,
-						//   cacheId: 'lightcurve_' + index, ///追加
 						});
 					var O = i.useCache({
 					  	keys: F,
 					  	getter: function (e) {
-							var t = dict_LCdata;
-							// var t = lcStates[index] ? lcStates[index].dict_LCdata : dict_LCdata; ///追加
-							//console.log(t ? a.getRollingAverage(t, y.binSize) : null);
+							// var t = dict_LCdata;
+							var t = lcStates[index] && lcStates[index].dict_LCdata;
 							return t ? a.getRollingAverage(t, y.binSize) : null;
 					  	},
 					  	onError: E,
 					  	dependencies: [y.binSize, _],
-						// dependencies: [y.binSize, _, index], ///追加
-						// cacheId: 'rolling_' + index, ///追加
 					});
+					// console.log("[" + index + "]w: " + w);
+					// console.log("[" + index + "]: " + F);
+					// console.log("[" + index + "]: " + l.getLighytCurveData);
+					// console.log("[" + index + "]: " + JSON.stringify([..._]));
 
 
 		  
@@ -11869,7 +11871,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										} 
   								    }
   								  }, useBG ? "BG on" : "BG off")
-								//   ///追加
+								//   //追加
 								//   ,
 								//   // 四分割表示時のみ拡大ボタンを表示
 								//   divide ? n.createElement("button", {
@@ -11953,7 +11955,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 											// for (let i = 0; i < 4; i++) {
 											// 	// const underframeDoc = window.parent.underframe.document;
 											// 	// const container = underframeDoc.getElementById(`lc-${i}`);
-											// 	console.log("テストlcStates[" + i + "].LCdata");
+											// 	console.log("lcStates[" + i + "].LCdata");
 											// 	console.dir(lcStates[i].LCdata);
 												
 											// 	(function(index) {
@@ -12151,7 +12153,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							//   }, K)
 							  },[
 								K,
-								///追加
+								//追加
 								,
 								// MARK:四分割表示の拡大ボタン
 								// 四分割表示時のみ拡大ボタンを表示
