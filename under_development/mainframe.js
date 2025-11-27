@@ -306,8 +306,15 @@ function markerDisp(inputX,inputY,force)
     var marButton = parent.leftframe.document.getElementById("marker");
     var marObj = parent.mainframe.document.getElementById("myMarker").style;
 
-    marObj.left = -12 + inputX + "px";
-    marObj.top  = -12 + inputY + "px";
+	// マーカーの現在のサイズを取得
+    var markerImg = parent.mainframe.document.querySelector('#myMarker img');
+    var markerSize = markerImg ? markerImg.width : 25; // デフォルト25px
+    var offset = Math.round(markerSize / 2); // マーカーの中心に配置するためのオフセット
+
+    // marObj.left = -12 + inputX + "px";
+    // marObj.top  = -12 + inputY + "px";
+	marObj.left = -offset + inputX + "px";
+    marObj.top  = -offset + inputY + "px";
 
     recordX = inputX;
     recordY = inputY;
@@ -332,8 +339,15 @@ function markerDispId(inputX,inputY,id,force)
     var marButton = parent.leftframe.document.getElementById("marker");
     var marObj = parent.mainframe.document.getElementById("myMarker"+id).style;
 
-    marObj.left = -12 + inputX + "px";
-    marObj.top  = -12 + inputY + "px";
+	// マーカーの現在のサイズを取得
+    var markerImg = parent.mainframe.document.querySelector('#myMarker' + id + ' img');
+    var markerSize = markerImg ? markerImg.width : 25; // デフォルト25px
+    var offset = Math.round(markerSize / 2); // マーカーの中心に配置するためのオフセット
+
+    // marObj.left = -12 + inputX + "px";
+    // marObj.top  = -12 + inputY + "px";
+	marObj.left = -offset + inputX + "px";
+    marObj.top  = -offset + inputY + "px";
 
     // recordX = inputX;
     // recordY = inputY;
@@ -1090,8 +1104,15 @@ function rewriteMarker(inputX,inputY) {
 	var curObj = parent.mainframe.document.getElementById("myCursor").style;
 
 	if(marButton.value == "Marker-on"){
-		marObj.left = -12 + inputX * imgWidth/preImgWidth + "px";
-		marObj.top  = -12 + inputY * imgHeight/preImgHeight + "px";
+        // マーカーの現在のサイズを取得
+        var markerImg = parent.mainframe.document.querySelector('#myMarker img');
+        var markerSize = markerImg ? markerImg.width : 25;
+        var offset = Math.round(markerSize / 2);
+
+		// marObj.left = -12 + inputX * imgWidth/preImgWidth + "px";
+		// marObj.top  = -12 + inputY * imgHeight/preImgHeight + "px";
+		marObj.left = -offset + inputX * imgWidth/preImgWidth + "px";
+        marObj.top  = -offset + inputY * imgHeight/preImgHeight + "px";
 	}
 
 	if(curButton.value == "Cursor-on"){
@@ -1108,8 +1129,15 @@ function rewriteMarkerId(inputX,inputY, id) {
 	var marObj = parent.mainframe.document.getElementById("myMarker" + id).style;
 
 	if(marButton.value == "Marker-on"){
-		marObj.left = -12 + inputX * imgWidth/preImgWidth + "px";
-		marObj.top  = -12 + inputY * imgHeight/preImgHeight + "px";
+		// マーカーの現在のサイズを取得
+        var markerImg = parent.mainframe.document.querySelector('#myMarker' + id + ' img');
+        var markerSize = markerImg ? markerImg.width : 25;
+        var offset = Math.round(markerSize / 2);
+
+		// marObj.left = -12 + inputX * imgWidth/preImgWidth + "px";
+		// marObj.top  = -12 + inputY * imgHeight/preImgHeight + "px";
+		marObj.left = -offset + inputX * imgWidth/preImgWidth + "px";
+        marObj.top  = -offset + inputY * imgHeight/preImgHeight + "px";
 	}
 
 	// idに対応する変数を更新
@@ -2259,6 +2287,7 @@ function sendLightCurveRequest(url, data, i, successCallback) {
 			// const underframe = window.parent.underframe.document.getElementById('undermessage'); 
 			// underframe.innerText =  'Failed to get data. Please click another event.';
 
+			window.parent.underframe.resetLcStatesIndex(i); // 光度曲線の状態をリセット
         }
     }).fail(() => {
         console.log('failed');
@@ -2309,29 +2338,78 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 		console.log(nCandidate2[n][0] + " & " + nCandidate2[n][1]);
 	}
 
-	// sigmaが最大の要素の番号を取得
-	sigmaMaxIndex = findSigmaMax(nCandidate2);
-	// sigmaが最大の要素を配列の先頭に追加
-	let maxiTriArray = [nCandidate2[sigmaMaxIndex][0]];
-	// 残りの要素を追加（重複を避けるため、すでに追加した要素はフィルタリング）
-	for (let n = 0; n < nCandidate2.length; n++) {
-	  if (n !== sigmaMaxIndex) {
-	    maxiTriArray.push(nCandidate2[n][0]);
-	  }
+	/////旧処理
+	// // sigmaが最大の要素の番号を取得
+	// sigmaMaxIndex = findSigmaMax(nCandidate2);
+	// // sigmaが最大の要素を配列の先頭に追加
+	// let maxiTriArray = [nCandidate2[sigmaMaxIndex][0]];
+	// // 残りの要素を追加（重複を避けるため、すでに追加した要素はフィルタリング）
+	// for (let n = 0; n < nCandidate2.length; n++) {
+	//   if (n !== sigmaMaxIndex) {
+	//     maxiTriArray.push(nCandidate2[n][0]);
+	//   }
+	// }
+
+	// let sigmaMaxEvent = nCandidate2[sigmaMaxIndex][1];
+	// let sigmaMaxTimeScale = sigmaMaxEvent.match(/\(([^,]+)/)[1]; // timescaleを取得
+	// let sigMaxRa = nCandidate2[sigmaMaxIndex][2];
+	// let sigMaxDec = nCandidate2[sigmaMaxIndex][3];
+
+	// //最大の timescale を取得
+	// // let maxTimeScale = findLongestTimeScale(nCandidate2);
+
+	// console.log("Max sigma dptc: ", nCandidate2[sigmaMaxIndex][0]);
+	// // console.log("Longest timescale: ", maxTimeScale);
+	// console.log("Max sigma timescale: ", sigmaMaxTimeScale);
+	// console.log("MaxiTriArray: ", maxiTriArray);
+
+	/////新処理
+	let useTimeScale;
+	let useRa;
+	let useDec;
+	let maxiTriArray = [];
+
+	// console.log("テストnCandidate2:", nCandidate2);
+	// console.log("テストnCandidate2:", nCandidate2[0].length);
+	if (nCandidate2[0].length == 8) { // mailイベントが一番近いとき
+		maxiTriArray = [nCandidate2[0][0]];
+		useTimeScale = nCandidate2[0][1].match(/\(([^,]+)/)[1];
+		useRa = nCandidate2[0][2];
+		useDec = nCandidate2[0][3];
+		
+		if (nCandidate2.length > 1) {
+			naeve = nCandidate2.slice(1); // mailイベントを除いた配列を作成
+
+			sigmaMaxIndex = findSigmaMax(naeve); // sigmaが最大の要素の番号を取得
+			
+			maxiTriArray = [naeve[sigmaMaxIndex][0]]; // sigmaが最大の要素を配列の先頭に追加
+
+			// 残りの要素を追加（重複を避けるため、すでに追加した要素はフィルタリング）
+			for (let n = 0; n < naeve.length; n++) {
+			  if (n !== sigmaMaxIndex) {
+			    maxiTriArray.push(naeve[n][0]);
+			  }
+			}
+		}
+	} else {
+		sigmaMaxIndex = findSigmaMax(nCandidate2); // sigmaが最大の要素の番号を取得
+		
+		maxiTriArray = [nCandidate2[sigmaMaxIndex][0]]; // sigmaが最大の要素を配列の先頭に追加
+		
+		// 残りの要素を追加（重複を避けるため、すでに追加した要素はフィルタリング）
+		for (let n = 0; n < nCandidate2.length; n++) {
+		  if (n !== sigmaMaxIndex) {
+		    maxiTriArray.push(nCandidate2[n][0]);
+		  }
+		}
+
+		let sigmaMaxEvent = nCandidate2[sigmaMaxIndex][1];
+
+		useTimeScale = sigmaMaxEvent.match(/\(([^,]+)/)[1];
+		useRa = nCandidate2[sigmaMaxIndex][2];
+		useDec = nCandidate2[sigmaMaxIndex][3];
 	}
-
-	let sigmaMaxEvent = nCandidate2[sigmaMaxIndex][1];
-	let sigmaMaxTimeScale = sigmaMaxEvent.match(/\(([^,]+)/)[1]; // timescaleを取得
-	let sigMaxRa = nCandidate2[sigmaMaxIndex][2];
-	let sigMaxDec = nCandidate2[sigmaMaxIndex][3];
-
-	//最大の timescale を取得
-	let maxTimeScale = findLongestTimeScale(nCandidate2);
-
-	console.log("Max sigma dptc: ", nCandidate2[sigmaMaxIndex][0]);
-	console.log("Longest timescale: ", maxTimeScale);
-	console.log("Max sigma timescale: ", sigmaMaxTimeScale);
-	console.log("MaxiTriArray: ", maxiTriArray);
+	/////
 
 	// DBでの検索の基準を「TRIGGER TIME」にするため、gwTriUnixをGPStimeに変換
 	var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
@@ -2339,14 +2417,17 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 
 	var send = {"dptc_zero" : gwTriGPS,
 				// "timescale" : maxTimeScale,
-				"timescale" : sigmaMaxTimeScale,
+				// "timescale" : sigmaMaxTimeScale,
+				"timescale" : useTimeScale,
 				"energy"    : a[2],
 				"error" 	: a[3],
 				"star"      : a[4],	
 				// "ra" 	   	: x,
 				// "dec" 	    : y
-				"ra" 	   	: sigMaxRa,
-				"dec" 	    : sigMaxDec
+				// "ra" 	   	: sigMaxRa,
+				// "dec" 	    : sigMaxDec
+				"ra" 	   	: useRa,
+				"dec" 	    : useDec
 			   };
 
 	// グローバル変数に保存
@@ -2400,8 +2481,10 @@ async function polar2lightCurvePath(x, y, detail, diff) {
 				receive_LCdata,
 				gwTriUnix,
 				maxiTriArray,
-				sigMaxRa,
-				sigMaxDec,
+				// sigMaxRa,
+				// sigMaxDec,
+				useRa,
+				useDec,
 				0
 			);
 
@@ -2470,6 +2553,9 @@ async function mainPopLightCurve(){
     			//    "dec"       : 19.6
 			   	};
 
+	// グローバル変数に保存
+    window.currentSend = send2;
+
 	console.log(send2);
 
 	// データを送信し、成功したら光度曲線を表示する
@@ -2487,6 +2573,131 @@ async function mainPopLightCurve(){
 				[],
 				migiClickRa,
 				migiClickDec,
+				0
+			);
+	    }
+	);
+
+	showUnderFrame();
+	showLoadingMessage('waiting...'); // ローディングメッセージを表示
+}
+
+// 新しいウィンドウでmakelightcurve.htmlを開く関数
+//MARK: openLightCurveWindow関数
+function openLightCurveWindow() {
+	let gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
+    let intUNIX2DPTC = window.parent.underframe.intUNIX2DPTC;
+    let gwTriDPTC = gwTriGPS + intUNIX2DPTC;
+
+	// console.log("テストgwTriUnix: " + gwTriUnix);
+	// console.log("テストra: " + migiClickRa.toFixed(1));
+	// console.log("テストdec: " +  migiClickDec.toFixed(1));
+
+    const lightCurveWindow = window.open(
+        './makelightcurve.html',
+        'LCmenu',
+        'width=550,height=580,scrollbars=yes,resizable=yes'
+    );
+    
+    // 新しいウィンドウの場合
+    lightCurveWindow.onload = function() {
+		// console.log("LightCurve window loaded.");
+        updateValue(lightCurveWindow, gwTriDPTC, migiClickRa, migiClickDec);
+    };
+    
+    // 既存ウィンドウの場合（すでに読み込み済み）
+    if (lightCurveWindow.document && lightCurveWindow.document.readyState === 'complete') {
+		// console.log("LightCurve window already loaded.");
+        updateValue(lightCurveWindow, gwTriDPTC, migiClickRa, migiClickDec);
+    }
+    
+    // フォーカス
+    lightCurveWindow.focus();
+}
+
+function updateValue(windowRef, dptc, ra, dec) {
+    // try {        
+    windowRef.document.getElementsByName("dptc_s")[0].value = Math.round(dptc);
+	windowRef.document.getElementsByName("ra")[0].value = ra.toFixed(1);
+	windowRef.document.getElementsByName("dec")[0].value = dec.toFixed(1);
+        // console.log("Default DPTC updated to:", Math.round(dptc));
+    // } catch (error) {
+    //     console.error("Error updating DPTC:", error);
+    // }
+}
+
+// 右クリックした時に表示される LightCurve を押した時に実行される関数（詳細に指定できるver.）
+// MARK: mainPopLightCurve2関数
+async function mainPopLightCurve2(dptc, timescale, ra, dec, cameraid){
+	// underframeのドキュメントを取得
+	const underframe = window.parent.underframe.document;
+	
+	// 既存のコンテンツをクリア
+	let divs = underframe.getElementsByTagName('div');
+	while (divs.length > 0) {
+		divs[0].remove();
+	}
+
+	window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
+	parent.window.commonDisplayRange = {}; // 共通表示範囲をリセット
+
+	// 番号付きマーカー（myMarker1, myMarker2, myMarker3）を非表示
+    for (let i = 1; i <= 3; i++) {
+		stopMarkerBlink("myMarker" + i); // マーカーの点滅を停止
+
+        var marObjId = parent.mainframe.document.getElementById("myMarker" + i);
+        if (marObjId) {
+            marObjId.style.visibility = "hidden";
+        }
+    }
+
+	// var gwTriGPS = window.parent.underframe.unix2gps(gwTriUnix);
+	// console.log("migiClickRa:", migiClickRa);
+	// console.log("migiClickDec:", migiClickDec);
+
+	// 文字列を配列に変換し、数値に変換してフィルタリング
+	var cameraArray = cameraid.split(',')
+	    .map(num => parseInt(num.trim()))
+	    .filter(num => !isNaN(num) && num >= 0 && num < 12);
+
+	var fcamid = JSON.stringify(cameraArray);
+
+	// console.log("cameraid: " + cameraid);
+	// console.log("ffcamid: " + fcamid);
+
+	var send2 = { "dptc_zero" : dptc,
+				  "timescale" : timescale,
+				  "energy"    : "High",
+				  "error"     : "",
+				  "star"      : "",
+				  "ra"        : ra,
+    			  "dec"       : dec,
+				//    "camid"     : "[1, 2, 3, 4, 5, 7]" //カメラ指定
+				  "camid"     : fcamid
+			   	};
+
+	// グローバル変数に保存
+    window.currentSend = send2;
+
+	console.log(send2);
+
+	moveMarkerToRaDec(ra, dec); // マーカー移動
+
+	// データを送信し、成功したら光度曲線を表示する
+	sendLightCurveRequest(
+		// '/cgi-bin/make_LCdata2.py',
+	    '/cgi-bin/make_LCdataBG.py',
+	    send2,
+		0,
+	    (receive_LCdata) => {
+			clearDivs(window.parent.underframe.document); // 既存のコンテンツを削除
+			createGridContainer('single');
+	        window.parent.underframe.underframe_pro(
+				receive_LCdata,
+				gwTriUnix,
+				[],
+				ra,
+				dec,
 				0
 			);
 	    }
@@ -2525,7 +2736,7 @@ function moveMarkerToRaDec(ra, dec) {
         // markerDisp(IX, IY, "y");
 		markerDisp(IX, IY);
         
-        console.log('Marker moved to RA=' + ra + ', Dec=' + dec);
+        // console.log('Marker moved to RA=' + ra + ', Dec=' + dec);
         
     } else {
         console.log("Invalid coordinates: RA=" + ra + ", Dec=" + dec);
@@ -2579,9 +2790,9 @@ async function firstLC(){
 	// const underframe = window.parent.underframe.document;
 	
 	// 既存のコンテンツを削除
+	// window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
 	clearDivs(window.parent.underframe.document); // 既存のコンテンツを削除
-	window.parent.underframe.resetLcStates(); // 光度曲線の状態をリセット
-	console.log("[main]window.commonDisplayRange:", parent.window.commonDisplayRange);
+	// console.log("[main]window.commonDisplayRange:", parent.window.commonDisplayRange);
 	parent.window.commonDisplayRange = {}; // 共通表示範囲をリセット
 
 	stopMarkerBlink(); // 全てのマーカーの点滅を停止
@@ -2666,8 +2877,7 @@ async function firstLC(){
 					   	"ra"        : selected[i][0],
     				   	"dec"       : selected[i][1]
 			   		};
-
-					console.log("送信データ ra: " + send2.ra + ", dec: " + send2.dec);
+					// console.log(i + "]テストsend2:", send2);
 
 					// マーカーを表示（i=0なら通常のマーカー、それ以外なら番号付きマーカー）
     				if (i === 0) {
@@ -2689,8 +2899,11 @@ async function firstLC(){
 					    send2,
 						i,
 					    (receive_LCdata) => {
+							console.dir(send2);
 							console.log("LC-index:", i);
+
 							window.currentLCIndex = i;
+							window.parent.underframe.resetLcStatesIndex(i); // 光度曲線の状態をリセット
 					        window.parent.underframe.underframe_pro(
 								receive_LCdata,
 								gwTriUnix,
@@ -2728,7 +2941,8 @@ async function firstLC(){
 
 // MARK: createGridContainer関数
 // コンテナを作成する関数v2 K.Takagi 2025/10/06
-function createGridContainer(mode = 'single') {
+// function createGridContainer(mode = 'single') {
+function createGridContainer(mode, index = 0) {
     const underframeDoc = window.parent.underframe.document;
     
     // 既存のコンテナを削除
@@ -2765,6 +2979,8 @@ function createGridContainer(mode = 'single') {
         }
         
         underframeDoc.body.appendChild(gridContainer);
+		underframeDoc.body.style.margin = "0";
+		underframeDoc.body.style.padding = "0";
         // console.log('Grid container created successfully'); 
     } else {
 		// 単一表示用コンテナを作成
@@ -2778,7 +2994,8 @@ function createGridContainer(mode = 'single') {
         
         // 単一の光度曲線用コンテナ
         const lightCurveDiv = underframeDoc.createElement('div');
-        lightCurveDiv.id = 'lc-0';  // 常にlc-0を使用
+        // lightCurveDiv.id = 'lc-0';  // 常にlc-0を使用
+		lightCurveDiv.id = `lc-${index}`;
         lightCurveDiv.style.cssText = `
             background-color: black;
             width: 100%;
