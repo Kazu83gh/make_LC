@@ -6,6 +6,8 @@ function resetLcStates() {
 	for (let i = 0; i < 4; i++) {
         lcStates[i] = {
             selectedEnergyBand: "All",
+			loopEnergyBand: 0,
+			chgEBArr:[],
             changeBinsize: 1,
             useBG: 1,
             startRange: 1400000000,
@@ -26,6 +28,30 @@ function resetLcStates() {
         };
     }
 	console.log("lcStates has been reset");
+}
+function resetLcStatesIndex(index) {
+    lcStates[index] = {
+        selectedEnergyBand: "All",
+		loopEnergyBand: 0,
+		chgEBArr:[],
+        changeBinsize: 1,
+        useBG: 1,
+        startRange: 1400000000,
+        endRange: 1400000000,
+        zoomAlldata: [],
+        highZoom: [],
+        medZoom: [],
+        lowZoom: [],
+		zoomData: [],
+		outOfRangeEvents: {},
+        pre_LCdata: null,
+        dict_LCdata: null,
+        LCdata: null,
+        gwTriUnix: null,
+        maxiTriArray: null,
+        ra: null,
+        dec: null
+    };
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // MARK: performanceLogger
@@ -158,10 +184,12 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
         );
         return;
     }
-
+	
 	if (!lcStates[index]) {
         lcStates[index] = {
             selectedEnergyBand: "All",
+			loopEnergyBand: 0,
+			chgEBArr:[],
             changeBinsize: 1,
             useBG: 1,
 			startRange: 1400000000, //すぐ後に更新されるので適当な値
@@ -343,6 +371,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
     				    	for (let missingDptc = data[i - 3] + 1; missingDptc < data[i - 1]; missingDptc++) {
     				    	    let missingConvertedValue = gps2unix(missingDptc - dptcUnixDiff) + 0.5;
     				    	    let missingArray = [missingConvertedValue, -bgArr[ebIndex][gapcnt], 1 + bgErrArr[ebIndex][gapcnt]];
+
+								// if(!bgArr[ebIndex][gapcnt] || !bgArr[ebIndex][gapcnt]) {
+								// 	missingArray = [missingConvertedValue, 0, 1];
+								// }
     				    	    
 								array.push(missingArray);
     				    	}
@@ -365,6 +397,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					//cnt, errの値をBG情報を用いて更新
     			    cnt = data[i] - bgArr[ebIndex][gapcnt];
     			    err = Math.sqrt(data[i] + bgErrArr[ebIndex][gapcnt]);
+					// if(bgArr[ebIndex][gapcnt] && bgArr[ebIndex][gapcnt]) {
+					// 	cnt = data[i] - bgArr[ebIndex][gapcnt];			
+    			    // 	err = Math.sqrt(data[i] + bgErrArr[ebIndex][gapcnt]);
+					// }
     			}
 
 				array1.push(convertedValue);
@@ -510,24 +546,60 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
     //         end: dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600
     //     };
     // }
+
 	if (!parent.window.commonDisplayRange || Object.keys(parent.window.commonDisplayRange).length === 0) {
-    	parent.window.commonDisplayRange = {
-    	    start: dict_AllLCdata[0][0] - 3600,
-    	    end: dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600
-    	};
+		var startlc = dict_AllLCdata[0][0] - 3600;
+		var endlc = dict_AllLCdata[dict_AllLCdata.length - 1][0] + 3600;
+		var rangelc = endlc - startlc;
+		
+		if (rangelc < 22080) {
+			parent.window.commonDisplayRange = {
+    	    	start: gwTriUnix - 22080,
+    	    	end: gwTriUnix + 22080
+			};
+    	} else {
+			parent.window.commonDisplayRange = {
+    	    	start: startlc,
+    	    	end: endlc
+    		};
+		}
 	}
+
 	// console.log("[under]commonDisplayRange: ", parent.window.commonDisplayRange);
-    
 	startAllRange = parent.window.commonDisplayRange.start;
 	endAllRange = parent.window.commonDisplayRange.end;
-	
-	// 光度曲線の表示範囲を記憶する変数
-	startRange = startAllRange;
-	endRange = endAllRange;
+
+	// console.log(index + "]テスト:" + lcStates[index].startRange + ", " + lcStates[index].endRange);
+	// MARK:表示範囲の決定
+	if ( // lcStates[index].startRange/endRngeが初期値でなく、かつ表示範囲を変更している場合
+			lcStates[index].startRange !== 1400000000
+			&& lcStates[index].endRange !== 1400000000
+			&& (
+				lcStates[index].startRange != parent.window.commonDisplayRange.start 
+				|| lcStates[index].endRange != parent.window.commonDisplayRange.end
+			)
+		) 
+	{
+		// console.log(index + "]テスト");
+		startRange = lcStates[index].startRange;
+		endRange = lcStates[index].endRange;
+ 	} else { // それ以外
+		// 光度曲線の表示範囲を記憶する変数
+		startRange = startAllRange;
+		endRange = endAllRange;
+
+		// lcStatesに範囲を保存
+		lcStates[index].startRange = startRange;
+		lcStates[index].endRange = endRange;
+	}
+
+	// // 光度曲線の表示範囲を記憶する変数
+	// startRange = startAllRange;
+	// endRange = endAllRange;
 
 	// lcStatesに範囲を保存
-	lcStates[index].startRange = startRange;
-	lcStates[index].endRange = endRange;
+	// lcStates[index].startRange = startRange;
+	// lcStates[index].endRange = endRange;
 
 	// 拡大機能のためにデータをまとめる
 	sumAlldata = graph_Summarize(dict_AllLCdata);
@@ -8926,6 +8998,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					//bins、minX、minYの設定
 					//rにdict_LCdata、oにはbinsizeが入っている
 					//(exports.count = true);
+					// MARK:getRollingAverage関数
 				  exports.getRollingAverage = function (r, o) {
 					//dptcをMJDにして再代入
 					// if (this.count) {
@@ -8995,6 +9068,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 									for(; dataNum < r.length && startBin <= r[dataNum][0] && startBin + o >= r[dataNum][0]; dataNum++) {	
 										sumCount += r[dataNum][1];
 										sumErr += r[dataNum][2] * r[dataNum][2]; //誤差の二乗を足し合わせる
+										// console.log(index + "]テスト: " + r[dataNum][0], r[dataNum][1], r[dataNum][2]);
 									}
 
 									if (sumErr != 0) {
@@ -9006,6 +9080,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										// let countErr = rSumCount / o; //1秒あたりのカウント数の誤差
 										let rSumCount = Math.sqrt(sumErr); //カウント数の平方根
 										let countErr = rSumCount / o; //1秒あたりのカウント数の誤差
+
+										// console.log("テストo: " + o);
+										// console.log("テストsumCount: " + sumCount);
+										// console.log("テストsumErr: " + sumErr);
 
 										//MARK:popupLCとの整合性確認用
 										// let countSec = sumCount; //1秒あたりのカウント数
@@ -9048,14 +9126,23 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							loopCount++;
 						}
 
+						lcStates[index].loopEnergyBand = loopCount;
+						lcStates[index].chgEBArr = changeEBArray;
 						// console.log("範囲外:", lcStates[index].outOfRangeEvents);
 
 						// グラフの最小値の設定
 						// n[0] = Math.min(n[0], -2.0);
-						if (n[0] > -2.0) {
-						    n[0] = -2.0;  // 最小値が-2より大きい場合は-2に
+						// if (n[0] > -2.0) {
+						//     n[0] = -2.0;  // 最小値が-2より大きい場合は-2に
+						// } else if (n[0] >= -5.0) {
+						//     // n[0] = n[0];  // -2~-5の間なら最小値をそのまま使用
+						// } else {
+						//     n[0] = -5.0;  // 最小値が-5より小さければ-5に
+						// }
+						if (n[0] > -1.0) {
+						    n[0] = -1.0;  // 最小値が-1より大きい場合は-1に
 						} else if (n[0] >= -5.0) {
-						    // n[0] = n[0];  // -2~-5の間なら最小値をそのまま使用
+						    // n[0] = n[0];  // -1~-5の間なら最小値をそのまま使用
 						} else {
 						    n[0] = -5.0;  // 最小値が-5より小さければ-5に
 						}
@@ -9378,11 +9465,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						},
 					  },
 					}
-					/////
-					// , "LC_0", {
-					// 	id: "LC_0",
-					// }
-					//////
 				);
 				},
 				{},
@@ -10322,15 +10404,17 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						  e.createElement(
 							"text",
 							{
-							  key: "dateLabel",
+							  	key: "dateLabel",
 							//   x: y(s),
 							//   y: d - 4 - p,
-							  x: divide ? y(s) + 30 : y(s),
-							  y: divide ? d + 10 : d - 4 - p,
-							  fill: i.Color.white,
-							  fontSize: (100 * globalScale) + "%",
-							  dominantBaseline: "baseline",
-							  textAnchor: "end",
+							//   x: divide ? y(s) + 30 : y(s),
+							//   y: divide ? d + 10 : d - 4 - p,
+								x: divide ? y(s) + 30 : y(s) + 45,
+							  	y: d + 10,
+							  	fill: i.Color.white,
+							  	fontSize: (100 * globalScale) + "%",
+							  	dominantBaseline: "baseline",
+							  	textAnchor: "end",
 							},
 							"UTC"
 						  )
@@ -10390,8 +10474,10 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							key: "mjdLabel",
 							// x: y(s),
 							// y: f + 4 + p,
-							x: divide ? y(s) + 30 : y(s),
-							y: divide ? f - 10 : f + 4 + p,
+							// x: divide ? y(s) + 30 : y(s),
+							// y: divide ? f - 10 : f + 4 + p,
+							x: divide ? y(s) + 30 : y(s) + 45,
+							y: f - 10,
 							fill: i.Color.white,
 							fontSize: (100 * globalScale) + "%",
 							dominantBaseline: "hanging",
@@ -10580,7 +10666,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							);
 					  } else {
 						//console.log("x.bins: " + x.bins);
-						if (loopCount === 1) { //All,Low,Med,Highの処理
+						// if (loopCount === 1) { //All,Low,Med,Highの処理
+						if (lcStates[index].loopEnergyBand === 1) { //All,Low,Med,Highの処理
 							//var _ = -1;
 							//plottypeがpointの光度曲線の作成場所
 							M.push(
@@ -10598,6 +10685,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 											  	r = P(e[w]), //十字の中心のy座標
 											  	a = e[A] * B, //カウント数のエラーバーの長さ
 											  	o = [];
+											// console.log("テストe" + e);
 											// if (l < n && i < s) {
 											if (l < n && i < s && m > r) {
 											  	o.push(
@@ -10611,35 +10699,71 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 											}
 											return o.join("");
 									  	})
-									  	// .join(""),
-										.join("") + 
-										// 範囲外イベントの矢印パスを追加
-            							// (lcStates[index] && lcStates[index].outOfRangeEvents ? 
-            							//     lcStates[index].outOfRangeEvents.map(function(value) {
-										(lcStates[index] && lcStates[index].outOfRangeEvents[0] ? 
-            							    lcStates[index].outOfRangeEvents[0].map(function(value) {
-            							        var arrowX = z(value);
-            							        if (l <= arrowX && arrowX <= s) {
-            							            return "M" + arrowX + "," + (m - 20) + "V" + m +
-            							                //    "l -3,-8 M" + arrowX + "," + m +
-            							                //    "l 3,-8";
-														"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
-            							                "l 4,-11";
-            							        }
-            							        return "";
-            							    }).join("") : ""
-            							),
+									  	.join(""),
+										/////
+										// .join("") + 
+										// // 範囲外イベントの矢印パスを追加
+            							// // (lcStates[index] && lcStates[index].outOfRangeEvents ? 
+            							// //     lcStates[index].outOfRangeEvents.map(function(value) {
+										// (lcStates[index] && lcStates[index].outOfRangeEvents[0] ? 
+            							//     lcStates[index].outOfRangeEvents[0].map(function(value) {
+            							//         var arrowX = z(value);
+            							//         if (l <= arrowX && arrowX <= s) {
+            							//             return "M" + arrowX + "," + (m - 20) + "V" + m +
+            							//                 //    "l -3,-8 M" + arrowX + "," + m +
+            							//                 //    "l 3,-8";
+										// 				"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
+            							//                 "l 4,-11";
+            							//         }
+            							//         return "";
+            							//     }).join("") : ""
+            							// ),
+										/////
 									stroke: E,
 							  	})
-							);	
+							);
+							// console.log("テストl" + l);
+							// console.log("テストs" + s);
+							// console.log("テストm" + m);
+							// console.log("テスト5" + M[4].props.d);
+
+							// 範囲外イベントの矢印パス
+							if (lcStates[index] && lcStates[index].outOfRangeEvents[0]) {
+							    var arrowPath = lcStates[index].outOfRangeEvents[0].map(function(value) {
+							        var arrowX = z(value);
+							        if (l <= arrowX && arrowX <= s) {
+							            return "M" + arrowX + "," + (m - 20) + "V" + m +
+							                "l -4,-11 M" + arrowX + "," + m +
+							                "l -3,-8 M" + arrowX + "," + m +
+							                "l 4,-11";
+							        }
+							        return "";
+							    }).join("");
+							
+							    if (arrowPath) {
+							        M.push(
+							            e.createElement("path", {
+							                key: "outOfRangeArrows",
+							                id: "can_zoom_arrows",
+							                d: arrowPath,
+											stroke: E === t.Color.white ? t.Color.gray : E,
+											strokeOpacity: E === t.Color.white ? 1.0 : 0.7,
+							                fill: "none"
+							            })
+							        );
+							    }
+							}
+
 					    // } else if (loopCount === 3) { //3色同時表示の処理
+						// } else if (lcStates[index].loopEnergyBand === 3) { //3色同時表示の処理
 						} else { //3色同時表示の処理
 							M.push( //Highの表示
 								e.createElement("path", {
 								  	key: t.PlotType.Point,
 								  	id: "can_zoom",
 								  	d: x.bins //MARK:十字のパス設定
-										.slice(0, changeEBArray[0])
+										// .slice(0, changeEBArray[0])
+										.slice(0, lcStates[index].chgEBArr[0])
 										.map(function (e) {
 										  	var t = z(e[0]), //十字の中心のx座標
 												i = z(e[1]), //dptcのエラーバーの左端
@@ -10658,29 +10782,56 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										  	}
 										  	return o.join("");
 										})
-										// .join(""),
-										.join("") + 
-										// 範囲外イベントの矢印パスを追加
-										(lcStates[index] && lcStates[index].outOfRangeEvents[0] ? 
-            							    lcStates[index].outOfRangeEvents[0].map(function(value) {
-            							        var arrowX = z(value);
-            							        if (l <= arrowX && arrowX <= s) {
-            							            return "M" + arrowX + "," + (m - 20) + "V" + m +
-														"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
-            							                "l 4,-11";
-            							        }
-            							        return "";
-            							    }).join("") : ""
-            							),
+										.join(""),
+										// .join("") + 
+										// // 範囲外イベントの矢印パスを追加
+										// (lcStates[index] && lcStates[index].outOfRangeEvents[0] ? 
+            							//     lcStates[index].outOfRangeEvents[0].map(function(value) {
+            							//         var arrowX = z(value);
+            							//         if (l <= arrowX && arrowX <= s) {
+            							//             return "M" + arrowX + "," + (m - 20) + "V" + m +
+										// 				"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
+            							//                 "l 4,-11";
+            							//         }
+            							//         return "";
+            							//     }).join("") : ""
+            							// ),
 										stroke: t.Color.blue,
 								})
 							);
+
+							// 範囲外イベント矢印
+							if (lcStates[index] && lcStates[index].outOfRangeEvents[0]) {
+							    var arrowPath = lcStates[index].outOfRangeEvents[0].map(function(value) {
+							        var arrowX = z(value);
+							        if (l <= arrowX && arrowX <= s) {
+							            return "M" + arrowX + "," + (m - 20) + "V" + m +
+							                "l -4,-11 M" + arrowX + "," + m +
+							                "l -3,-8 M" + arrowX + "," + m +
+							                "l 4,-11";
+							        }
+							        return "";
+							    }).join("");
+							
+							    if (arrowPath) {
+							        M.push(
+							            e.createElement("path", {
+							                key: "outOfRangeArrows-high",
+							                d: arrowPath,
+							                stroke: t.Color.blue,
+							                strokeOpacity: 0.7,
+							            })
+							        );
+							    }
+							}
+
 							M.push( //Medの表示
 								e.createElement("path", {
 								  	key: t.PlotType.Point,
 								  	id: "can_zoom",
 								  	d: x.bins
-										.slice(changeEBArray[0], changeEBArray[1])
+										// .slice(changeEBArray[0], changeEBArray[1])
+										.slice(lcStates[index].chgEBArr[0], lcStates[index].chgEBArr[1])
 										.map(function (e) {
 										  	var t = z(e[0]), //十字の中心のx座標
 												i = z(e[1]), //dptcのエラーバーの左端
@@ -10699,29 +10850,56 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										  	}
 										  	return o.join("");
 										})
-										// .join(""),
-										.join("") + 
-										// 範囲外イベントの矢印パスを追加
-										(lcStates[index] && lcStates[index].outOfRangeEvents[1] ? 
-            							    lcStates[index].outOfRangeEvents[1].map(function(value) {
-            							        var arrowX = z(value);
-            							        if (l <= arrowX && arrowX <= s) {
-            							            return "M" + arrowX + "," + (m - 20) + "V" + m +
-														"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
-            							                "l 4,-11";
-            							        }
-            							        return "";
-            							    }).join("") : ""
-            							),
+										.join(""),
+										// .join("") + 
+										// // 範囲外イベントの矢印パスを追加
+										// (lcStates[index] && lcStates[index].outOfRangeEvents[1] ? 
+            							//     lcStates[index].outOfRangeEvents[1].map(function(value) {
+            							//         var arrowX = z(value);
+            							//         if (l <= arrowX && arrowX <= s) {
+            							//             return "M" + arrowX + "," + (m - 20) + "V" + m +
+										// 				"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
+            							//                 "l 4,-11";
+            							//         }
+            							//         return "";
+            							//     }).join("") : ""
+            							// ),
 										stroke: t.Color.green,
 								})
 							);
+
+							// 範囲外イベント矢印
+							if (lcStates[index] && lcStates[index].outOfRangeEvents[1]) {
+							    var arrowPath = lcStates[index].outOfRangeEvents[1].map(function(value) {
+							        var arrowX = z(value);
+							        if (l <= arrowX && arrowX <= s) {
+							            return "M" + arrowX + "," + (m - 20) + "V" + m +
+							                "l -4,-11 M" + arrowX + "," + m +
+							                "l -3,-8 M" + arrowX + "," + m +
+							                "l 4,-11";
+							        }
+							        return "";
+							    }).join("");
+							
+							    if (arrowPath) {
+							        M.push(
+							            e.createElement("path", {
+							                key: "outOfRangeArrows-high",
+							                d: arrowPath,
+							                stroke: t.Color.green,
+							                strokeOpacity: 0.7,
+							            })
+							        );
+							    }
+							}
+
 							M.push( //Lowの表示
 								e.createElement("path", {
 								  	key: t.PlotType.Point,
 								  	id: "can_zoom",
 								  	d: x.bins
-										.slice(changeEBArray[1], x.bins.length)
+										// .slice(changeEBArray[1], x.bins.length)
+										.slice(lcStates[index].chgEBArr[1], x.bins.length)
 										.map(function (e) {
 										  	var t = z(e[0]), //十字の中心のx座標
 												i = z(e[1]), //dptcのエラーバーの左端
@@ -10740,23 +10918,49 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										  	}
 										  	return o.join("");
 										})
-										// .join(""),
-										.join("") + 
-										// 範囲外イベントの矢印パスを追加
-										(lcStates[index] && lcStates[index].outOfRangeEvents[2] ? 
-            							    lcStates[index].outOfRangeEvents[2].map(function(value) {
-            							        var arrowX = z(value);
-            							        if (l <= arrowX && arrowX <= s) {
-            							            return "M" + arrowX + "," + (m - 20) + "V" + m +
-														"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
-            							                "l 4,-11";
-            							        }
-            							        return "";
-            							    }).join("") : ""
-            							),
+										.join(""),
+										// .join("") + 
+										// // 範囲外イベントの矢印パスを追加
+										// (lcStates[index] && lcStates[index].outOfRangeEvents[2] ? 
+            							//     lcStates[index].outOfRangeEvents[2].map(function(value) {
+            							//         var arrowX = z(value);
+            							//         if (l <= arrowX && arrowX <= s) {
+            							//             return "M" + arrowX + "," + (m - 20) + "V" + m +
+										// 				"l -4,-11 M" + arrowX + "," + m +     							                   "l -3,-8 M" + arrowX + "," + m +
+            							//                 "l 4,-11";
+            							//         }
+            							//         return "";
+            							//     }).join("") : ""
+            							// ),
 										stroke: t.Color.red,
 								})
 							);
+
+							// 範囲外イベント矢印
+							if (lcStates[index] && lcStates[index].outOfRangeEvents[2]) {
+							    var arrowPath = lcStates[index].outOfRangeEvents[2].map(function(value) {
+							        var arrowX = z(value);
+							        if (l <= arrowX && arrowX <= s) {
+							            return "M" + arrowX + "," + (m - 20) + "V" + m +
+							                "l -4,-11 M" + arrowX + "," + m +
+							                "l -3,-8 M" + arrowX + "," + m +
+							                "l 4,-11";
+							        }
+							        return "";
+							    }).join("");
+							
+							    if (arrowPath) {
+							        M.push(
+							            e.createElement("path", {
+							                key: "outOfRangeArrows-high",
+							                d: arrowPath,
+							                stroke: t.Color.red,
+							                strokeOpacity: 0.7,
+							            })
+							        );
+							    }
+							}
+
 						}
 					  }
 					}
@@ -10891,7 +11095,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							left: divide ? 32 : 40,
 							// right: 0.5,
 						  	// right: 10,
-							right: divide ? 40 : 10,
+							// right: divide ? 40 : 10,
+							right: divide ? 40 : 60,
 							// top: 32,
 							// top: 37, 
 						  	// top: divide ? 30 : 37, 
@@ -10908,7 +11113,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							left: divide ? 40 : 48,
 							// right: 0.5,
 						  	// right: 10,
-							right: divide ? 40 : 10,
+							// right: divide ? 40 : 10,
+							right: divide ? 40 : 60,
 							// top: 32,
 							// top: 37, 
 						  	// top: divide ? 30 : 37, 
@@ -10924,7 +11130,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 							left: divide ? 46 : 54,
 							// right: 0.5,
 						  	// right: 10,
-							right: divide ? 40 : 10,
+							// right: divide ? 40 : 10,
+							right: divide ? 40 : 60,
 							// top: 32,
 							// top: 37, 
 						  	// top: divide ? 30 : 37, 
@@ -10949,21 +11156,45 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					  startRange = exports.h[0][0];
 					  endRange = exports.h[0][1];
 
-					  	if (!lcStates[index]) {
-					  	    lcStates[index] = {
-					  	        selectedEnergyBand: "All",
-					  	        changeBinsize: 1,
-					  	        useBG: 1,
-					  	        startRange: 1400000000,
-					  	        endRange: 1400000000,
-					  	        zoomAlldata: [],
-					  	        highZoom: [],
-					  	        medZoom: [],
-					  	        lowZoom: [],
-					  	        pre_LCdata: null,
-					  	        dict_LCdata: null,
-					  	    };
-					  	}
+					  	// if (!lcStates[index]) {
+					  	//     lcStates[index] = {
+					  	//         selectedEnergyBand: "All",
+					  	//         changeBinsize: 1,
+					  	//         useBG: 1,
+					  	//         startRange: 1400000000,
+					  	//         endRange: 1400000000,
+					  	//         zoomAlldata: [],
+					  	//         highZoom: [],
+					  	//         medZoom: [],
+					  	//         lowZoom: [],
+					  	//         pre_LCdata: null,
+					  	//         dict_LCdata: null,
+					  	//     };
+					  	// }
+						if (!lcStates[index]) {
+    					    lcStates[index] = {
+    					        selectedEnergyBand: "All",
+								loopEnergyBand: 0,
+								chgEBArr:[],
+    					        changeBinsize: 1,
+    					        useBG: 1,
+								startRange: 1400000000, //すぐ後に更新されるので適当な値
+    					    	endRange: 1400000000, //すぐ後に更新されるので適当な値
+    					        zoomAlldata: [],
+    					        highZoom: [],
+    					        medZoom: [],
+    					        lowZoom: [],
+								zoomData: [],
+								outOfRangeEvents: {},
+								pre_LCdata: null,
+								dict_LCdata: null,
+								LCdata: null,
+								gwTriUnix: null,
+								maxiTriArray: null,
+								ra: null,
+								dec: null
+    					    };
+    					}
 
 					  lcStates[index].startRange = startRange;
 					  lcStates[index].endRange = endRange;
@@ -11327,8 +11558,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					h = e(require("../../util/catalog")),
 					p = t(require("./style.css")),
 					g = require("../Errors");
-				//MARK:getInitialSelectedObjects関数
-				  (exports.getInitialSelectedObjects = function () {
+				//MARK:getkey関数
+				  	// (exports.getInitialSelectedObjects = function () {
+					(exports.getkey = function () {
 					// var e = location.pathname.match(/^\/objects\/([^\/]+)$/),
 					//   t = [];
 		  
@@ -11341,9 +11573,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					//   t
 					// );
 
-					// 光度曲線ごとに一意のキーを生成
-    				return [`LC_${index}`];
-				  }),
+						// 光度曲線ごとに一意のキーを生成
+    					return [`LC_${index}`];
+				 	}),
 					(exports.App = function () {
 					  var e = n.useReducer(function (e, t) {
 						  return e.concat(t);
@@ -11379,9 +11611,9 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 						P = n.useState(""),
 						C = P[0],
 						q = P[1],
-						w = n.useState(exports.getInitialSelectedObjects()),
+						// w = n.useState(exports.getInitialSelectedObjects()),
+						w = n.useState(exports.getkey()),
 						F = w[0],
-						// F = [`LC_${index}`],
 						U = w[1],
 						//サイトのURL名作成
 						x = n.useReducer(function (e, t) {
@@ -11400,6 +11632,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					  	getter: function (e) {
 							// var t = dict_LCdata;
 							var t = lcStates[index] && lcStates[index].dict_LCdata;
+							// console.log(index + "]テストt: " + t);
 							return t ? a.getRollingAverage(t, y.binSize) : null;
 					  	},
 					  	onError: E,
@@ -11409,8 +11642,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					// console.log("[" + index + "]: " + F);
 					// console.log("[" + index + "]: " + l.getLighytCurveData);
 					// console.log("[" + index + "]: " + JSON.stringify([..._]));
-
-
 		  
 					  //plottypeを変更を実行する部分
 					  n.useEffect(
@@ -11459,6 +11690,34 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 					  var setallState = n.useState(false);
 					  var setall = setallState[0];
 					  var setSetall = setallState[1];
+
+					  	// 全ての光度曲線のビンサイズを更新、再描画
+						async function updateLightCurves(newValue) {
+						    for (let i = 1; i < 4; i++) {
+						        if (lcStates[i]) {												
+						            await new Promise(resolve => {												
+						                // 光度曲線を直接更新
+						                let targetDiv = window.parent.underframe.document.getElementById('lc-' + i);
+						                if (targetDiv) {
+						                    targetDiv.innerHTML = '';
+						                }
+									
+						                // 各光度曲線のコンテキストで再描画
+                    					window.parent.underframe.underframe_pro(
+                    					    lcStates[i].LCdata,
+                    					    lcStates[i].gwTriUnix,
+                    					    lcStates[i].maxiTriArray,
+                    					    lcStates[i].ra,
+                    					    lcStates[i].dec,
+                    					    i,
+                    					    1  // divide = 1（四分割表示）
+                    					);
+									
+						                resolve();
+						            });
+						        }
+						    }
+						}
 					  return L
 						? n.createElement(n.Fragment, null, K)
 						: n.createElement(
@@ -11509,22 +11768,33 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
     								    gap: "5px",
     								  }
     								},
-									///没処理
-									// index == 0 && divide
-    								// 	? n.createElement("input", {
-    								// 	    type: "checkbox",
-    								// 	    name: "setall-checkbox",
-    								// 	    checked: setall,
-    								// 	    style: {
-    								// 	        width: (16 * globalScale) + "px",
-    								// 	        height: (16 * globalScale) + "px",
-    								// 	    },
-    								// 	    onChange: function() {
-    								// 	        console.log("Checkbox was clicked!");
-    								// 	        setSetall(!setall);
-    								// 	        console.log("setall is now:", !setall);
-    								// 	    }
-    								// 	}) : null,
+									///新処理
+									index == 0 && divide
+    									? n.createElement("input", {
+    									    type: "checkbox",
+    									    name: "setall-checkbox",
+    									    checked: setall,
+    									    style: {
+												width: (18 * globalScale) + "px",
+    									        height: (18 * globalScale) + "px",
+												marginLeft: "0px",
+    									    },
+    									    onChange: function() {
+    									        // setSetall(!setall);
+    									        // console.log("setall is now:", !setall);
+												const newSetallState = !setall;
+    											setSetall(newSetallState);
+    											console.log("setall is now:", newSetallState);
+
+												// index 1~3のinput要素を無効化
+    											for (let i = 1; i < 4; i++) {
+    											    const input = document.querySelector(`input[name="binsize-${i}"]`);
+    											    if (input) {
+														input.disabled = newSetallState;
+    											    }
+    											}
+    									    }
+    									}) : null,
 									///
 								  n.createElement(
 									"label",
@@ -11535,7 +11805,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										fontSize: (100 * globalScale) + "%",
 									  },
 									},
-									"Bin size: "
+									// "Bin size: "
+									divide ? "Bin:" : "Bin size: "
 								  ),
 								  //MARK:Bin sizeの入力
 								  //bin sizeの入力
@@ -11551,7 +11822,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 									style: {
     								    width: (49 * globalScale) + "px",
     								    height: (21 * globalScale) + "px",
-    								    fontSize: (14 * globalScale) + "px"
+    								    fontSize: (14 * globalScale) + "px",
     								},
 									onMouseDown: function(e) { //スピンボタンをクリックしたときの処理
 										const input = e.currentTarget;
@@ -11562,92 +11833,73 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										// const currentValue = parseInt(input.value, 10);
 										const currentValue = lcStates[index].changeBinsize;
 								
-										if (clickSpin && isSpinUp) {  // 上ボタン
-											const newValue = currentValue * 2 - 1;
-											if (newValue <= 128) {
-												input.value = parseInt(newValue, 10);
-												T({ binSize: c.filterBinSize(newValue) });
-												lcStates[index].changeBinsize = newValue;//
-											}
-										} else if (clickSpin) {  // 下ボタン
-											const newValue = currentValue / 2 + 1;
-											if (newValue >= 2) {
-												input.value = parseInt(newValue, 10);
-												T({ binSize: c.filterBinSize(newValue) });
-												lcStates[index].changeBinsize = newValue;//
-											}
-										}
-										//// 没処理
 										// if (clickSpin && isSpinUp) {  // 上ボタン
 										// 	const newValue = currentValue * 2 - 1;
 										// 	if (newValue <= 128) {
 										// 		input.value = parseInt(newValue, 10);
 										// 		T({ binSize: c.filterBinSize(newValue) });
-
-										// 		if (setall && divide) {
-										// 			lcStates[index].changeBinsize = newValue;
-
-            							// 		    // 全ての光度曲線のビンサイズを更新
-            							// 		    for (let i = 1; i < 4; i++) {
-            							// 		        if (lcStates[i]) {
-										// 					console.log("[" + i + "]newValue:" + newValue);
-            							// 		            lcStates[i].changeBinsize = newValue;
-
-										// 					// 各光度曲線のinput要素を直接更新
-            							// 					setTimeout(() => {
-            							// 					    const targetInput = document.querySelector(`input[name="binsize-${i}"]`);
-            							// 					    if (targetInput) {
-            							// 					        targetInput.value = newValue;
-																
-            							// 					        // changeイベントを手動で発火させてReactに変更を通知
-            							// 					        const event = new Event('change', { bubbles: true });
-            							// 					        targetInput.dispatchEvent(event);
-            							// 					    }
-            							// 					}, 0);
-            							// 		        }
-            							// 		    }
-            							// 		} else {
-            							// 		    // 通常の処理（単一のインデックスのみ更新）
-            							// 		    lcStates[index].changeBinsize = newValue;
-            							// 		}
+										// 		lcStates[index].changeBinsize = newValue;//
 										// 	}
 										// } else if (clickSpin) {  // 下ボタン
 										// 	const newValue = currentValue / 2 + 1;
 										// 	if (newValue >= 2) {
 										// 		input.value = parseInt(newValue, 10);
 										// 		T({ binSize: c.filterBinSize(newValue) });
-
-										// 		if (setall && divide) {
-										// 			lcStates[index].changeBinsize = newValue;
-
-            							// 		    // 全ての光度曲線のビンサイズを更新
-            							// 		    for (let i = 1; i < 4; i++) {
-            							// 		        if (lcStates[i]) {
-										// 					console.log("[" + i + "]newValue:" + newValue);
-            							// 		            lcStates[i].changeBinsize = newValue;
-
-            							// 					// 各光度曲線のinput要素を直接更新
-            							// 					setTimeout(() => {
-            							// 					    const targetInput = document.querySelector(`input[name="binsize-${i}"]`);
-            							// 					    if (targetInput) {
-            							// 					        targetInput.value = newValue;
-																
-            							// 					        // changeイベントを手動で発火させてReactに変更を通知
-            							// 					        const event = new Event('change', { bubbles: true });
-            							// 					        targetInput.dispatchEvent(event);
-            							// 					    }
-            							// 					}, 0);
-            							// 		        }
-            							// 		    }
-            							// 		} else {
-            							// 		    lcStates[index].changeBinsize = newValue;
-            							// 		}
+										// 		lcStates[index].changeBinsize = newValue;//
 										// 	}
 										// }
+										///// 新処理
+										if (clickSpin && isSpinUp) {  // 上ボタン
+											const newValue = currentValue * 2 - 1;
+											if (newValue <= 128) {
+												input.value = parseInt(newValue, 10);
+												T({ binSize: c.filterBinSize(newValue) });
+												lcStates[index].changeBinsize = newValue;
+
+												if (setall && divide) {
+													for (let i = 1; i < 4; i++) {
+            								    		lcStates[i].changeBinsize = newValue + 1;
+            										}
+
+												    // updateLightCurves(newValue);
+													// updateLightCurves(newValue).then(() => {
+									            	//     for (let i = 1; i < 4; i++) {
+									            	//         const input = document.querySelector(`input[name="binsize-${i}"]`);
+									            	//         if (input) {
+									            	//             input.disabled = true;
+									            	//         }
+									            	//     }
+									            	// });
+												}
+											}
+										} else if (clickSpin) {  // 下ボタン
+											const newValue = currentValue / 2 + 1;
+											if (newValue >= 2) {
+												input.value = parseInt(newValue, 10);
+												T({ binSize: c.filterBinSize(newValue) });
+												lcStates[index].changeBinsize = newValue;
+
+												if (setall && divide) {
+													for (let i = 1; i < 4; i++) {
+            								    		lcStates[i].changeBinsize = newValue - 1;
+            										}
+
+													// updateLightCurves(newValue);
+													// updateLightCurves(newValue).then(() => {
+									            	//     for (let i = 1; i < 4; i++) {
+									            	//         const input = document.querySelector(`input[name="binsize-${i}"]`);
+									            	//         if (input) {
+									            	//             input.disabled = true;
+									            	//         }
+									            	//     }
+									            	// });
+												}
+											}
+										}
 										// for (let i = 0; i < 4; i++) {
-										// 	console.log("lcStates[" + i + "].changeBinsize: " +  lcStates[i].changeBinsize);
+										// 	console.log("テストlcStates[" + i + "].changeBinsize: " +  lcStates[i].changeBinsize);
             							// }
-										///
+										/////
 									},
 									onKeyDown: function(e) { //上下キーを押したときの処理
 										if (e.key === "ArrowUp" || e.key === "ArrowDown") {
@@ -11659,7 +11911,24 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 												if (newValue <= 128) {
 													e.currentTarget.value = newValue;
 													T({ binSize: c.filterBinSize(newValue) });
-													lcStates[index].changeBinsize = newValue;//
+													lcStates[index].changeBinsize = newValue;
+
+													if (setall && divide) {
+														for (let i = 1; i < 4; i++) {
+            								    			lcStates[i].changeBinsize = newValue;
+            											}
+
+														// updateLightCurves(newValue);
+														updateLightCurves(newValue).then(() => {
+									            		    for (let i = 1; i < 4; i++) {
+									            		        const input = document.querySelector(`input[name="binsize-${i}"]`);
+									            		        if (input) {
+									            		            input.disabled = true;
+									            		        }
+									            		    }
+									            		});
+													}
+
 												}
 											} else if (e.key === "ArrowDown") {
 												e.preventDefault();
@@ -11667,7 +11936,23 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 												if (newValue >= 1) {
 													e.currentTarget.value = newValue;
 													T({ binSize: c.filterBinSize(newValue) });
-													lcStates[index].changeBinsize = newValue;//
+													lcStates[index].changeBinsize = newValue;
+
+													if (setall && divide) {
+														for (let i = 1; i < 4; i++) {
+            								    			lcStates[i].changeBinsize = newValue;
+            											}
+													
+														// updateLightCurves(newValue);
+														updateLightCurves(newValue).then(() => {
+									            		    for (let i = 1; i < 4; i++) {
+									            		        const input = document.querySelector(`input[name="binsize-${i}"]`);
+									            		        if (input) {
+									            		            input.disabled = true;
+									            		        }
+									            		    }
+									            		});
+													}
 												}
 											}
 										}
@@ -11677,7 +11962,23 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										if (!isNaN(value)) {
 											T({ binSize: c.filterBinSize(value) });
 											changeBinsize = value;
-											lcStates[index].changeBinsize = value;//
+											lcStates[index].changeBinsize = value;
+
+											if (setall && divide) {
+												for (let i = 1; i < 4; i++) {
+            										lcStates[i].changeBinsize = value;
+            									}
+											
+												// updateLightCurves(value);
+												updateLightCurves(value).then(() => {
+									                for (let i = 1; i < 4; i++) {
+									                    const input = document.querySelector(`input[name="binsize-${i}"]`);
+									                    if (input) {
+									                        input.disabled = true;
+									                    }
+									                }
+									            });
+											}
 										}
 									}
 								  }),
@@ -11710,7 +12011,7 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										   marginLeft: "-5px", // 左側を詰める
     							        },
     							      },
-    							      "Energy band: "),
+    							      "Band:"),
     							      // Energy bandのラジオボタンを追加
     							      ...o.AvailableEnergyBands.map(function (e) {
     							        return n.createElement(
@@ -11787,24 +12088,39 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										marginRight: "10px"
     								  }
     								},
-								  n.createElement(
-                                    "label", 
-                                    {
-                                      style: {
-										// color: "white",
-										color: index === 0 ? r.Color.white :
-               								   index === 1 ? r.Color.red :
-               								   index === 2 ? r.Color.orange :
-               								   index === 3 ? r.Color.yellow :
-               								   "white",
-										fontSize: (100 * globalScale) + "%",
-										// transform: "translateX(62px)" //一つだけ表示する場合
-										// transform: "translateX(51px)" //四分割表示する場合
-										// transform: divide ? "translateX(51px)" : "translateX(62px)"
-										transform: divide ? "" : "translateX(62px)"
-									  }
-                                    },
-                                    "(α, δ) = (" +  Number(ra).toFixed(1) + ", " +  Number(dec).toFixed(1) + ")"),
+								  	n.createElement(
+                                    	"label", 
+                                    	{
+                                    	  style: {
+											// color: "white",
+											color: index === 0 ? r.Color.white :
+               									   index === 1 ? r.Color.red :
+               									   index === 2 ? r.Color.orange :
+               									   index === 3 ? r.Color.yellow :
+               									   "white",
+											fontSize: (100 * globalScale) + "%",
+											// transform: "translateX(62px)" //一つだけ表示する場合
+											// transform: "translateX(51px)" //四分割表示する場合
+											// transform: divide ? "translateX(51px)" : "translateX(62px)"
+											transform: divide ? "translateX(47px)" : "translateX(62px)"
+										  }
+                                    	},
+										"(α, δ) = (" +  Number(ra).toFixed(1) + ", " +  Number(dec).toFixed(1) + "), "
+									),
+									// MARK:Camera IDの表示
+									n.createElement(
+                                	    "label", 
+                                	    {
+                                	      style: {
+											color: "white",
+											fontSize: (100 * globalScale) + "%",
+											transform: divide ? "translateX(47px)" : "translateX(62px)",
+										  }
+                                	    },
+										divide 
+											? "CamID = " + (Array.isArray(camid) ? `${camid.join(',')}` : camid)
+											: "Camera ID = " + (Array.isArray(camid) ? `${camid.join(',')}` : camid)
+									),
 								  // MARK:BGボタン
   								  n.createElement("button", {
   								    type: "button",
@@ -11814,23 +12130,16 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
     									border: "none",
     									borderRadius: "3px",
     									cursor: "pointer",
-    									// fontSize: "14px",
 										fontSize: (88 * globalScale) + "%",
-										// transform: "translateY(24px)" //一つだけ表示する場合
-										// transform: "translateY(15px)" //四分割表示する場合
-										// transform: divide ? "translateY(16px)" : "translateY(24px)"
-										transform: divide ? "" : "translateY(24px)"
+										transform: divide ? "translateX(5px) translateY(18px)" : "translateY(24px)",
+										width: divide ?  "32px" : "",
+										paddingLeft: divide ?  "0px" : "",
+										paddingRight: divide ?  "0px" : "",
   								    },
   								    onClick: function() {
-										// // underframeのdivを消去
-										// let divs = window.parent.underframe.document.getElementsByTagName('div');
-    									// while (divs.length > 0) {
-    									//     divs[0].remove();
-    									// } 
 										// 特定のIDを持つdivのみを削除
     									let targetDiv = window.parent.underframe.document.getElementById('lc-' + index);
     									if (targetDiv) {
-    									    // targetDiv.remove();
 											targetDiv.innerHTML = '';
     									}
 
@@ -11871,156 +12180,6 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 										} 
   								    }
   								  }, useBG ? "BG on" : "BG off")
-								//   //追加
-								//   ,
-								//   // 四分割表示時のみ拡大ボタンを表示
-								//   divide ? n.createElement("button", {
-  								//     type: "button",
-								// 	id: `expand-button-${index}`,
-  								//     style: {
-    							// 		backgroundColor: "gainsboro",
-    							// 		color: "black",
-    							// 		border: "none",
-    							// 		borderRadius: "3px",
-    							// 		cursor: "pointer",
-    							// 		fontSize: "7px",
-								// 		// fontSize: (88 * globalScale) + "%",
-  								//     },
-  								//     onClick: function(event) {
-								// 		// ボタンのIDからindexを取得
-        						// 		const buttonId = event.target.id;
-        						// 		const clickedIndex = parseInt(buttonId.split('-')[2]);
-								// 		// console.log('Clicked expand button for index:', clickedIndex);
-								// 		// console.dir(lcStates);
-
-								// 		// 現在の光度曲線データを保存
-    							// 		const currentData = {
-    							// 		    LCdata: lcStates[clickedIndex].LCdata,
-								// 			gwTriUnix: lcStates[clickedIndex].gwTriUnix,
-    							// 		    maxiTriArray: lcStates[clickedIndex].maxiTriArray,
-    							// 		    ra: lcStates[clickedIndex].ra,
-    							// 		    dec: lcStates[clickedIndex].dec,
-    							// 		};
-
-								// 		// console.dir(currentData);
-
-								// 		let divs = document.getElementsByTagName('div');
-    							// 		while (divs.length > 0) {
-    							// 		    divs[0].remove();
-    							// 		}
-
-								// 		resetLcStates();
-
-    							// 		parent.mainframe.createGridContainer('single');
-
-								// 		underframe_pro(
-    							// 		    currentData.LCdata,
-    							// 		    currentData.gwTriUnix,
-    							// 		    currentData.maxiTriArray,
-    							// 		    currentData.ra,
-    							// 			currentData.dec,
-    							// 		    0, 
-    							// 		    0  
-    							// 		);
-
-								// 		expand = true;
-  								//     }
-  								//   }, "🔍") : null
-								//   ///
-								  ////
-								  ,
-								  !divide && expand ? n.createElement("button", {
-								   	type: "button",
-								  		id: "reduce-button",
-  								  	    style: {
-    							  			backgroundColor: "gainsboro",
-    							  			color: "black",
-    							  			border: "none",
-    							  			borderRadius: "3px",
-    							  			cursor: "pointer",
-    							  			// fontSize: "16px",
-											fontSize: "88%",	
-								  			position: "fixed",
-								  			right: "15px",
-											transform: "translateY(24px) translateX(-55px)",
-								  			// bottom: "20px",
-								  			// zIndex: 1000,
-								  			// padding: "8px 16px",
-  								  	    },
-										// MARK:backボタン
-  								  	    onClick: function() {
-    							  			// window.parent.mainframe.createGridContainer('grid');
-  
-    							  			// // window.parent.mainframe.firstLC(); 	// 4つの光度曲線を再表示
-											// for (let i = 0; i < 4; i++) {
-											// 	// const underframeDoc = window.parent.underframe.document;
-											// 	// const container = underframeDoc.getElementById(`lc-${i}`);
-											// 	console.log("lcStates[" + i + "].LCdata");
-											// 	console.dir(lcStates[i].LCdata);
-												
-											// 	(function(index) {
-											// 		setTimeout(function() {
-											// 			underframe_pro(
-											// 				lcStates[index].LCdata,
-											// 				lcStates[index].gwTriUnix,
-											// 				lcStates[index].maxiTriArray,
-											// 				lcStates[index].ra,
-											// 				lcStates[index].dec,
-											// 				index,
-											// 				1
-											// 			);
-											// 		}, index * 300);
-											// 	})(i);
-											// }
-  
-								  			// expand = false;
-											window.parent.mainframe.createGridContainer('grid');
-
-										    // 4つの光度曲線を順次処理
-										    async function processLightCurves() {
-										        for (let i = 0; i < 4; i++) {
-										            // lcStates[i]が存在し、必要なデータが揃っているかチェック
-										            if (lcStates[i] && 
-										                lcStates[i].LCdata && 
-										                lcStates[i].gwTriUnix !== undefined && 
-										                lcStates[i].maxiTriArray && 
-										                lcStates[i].ra !== undefined && 
-										                lcStates[i].dec !== undefined) {
-														
-										                console.log(`Processing light curve ${i}`);
-														
-										                // Promise化してawaitで待機
-										                await new Promise((resolve) => {
-										                    // underframe_pro処理を実行
-										                    window.parent.underframe.underframe_pro(
-										                        lcStates[i].LCdata,
-										                        lcStates[i].gwTriUnix,
-										                        lcStates[i].maxiTriArray,
-										                        lcStates[i].ra,
-										                        lcStates[i].dec,
-										                        i,
-										                        1
-										                    );
-														
-										                    // 処理が完了するまで少し待機（必要に応じて調整）
-										                    setTimeout(resolve, 100); // 100ms待機
-										                });
-													
-										                console.log(`Light curve ${i} completed`);
-										            } else {
-										                console.warn(`lcStates[${i}] is not properly initialized or missing required data`);
-										            }
-										        }
-										        console.log("All light curves processed");
-										    }
-										
-										    // 非同期処理を開始
-										    processLightCurves();
-										
-										    expand = false;
-  								  	    }
-  								  	  }, "back") : null
-								  ///
 								),
 								),					
 							  	// エネルギーバンドの選択するラジオボタンの表示
@@ -12198,8 +12357,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
     								    ra: lcStates[clickedIndex].ra,
     								    dec: lcStates[clickedIndex].dec,
     								};
-
 									// console.dir(currentData);
+
 									let divs = document.getElementsByTagName('div');
     								while (divs.length > 0) {
     								    divs[0].remove();
@@ -12207,7 +12366,8 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
 
 									// resetLcStates();
 
-    								parent.mainframe.createGridContainer('single');
+    								// parent.mainframe.createGridContainer('single');
+									parent.mainframe.createGridContainer('single', index);
 
 									underframe_pro(
     								    currentData.LCdata,
@@ -12215,28 +12375,102 @@ function underframe_pro(LCdata, gwTriUnix, maxiTriArray, ra , dec, index, divide
     								    currentData.maxiTriArray,
     								    currentData.ra,
     									currentData.dec,
-    								    0, 
+										index,
     								    0  
     								);
 
 									expand = true;
   								  }
   								}, "◢") : null
-								///
 								,
-								!divide ? n.createElement(
-                                    "label", 
-                                    {
-                                      style: {
-										// color: "white",
-										color: "white",
-										fontSize: (100 * globalScale) + "%",
-										// transform: divide ? "" : "translateX(62px)"
-									  }
-                                    },
-                                    // camid) : null
-									// Array.isArray(camid) ? `[${camid.join(',')}]` : camid) : null
-									"Camera ID = " + (Array.isArray(camid) ? `[${camid.join(',')}]` : camid)) : null
+								!divide && expand ? n.createElement("button", {
+								   	type: "button",
+								  	id: "reduce-button",
+									style: {
+    									BackgroundColor: "gainsboro",
+    									color: "gray",
+    									border: "none",
+    									borderRadius: "3px",
+    									cursor: "pointer",
+    									fontSize: "7px",
+    									position: "relative",
+    									float: "right",
+    									// marginTop: "-8px",
+										marginTop: "-18px",
+    									marginRight: "0px",
+    									zIndex: 10,
+    									width: "20px",
+    									height: "20px",
+    									clipPath: "polygon(0% 100%, 100% 100%, 100% 0%)",
+    									borderRadius: "0",
+  										paddingTop: "5px",
+  										paddingLeft: "10px",
+  										paddingRight: "0px",
+  										paddingBottom: "0px",
+  										textAlign: "left"
+  									},
+									// MARK:backボタン
+  								  	onClick: function() {
+										window.parent.mainframe.createGridContainer('grid');
+									    // 4つの光度曲線を順次処理
+									    async function processLightCurves() {
+									        for (let i = 0; i < 4; i++) {
+									            // lcStates[i]が存在し、必要なデータが揃っているかチェック
+									            if (lcStates[i] && 
+									                lcStates[i].LCdata && 
+									                lcStates[i].gwTriUnix !== undefined && 
+									                lcStates[i].maxiTriArray && 
+									                lcStates[i].ra !== undefined && 
+									                lcStates[i].dec !== undefined) {
+													
+									                // console.log(`Processing light curve ${i}`);
+													
+									                // Promise化してawaitで待機
+									                await new Promise((resolve) => {
+									                    window.parent.underframe.underframe_pro(
+									                        lcStates[i].LCdata,
+									                        lcStates[i].gwTriUnix,
+									                        lcStates[i].maxiTriArray,
+									                        lcStates[i].ra,
+									                        lcStates[i].dec,
+									                        i,
+									                        1
+									                    );
+													
+									                    // 処理が完了するまで少し待機（必要に応じて調整）
+									                    setTimeout(resolve, 100); // 100ms待機
+									                });
+												
+									                console.log(`Light curve ${i} completed`);
+									            } else {
+									                // console.warn(`lcStates[${i}] is not properly initialized or missing required data`);
+													window.parent.mainframe.containerMessage(i,"Failed to load data."); // エラーメッセージ表示
+									            }
+									        }
+									        console.log("All light curves processed");
+									    }
+									
+									    // 非同期処理を開始
+									    processLightCurves();
+									
+									    expand = false;
+  								  	}
+								}, "◢") : null
+								,
+								// !divide ? n.createElement(
+								// divide ? n.createElement(
+                                //     "label", 
+                                //     {
+                                //       style: {
+								// 		// color: "white",
+								// 		color: "white",
+								// 		fontSize: (100 * globalScale) + "%",
+								// 		// transform: divide ? "" : "translateX(62px)"
+								// 	  }
+                                //     },
+								// 	// "Camera ID = " + (Array.isArray(camid) ? `[${camid.join(',')}]` : camid)) : null
+								// 	"CamID = " + (Array.isArray(camid) ? `${camid.join(',')}` : camid)
+								// ) : null
 							  ])
 							)
 						  );
