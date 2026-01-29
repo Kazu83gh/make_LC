@@ -22,6 +22,7 @@ var dirUrl = slash+dirDef;
 var teamUrl =slash+dirDef+teamDef;
 var htm = ".html";
 
+var highSigEveFile = 'authEve.csv'; // 追加　信頼度の高いイベントをまとめたのファイル 260129 K.Takagi
 
 var skyimage = "image0";
 /* var errorimage = "image1"; */
@@ -65,6 +66,8 @@ var t_dirlist = new Array();  //追加
 var dirArray = new Array(); //dirlistを配列で保存するもの。
 var e_dirArray = new Array();  //追加
 var t_dirArray = new Array();  //追加
+var h_dirArray = new Array();  //追加 260129 K.Takagi
+var l_dirArray = new Array();  //追加 260129 K.Takagi
 var dirNumber = new Array(); //表示する日付の配列番号を指定する。
 var imageList ; //imglist.txtの中身を入れるもの。
 var imageArray = new Array(); //imageListを配列で保存するもの。
@@ -152,12 +155,18 @@ function secondLoad(){ //画像タイプ、エネルギー、エラー領域を�
 
 }
 
+//MARK: thirdLoad
 function thirdLoad(){  //追加,event/test切替時呼び出し
     var eTJudge = document.getElementById('eventTest');
-    if(eTJudge.value == 'event'){
-        dirListGet();
+    // if(eTJudge.value == 'event'){
+    //     dirListGet();
+    // }else{
+    //     t_dirListGet();
+    // }
+    if(eTJudge.value == 'test'){ //20260129 K.Takagi
+        t_dirListGet();       
     }else{
-        t_dirListGet();
+        dirListGet();
     }
     setTimeout("listGet('i')",1000);
     setTimeout("splitList('i')",1000);
@@ -192,6 +201,7 @@ function t_dirListGet(){
     t_dirAjax.send(null);
 }
 
+//MARK: sortOut
 function sortOut(){ //取得したディレクトリ名の整理をする.
 
     if((dirAjax.readyState == 4) && (dirAjax.status == 200)){
@@ -200,19 +210,61 @@ function sortOut(){ //取得したディレクトリ名の整理をする.
 
         /* 以下テキストデータを整理する */
         e_dirArray = dirList.split("\n"); //変数dirListを改行で区切り、配列dirArrayに代入
-        console.log(e_dirArray);
+        // console.log(e_dirArray);
 
         for(s = e_dirArray.length-1; s >= 0; s--){
             if(e_dirArray[s].indexOf("S") != 0){ //dirArry内の関係ない配列を消去
                 e_dirArray.splice(s,1);
             }
         }
-       
+
+        // highSigEveFileを読み込み、イベント名をh_dirArrayに格納 260129 K.Takagi
+        h_dirArray = [];
+        l_dirArray = [];
+
+        (function(){
+            var hAjax = new XMLHttpRequest();
+            hAjax.onreadystatechange = function(){
+                if(hAjax.readyState == 4 && hAjax.status == 200){
+                    var txt = hAjax.responseText;
+                    var lines = txt.split(/\r?\n/);
+                    for(var li = lines.length - 1; li >= 1; li--){
+                        var line = lines[li].trim();
+                        if(!line) continue;
+                        var cols = line.split(',');
+                        if(cols.length > 0){
+                            h_dirArray.push(cols[0].trim());
+                        }
+                    }
+
+                    // l_dirArray を作成
+                    (function(){
+                        var hSet = Object.create(null);
+                        for (var hi = 0; hi < h_dirArray.length; hi++) {
+                            hSet[h_dirArray[hi]] = true;
+                        }
+                        for (var ei = 0; ei < e_dirArray.length; ei++) {
+                            var val = e_dirArray[ei];
+                            if (!hSet[val]) {
+                                l_dirArray.push(val);
+                            }
+                        }
+                    })();
+
+                    console.log(e_dirArray);
+                    console.log(h_dirArray);
+                    console.log(l_dirArray);
+                } else if(hAjax.readyState == 4 && hAjax.status != 200){
+                    console.log(highSigEveFile + " : NG");
+                }
+            };
+            hAjax.open("GET", highSigEveFile, true);
+            hAjax.send(null);
+        })();       
     }else if ((dirAjax.readyState == 4) && (dirAjax.status != 200)) { //取得に失敗した場合
         parent.messageframe.document.getElementById("mess").innerHTML = "DirList : NG";
         mes();
     }
-
 }
 
 function t_sortOut(){  //取得したテストディレクトリ名の整理をする
@@ -238,12 +290,23 @@ function t_sortOut(){  //取得したテストディレクトリ名の整理を�
 
 }
 
+//MARK: listGet
 function listGet(init){ //ディレクトリ内の画像名を取得する
 
-    if(document.getElementById("eventTest").value == "event"){
+    // if(document.getElementById("eventTest").value == "event"){
+    //     dirArray = e_dirArray;
+    // }else{
+    //     dirArray = t_dirArray;
+    // }
+    // 260129 K.Takagi
+    if(document.getElementById("eventTest").value == "test"){
+        dirArray = t_dirArray;        
+    } else if(document.getElementById("eventTest").value == "high sig."){
+        dirArray = h_dirArray;
+    } else if(document.getElementById("eventTest").value == "low sig."){
+        dirArray = l_dirArray;
+    } else{
         dirArray = e_dirArray;
-    }else{
-        dirArray = t_dirArray;
     }
     console.log(dirArray);
 
@@ -741,13 +804,22 @@ function display_details(){ //表示する情報の選別及び配置
 
     var str = event[6].indexOf("https");
     var URL = event[6].substr(str);
+    // console.log("テストdirName="+dirName);
+    var gcnURL = "https://gcn.nasa.gov/circulars?view=index&query=" + dirName; 
+    // console.log("テストgcnURL="+gcnURL);
     dresult = "<table border='0'>";
 
     var trDate = event[2].match(/\d{4}\/\d{2}\/\d{2}/);
     var trTime = event[3].match(/\d{2}:\d{2}:\d{2}/);
 
-    dresult +="<tr><td> TRIGGER TIME: &nbsp;"+ trDate + "&ensp;" + trTime + "&ensp; <a href='" + URL + "'target=_blank>"+URL+"</a></td></tr>";
-    dresult +="<tr><td>" +event[0]+ "&ensp;" +event[4]+ "</td></tr></table>"
+    // dresult +="<tr><td> TRIGGER TIME: &nbsp;"+ trDate + "&ensp;" + trTime + "&ensp; <a href='" + URL + "'target=_blank>"+URL+"</a></td></tr>";
+    // dresult +="<tr><td>" +event[0]+ "&ensp;" +event[4]+ "</td></tr></table>"
+
+    dresult += "<tr><td> TRIGGER TIME: &nbsp;"+ trDate + "&ensp;" + trTime + 
+               "&ensp; GraceDB: <a href='" + URL + "'target=_blank>" + URL + "</a>" +
+               "&ensp; GCN: <a href='" + gcnURL + "'target=_blank>" + gcnURL + // GCNにも飛べるように 251118 K.Takagi
+               "</a></td></tr>";
+    dresult += "<tr><td>" +event[0]+ "&ensp;" +event[4]+ "</td></tr></table>"
 
     parent.detailsframe.document.getElementById("div1").innerHTML = dresult;
 
@@ -839,7 +911,7 @@ function get_csvfile(init){
 
 function create_listbox(){ //GWeventのリストボックスの生成
 
-    selectdir.length = 0; //12月19日追加。報告忘れず。
+    selectdir.length = 0; //12月19日追加。
 
     //for(s = dirArray.length -1, i=0; s > dirArray.length -11; s--){
     for(s = dirArray.length -1, i=0; s >= 0; s--){
@@ -858,6 +930,7 @@ function create_listbox(){ //GWeventのリストボックスの生成
     }
 }
 
+//MARK:changeBox
 function changeBox(value){ //GWeventに表示するセレクトボックス数の選択
 
     // if(value == "more"){
@@ -1863,9 +1936,11 @@ function changeScreen() {//mainframe.jsの関数fullScreen()とほぼ同じ
     setTimeout("parent.exposureframe.fit('')",10);
 }
 
+//MARK: eventTestJudge
 //20191214追加
 function eventTestJudge() {//testディレクトリとeventディレクトリの入れ替え
     var eTJudge = document.getElementById('eventTest');
+    var selected = eTJudge.value; //20260129 K.Takagi
     var dlist = document.list.dlist;
 
     delArray();
@@ -1879,25 +1954,55 @@ function eventTestJudge() {//testディレクトリとeventディレクトリの
         dlist.remove(s)
     }
 
-    if(eTJudge.value == 'event'){//testディレクトリを使う
+    // if(eTJudge.value == 'event'){//testディレクトリを使う
+    //     eTJudge.value = 'test';
+    //     sLength = 24;
+    //     eventTest = 'test/kafka'; // /kafka
+    //     dirDef = gw + slash + eventTest + slash;
+    //     dirUrl = slash+dirDef;
+    //     teamUrl =slash+dirDef+teamDef;
+    //     console.log(dirDef, dirUrl, teamUrl);
+    //     thirdLoad();
+    // }else{//eventディレクトリを使う
+    //     dirNameJudge = 'S';
+    //     eTJudge.value = 'event';
+    //     sLength = 10;
+    //     eventTest = 'event/kafka'; // /kafka
+    //     dirDef = gw + slash + eventTest + slash;
+    //     dirUrl = slash+dirDef;
+    //     teamUrl =slash+dirDef+teamDef;
+    //     thirdLoad();
+    // }
+
+    // 260129 K.Takagi
+    if (selected === 'test') { // testディレクトリを使う
         eTJudge.value = 'test';
         sLength = 24;
-        eventTest = 'test/kafka'; // /kafka
-        dirDef = gw + slash + eventTest + slash;
-        dirUrl = slash+dirDef;
-        teamUrl =slash+dirDef+teamDef;
-        console.log(dirDef, dirUrl, teamUrl);
-        thirdLoad();
-    }else{//eventディレクトリを使う
+        eventTest = 'test/kafka';
+    } else if (selected === 'high sig.') {
+        eTJudge.value = 'high sig.';
+        sLength = 10;
+        dirNameJudge = 'S';
+        eventTest = 'event/kafka';
+    }else if (selected === 'low sig.') {
+        eTJudge.value = 'low sig.';
+        sLength = 10;
+        dirNameJudge = 'S';
+        eventTest = 'event/kafka';
+    } else { // eventディレクトリを使う
         dirNameJudge = 'S';
         eTJudge.value = 'event';
         sLength = 10;
-        eventTest = 'event/kafka'; // /kafka
-        dirDef = gw + slash + eventTest + slash;
-        dirUrl = slash+dirDef;
-        teamUrl =slash+dirDef+teamDef;
-        thirdLoad();
-    }
+        eventTest = 'event/kafka';
+    } 
+
+    dirDef = gw + slash + eventTest + slash;
+    dirUrl = slash + dirDef;
+    teamUrl = slash + dirDef + teamDef;
+    console.log(dirDef, dirUrl, teamUrl);
+
+    thirdLoad();
+
     // document.getElementById("change_list").value = "more";
     document.getElementById("change_list").value = "recent";
 }
