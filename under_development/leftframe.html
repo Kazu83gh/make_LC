@@ -11,19 +11,29 @@
 
 <center>
 <i>GW event</i>
-
 </center>
-<table border="0" frame="void">
-<tr>
-  <form name="list">
-    <SELECT name="dlist" id="dlist"  style="width:100%;" onChange="change_dir(value)">
-    </SELECT>
-  </form> 
-</tr>
-<tr>
-  <td> <INPUT type="button"  ID="change_list" value="more" style="font-size:9pt; width:100%; padding-left:0%;" onClick="changeBox(value)"> </td>
-  <td> <INPUT type="button" id = "eventTest" style="font-size:9pt; width:100%; padding-left: 0%;" value="event" onClick="eventTestJudge()"> </td>
-</tr>
+
+<table border="0" frame="void" style="margin-left: auto; margin-right: auto;">
+  <tr>
+    <form name="list">
+      <SELECT name="dlist" id="dlist"  style="width:100%;" onChange="change_dir(value)">
+      </SELECT>
+    </form> 
+  </tr>
+  <tr> 
+    <!-- <td> <INPUT type="button"  ID="change_list" value="more" style="font-size:9pt; width:100%; padding-left:0%;" onClick="changeBox(value)"> </td> -->
+    <td> <INPUT type="button"  ID="change_list" value="recent" style="font-size:9pt; width:45px; text-align:center; padding:0;" onClick="changeBox(value)"> </td>
+    <!-- <td> <INPUT type="button" id = "eventTest" style="font-size:9pt; width:100%; padding-left: 0%;" value="event" onClick="eventTestJudge()"> </td> -->
+    <!-- <td> <INPUT type="button" id = "eventTest" style="font-size:9pt; width:45px; text-align:center; padding:0;" value="event" onClick="eventTestJudge()"> </td> -->
+    <td> <!-- 2026/01/29 K.Takagi -->
+      <SELECT id="eventTest" style="font-size:9pt; width:60px; text-align:center; padding:0;" onChange="eventTestJudge()">
+        <OPTION value="event" selected>event</OPTION>
+        <OPTION value="high sig.">high sig.</OPTION>
+        <OPTION value="low sig.">low sig.</OPTION>
+        <OPTION value="test">test</OPTION>
+      </SELECT>
+    </td>
+  </tr>
 </table>
 
 <center>
@@ -56,6 +66,7 @@
 -<i>Energy</i>-
 </center>
    
+<center>
 <form name=energy>
 <SELECT name="energy" id="energy" onChange="change_energy(value)">
   <OPTION value="rgb">Color</OPTION>
@@ -65,29 +76,36 @@
   <OPTION value="high">10-20keV</OPTION>
 </SELECT>
 </form>
+</center>
 
 <center>
 <i>GW Sky Map</i>
 </center>
 
-<table border="0" frame="void">
+<!-- <center> -->
+<table border="0" frame="void" style="width:100%; margin-left: auto; margin-right: auto;">
 <tr align="center">
-<form name="error">
-<SELECT name="error" id="error" onChange="change_error(value)">
-  <OPTION value="None">None</OPTION>
-</SELECT>
-</form>
+  <td>
+    <form name="error" style="width:100%; height: 20px; margin: 0; padding: 0;">
+      <SELECT name="error" id="error" onChange="change_error(value)" style="width:100%;">
+        <OPTION value="None">None</OPTION>
+      </SELECT>
+    </form>
+  </td>
 </tr>
 <tr>  <!-- エラー領域だけの画像が出来たらエラー領域の画像種類を選ぶものにする-->
-<form name="area">
-<SELECT name="area" id="area" onChange="change_area(value)">
-</SELECT>
-</form> 
-</tr> 
-<table>
+  <td>
+  <form name="area" style="width:100%; height: 20px; margin: 0; padding: 0;">
+    <SELECT name="area" id="area" onChange="change_area(value)" style="width:100%;">
+    </SELECT>
+  </form> 
+  </td>
+</tr>
+</table>
+<!-- </center> -->
 <br>
 
-<table border="1" style="margin-right: auto; font-size: 9pt;">
+<table border="1" style="margin-left: auto; margin-right: auto; font-size: 9pt;">
   <tr><td colspan="2"><center>Nova-Alert 1</center></td>
   <tr><td><center>trigger</center></td><td><center>mail</center></td>
   <tr>
@@ -98,7 +116,7 @@
   </tr>
 </table>
 
-<table border="1" style="margin-right: auto; font-size: 9pt;">
+<table border="1" style="margin-left: auto; margin-right: auto; font-size: 9pt;">
   <tr><td colspan="2"><center>Nova-Alert 2</center></td>
   <tr><td><center>trigger</center></td><td><center>mail</center></td>
   <tr>
@@ -113,6 +131,7 @@
 <center>
 <i>Exposure Map</i>
 </center>
+<center>
 <font size="1">
   <form name="radio">
     <INPUT type="radio" name ="range_on-off" id = "range-on" value="on"  onClick="Range(value)">ON
@@ -121,15 +140,18 @@
 </font>
 <input type="range" id="bar" name="num" min="0" max="1" step="0.01" value="0.2" style="width:100%; display:none; background-color:gainsboro" onchange="parent.mainframe.changeValue(this.value)">
 <INPUT type="button" value="Exposure-off" style="display:none; "onClick="Exposure(value)" ID="b_exposure">
-  <!-- <br> -->
+<!-- <br> -->
+</center>
 
 <!-- 20250701 髙木が追加 -->
 <center>
-  <i>Popup Options</i>
+  <i>Popup Opt.</i>
 </center>
 
-<table border="0" style="margin-right: auto; font-size: 9pt;">
-  <tr><td colspan="2"><center>Axis</center></td>
+<center>
+<table border="0" style="margin-left: auto; margin-right: auto; font-size: 9pt;">
+  <!-- <tr>
+    <td colspan="2"><center>Axis</center></td> -->
   <tr>
     <td>
       <form name="popXaxis">
@@ -146,11 +168,11 @@
     <!-- <td><form name="popYaxis"><SELECT name="popYaxis" id="popYaxis" onChange="popupYaxis()" style="font-size: 8pt;">
          <OPTION value="mCrab">No</OPTION></SELECT></form></td> -->
     <td>
-      <INPUT type="button" value="mCrab" onClick="popupYaxis()" style="font-size: 8pt; width:100%; background-color:gainsboro; position: relative; top: -6px;" ID="popupYaxis">
+      <INPUT type="button" value="mCrab" onClick="popupYaxis()" style="font-size: 8pt; width:100%; height: 18px; background-color:gainsboro; position: relative; top: -6px;" ID="popupYaxis">
     </td>
   </tr>
 </table>
-
+</center>
 <!-- <center>
   <i>Axis</i>
 </center> -->
@@ -189,54 +211,64 @@
 </table> -->
 
 <div name="popupDelay">
-  <center>
-    <i>Delay</i>
-    <br>
-    <span id="popupDelay-display"></span> [s]
+  <center style="font-size: 12pt;">
+    <i>Delay :</i>
+    <!-- <br> -->
+    <span id="popupDelay-display"></span> [s] 
   </center>
   <input type="range" id="popupDelay-range" min="0" max="3" value="0.1" step="0.1" style="width: 100%;" />
 </div>
-<br>
+<!-- <br> -->
 
+<!-- 11月26日、稲木が追加したもの -->
+<!-- 2025/6/16 デフォルトを Maker-on、Cursor-on に変更(髙木) -->
+<center>
+<table border="0" width="100">
+  <tr><td><INPUT type="button" value="Marker-on"        onClick="marker()"  style="width:100%; background-color:gainsboro" ID="marker"></td></tr>
+  <tr><td><INPUT type="button" value="Cursor-on"        onClick="cursor()"  style="width:100%; background-color:gainsboro" ID="cursor"></td></tr>
+</table>
+</center>
+<!--<INPUT type="button" value="mousemove" id="cursorMode" onmousedown="changeCursorMode()"><br>-->
+<!-- ここまで　-->
+<br>
 
 <center>
 <i>Data Selection</i>
 </center>
 
 <form name="imgtype">
-<SELECT name="imgtype" id="imgtype" onChange="change_type(value)">
+<SELECT name="imgtype" id="imgtype" onChange="change_type(value)" style="width:100%">
   <OPTION value="cln" selected>clean</OPTION>
   <OPTION value="col">COLPHI Cut</OPTION>
   <OPTION value="raw">raw</OPTION>
 </SELECT>
 </form>
 
-
-<!-- 11月26日、稲木が追加したもの -->
-<!-- 2025/6/16 デフォルトを Maker-on、Cursor-on に変更(髙木) -->
-<table border="0" width="100">
-  <tr><td><INPUT type="button" value="Marker-on"        onClick="marker()"  style="width:100%; background-color:gainsboro" ID="marker"></td></tr>
-  <tr><td><INPUT type="button" value="Cursor-on"        onClick="cursor()"  style="width:100%; background-color:gainsboro" ID="cursor"></td></tr>
-</table>
-<!--<INPUT type="button" value="mousemove" id="cursorMode" onmousedown="changeCursorMode()"><br>-->
-<!-- ここまで　-->
-
 <form name="zahyo">
-(&alpha;, &delta;)=
+(&alpha;, &delta;)= 
+<br>
 (<input type="text" value="" size="5" ID=resultAlpha>, 
 <input type="text" value="" size="5" ID=resultDelta>)
-<input type="button" value="GO" onClick="sarchPointE()"> 
+<!-- <input type="button" value="GO" onClick="sarchPointE()">  -->
 <br>
 (<i>l, b</i>)=
+<br>
 (<input type="text" value="" size="5" ID="resultgk">,
 <input type="text" value="" size="5" ID="resultgi">)
-<input type="button" value="GO" onClick="sarchPointG()">
+<!-- <input type="button" value="GO" onClick="sarchPointG()"> -->
+<br>
+<center>
+<input type="button" value="GO" onClick="sarchPointAuto()">
+</center>
 </form>
 
+<center>
 <input type="text" value="" size="8" style="color:white;background-color:black;" ID="jnamesearch">
 <input type="button" value="JSearch" onClick="jnamesearch()">
+</center>
 <br>
 
+<center>
 fluxOption<FORM name="SelFlu">
   <SELECT name="SelectFlux" onchange="reWrite()" id="SelectFlux">
     <OPTION value="-1" selected>RIKENsrc</OPTION>
@@ -246,8 +278,8 @@ fluxOption<FORM name="SelFlu">
     <OPTION value="0" >ALL</OPTION>
   </SELECT>
  </FORM>
+</center>
 <div ID="nresult"></div>
-
 <div id = "team"></div>
 <div id = "datasite"></div>
 <!--<a href="testindex.html" target="_blank" id = "test">test site</a><br>-->
